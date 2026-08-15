@@ -49,7 +49,7 @@ function addTextBox(value = "") {
   const input = document.createElement("input");
   input.type = "text";
   input.className = "arg-input";
-  input.value = value;
+  input.value = string(value).trim();
 
   const removeBtn = document.createElement("button");
   removeBtn.type = "button";
@@ -63,10 +63,10 @@ function addTextBox(value = "") {
 }
 
 // Mettre à jour la sélection
-function setShape(value="cycle") {
+function setShape(value = "cycle") {
   const shapeSelect = document.getElementById("shape-select");
   if (shapeSelect) {
-    const normalizedShape = String(shape).trim();
+    const normalizedShape = String(value).trim();
     // If the select already has this option, just select it
     const hasOption = Array.from(shapeSelect.options).some(
       (opt) => opt.value === normalizedShape
