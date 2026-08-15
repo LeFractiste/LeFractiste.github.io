@@ -25,7 +25,8 @@ window.addEventListener("DOMContentLoaded", () => {
     const shape = parts[0] || "cycle";
     const myWords = parts.slice(1);
 
-    // Prepare la page avec les boîtes de texte pour chaque mot
+    // Adapte la page pour la forme et ses éléments de texte
+    setShape(shape);
     myWords.forEach((word) => addTextBox(word));
 
     // 3. Génération et affichage du SVG
@@ -59,6 +60,24 @@ function addTextBox(value = "") {
   row.appendChild(input);
   row.appendChild(removeBtn);
   container.appendChild(row);
+}
+
+// Mettre à jour la sélection
+function setShape(value="cycle") {
+  const shapeSelect = document.getElementById("shape-select");
+  if (shapeSelect) {
+    const normalizedShape = String(shape).trim();
+    // If the select already has this option, just select it
+    const hasOption = Array.from(shapeSelect.options).some(
+      (opt) => opt.value === normalizedShape
+    );
+    if (hasOption) {
+      shapeSelect.value = normalizedShape;
+    } else {
+      // Option not present: take the first from html
+      shapeSelect.value = shapeselect.options(0);
+    }
+  }
 }
 
 // OnClick: Récupérer les valeurs et appeler SVGgen
