@@ -49,7 +49,7 @@ function addTextBox(value = "") {
   const input = document.createElement("input");
   input.type = "text";
   input.className = "arg-input";
-  input.value = string(value).trim();
+  input.value = String(value).trim();
 
   const removeBtn = document.createElement("button");
   removeBtn.type = "button";
