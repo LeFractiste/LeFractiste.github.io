@@ -11,6 +11,8 @@ function SVGgen(type, ...data) {
       return starTemplate(data);
     case "tree":
       return treeTemplate(data);
+    case "random"
+      return testTemplate(data);
     default:
       return `<text x="10" y="20">Type inconnu</text>`;
   }
