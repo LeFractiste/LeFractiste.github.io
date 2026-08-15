@@ -1,8 +1,9 @@
+"use strict";
 // SVGgenerator : generation de code Svg
 // code pour page html interactive encore dans graph
 
 // Entrée unique
-function SVGgen(type, data) {
+function SVGgen(type, ...data) {
   switch (type) {
     case "cycle":
       return cycleTemplate(data);
