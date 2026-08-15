@@ -38,18 +38,19 @@
 
     <!-- 3. Bouton de lancement -->
     <div class="form-group">
-      <button type="button" class="btn-action" onclick="generateSVG()">
+      <button type="button" class="btn-action" onclick="btn_generateSVG()">
         Générer le SVG
       </button>
     </div>
 
     <hr />
 
-    <!-- zone d'affichage du résultat -->
+    <!-- Zone d'affichage du SVG généré -->
     <h3>Résultat :</h3>
-    <!-- Zone Console de Validation -->
-    <p id="debug-console" class="console-text">SVG: en attente</p>
-
     <div id="svg-output">Le SVG apparaîtra ici.</div>
+
+    <!-- Zone Console, mode debug -->
+    <h3>Console</h3>
+    <p id="debug-console" class="console-text">SVG: en attente</p>
   </body>
 </html>

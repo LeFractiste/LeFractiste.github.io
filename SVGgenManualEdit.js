@@ -1,46 +1,41 @@
 "use strict";
-// Support de l'interface de SVGserver (Index.html: toutes nommées ainsi !)
+// Support de l'interface de SVGgenStaticServer (Index.html: toutes nommées ainsi !)
 // Utilise la lib de génération: SVG SVGgenerator.js :
-const http = require("http"); // ou import http from 'http'
-const url = require("url");
 
+// Main (entrée du code)
 // Mots par défaut au chargement
-const defaultData = "cycle, This, is Fun";
-
-// Initialisation des champs au chargement de la page
-const server = http.createServer((req, res) => {
-  // 1. Analyse de l'URL pour extraire les paramètres (ex: ?data=cycle,One,Two,Three)
-  const parsedUrl = url.parse(req.url, true);
-  const rawData = parsedUrl.query.data || defaultData;
-
-  // 2. Découpage du texte : "cycle,One,Two,Three"
-  const parts = rawData.split(",").map((s) => s.trim());
-  const shape = parts[0] || "cycle";
-  const myWords = parts.slice(1);
-
-  // 3. Génération du SVG
-  const svgContent = SVGgen(shape, ...myWords);
-
-  // 4. Étape (2) : Réponse HTTP avec les bons en-têtes (CORS + type de contenu SVG)
-  res.writeHead(200, {
-    "Content-Type": "image/svg+xml", // Indique au navigateur que c'est une image SVG
-    "Access-Control-Allow-Origin": "*", // Autorise les requêtes cross-domain (CORS)
-  });
-
-  // Envoi du flux SVG et fermeture de la connexion
-  res.end(svgContent);
-});
-
-// Le serveur écoute sur le port 3000
-server.listen(3000, () => {
-  console.log(
-    "Serveur SVG démarré sur http://localhost:3000/?data=cycle,One,Two,Three",
-  );
-});
+const defaultData = "cycle, This, is, Fun";
+let debugConsole; // élément de page
+let rawData; //lecture de l'url
+let svgContent; //le SVG généré
 
 // Initialisation de page (variable)
 window.addEventListener("DOMContentLoaded", () => {
-  myWords.forEach((word) => addTextBox(word));
+  try {
+    // 1. Analyse de l'URL pour extraire les paramètres (ex: ?data=cycle,One,Two,Three)
+    const urlParams = new URLSearchParams(window.location.search);
+    rawData = urlParams.get("data") || defaultData; // Récupère "cycle,One,Two,Three"
+
+    // and returns data to user
+    debugConsole = document.getElementById("debug-console");
+    debugConsole.textContent = "Page called with data=" + rawData;
+
+    // 2. Découpage du texte : "cycle,One,Two,Three"
+    const parts = rawData.split(",").map((s) => s.trim());
+    const shape = parts[0] || "cycle";
+    const myWords = parts.slice(1);
+
+    // Prepare la page avec les boîtes de texte pour chaque mot
+    myWords.forEach((word) => addTextBox(word));
+
+    // 3. Génération et affichage du SVG
+    svgContent = SVGgen(shape, ...myWords);
+    displaySVG(svgContent);
+  } catch (error) {
+    console.error("Erreur lors de l'initialisation de la page:", error);
+    debugConsole.textContent +=
+      "\nErreur lors de l'initialisation de la page: " + error.message;
+  }
 });
 
 // Ajouter une boîte de texte
@@ -66,41 +61,36 @@ function addTextBox(value = "") {
   container.appendChild(row);
 }
 
-// Récupérer les valeurs et appeler SVGgen
-function generateSVG() {
+// OnClick: Récupérer les valeurs et appeler SVGgen
+function btn_generateSVG() {
   const shape = document.getElementById("shape-select").value;
   const inputs = document.querySelectorAll(".arg-input");
-  const debugConsole = document.getElementById("debug-console");
 
   // Extraction de toutes les valeurs saisies
   const args = Array.from(inputs).map((input) => input.value);
 
-  // Affichage dans la console de validation
-  debugConsole.textContent =
-    "genSVG('" +
-    shape +
-    "', " +
-    args.map((arg) => "'" + arg + "'").join(", ") +
-    ")";
-
   // Vérification que la fonction externe existe bien et affichage
   if (typeof SVGgen === "function") {
     // SVGgen('cycle', 'This', 'is', 'Fun', ...)
-    const svgResult = SVGgen(shape, ...args);
-    displaySVG(svgResult, debugConsole);
+    svgContent = SVGgen(shape, ...args);
+    displaySVG(svgContent);
+    // Affichage dans la console de validation, sous forme de 'mots'
+    debugConsole.textContent = `genSVG('${shape}', ${args.map((arg) => "'" + arg + "'").join(", ")}) = \n`;
+    debugConsole.textContent += svgContent;
   } else {
     alert("La fonction SVGgen() n'est pas définie dans ce contexte !");
   }
 
   // Mise à jour de l'url affichée dans la barre d'adresse du navigateur
-  const newUrl =
-    `${window.location.origin}${window.location.pathname}` +
-    `?data=${shape},${args.join(",")}`;
+  //avec nettoyage du texte des argumentspour usage en URL
+  const params = new URLSearchParams();
+  params.set("data", `${shape},${args.join(",")}`);
+  const newUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
   window.history.replaceState(null, "", newUrl);
 }
 
 // Injection propre du SVG généré par SVGgen
-function displaySVG(svgData, debugConsole) {
+function displaySVG(svgData) {
   const outputDiv = document.getElementById("svg-output");
   outputDiv.innerHTML = ""; // Nettoyage de la zone
 
@@ -110,7 +100,6 @@ function displaySVG(svgData, debugConsole) {
   } else if (typeof svgData === "string") {
     // Si SVGgen renvoie une chaîne texte <svg>...</svg>
     outputDiv.innerHTML = svgData;
-    debugConsole.textContent += "=" + svgData;
   } else {
     outputDiv.textContent = "Format de retour SVG inconnu.";
   }

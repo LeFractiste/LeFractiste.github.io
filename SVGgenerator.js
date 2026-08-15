@@ -55,8 +55,54 @@ function cycleTemplate(items) {
   return svg;
 }
 
-// 2. Étoile / répulsion
+// 2. Étoile
 function starTemplate(items) {
+  let n = items.length;
+  let svgWidth = 600,
+    svgHeight = 600;
+  let centerX = svgWidth / 2,
+    centerY = svgHeight / 2;
+  let radius = 200;
+  let svg = `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">`;
+
+  for (let i = 0; i < n; i++) {
+    let angle = ((2 * Math.PI) / n) * i;
+    let x = centerX + radius * Math.cos(angle);
+    let y = centerY + radius * Math.sin(angle);
+    // svg += `<circle cx="${x}" cy="${y}" r="30" fill="#8ecae6" stroke="#023047" stroke-width="2"/>`;
+    svg += `<text x="${x - 20}" y="${y + 5}" font-family="Arial" font-size="14" fill="#023047">${items[i]}</text>`;
+    // flèche depuis le centre
+    svg += `<line x1="${centerX}" y1="${centerY}" x2="${x}" y2="${y}" stroke="#023047" stroke-width="2" marker-end="url(#arrow)"/>`;
+  }
+  svg += markerDef();
+  svg += "</svg>";
+  return svg;
+}
+
+// 3. Arbre hiérarchique simple
+function treeTemplate(items) {
+  let svgWidth = 600,
+    svgHeight = 600;
+  let levelHeight = 100;
+  let svg = `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">`;
+  let nodes = [];
+  items.forEach((label, i) => {
+    let x = (svgWidth / (items.length + 1)) * (i + 1);
+    let y = levelHeight;
+    nodes.push({ x, y, label });
+  });
+  nodes.forEach((n) => {
+    svg += `<circle cx="${n.x}" cy="${n.y}" r="30" fill="#ffb703" stroke="#023047" stroke-width="2"/>`;
+    svg += `<text x="${n.x - 20}" y="${n.y + 5}" font-family="Arial" font-size="14" fill="#023047">${n.label}</text>`;
+  });
+  svg += markerDef();
+  svg += "</svg>";
+  return svg;
+}
+
+// 4. répulsion à partir de positions aléatoires
+// TODO 3: il manque la ligne 1 et la géométrie est assez nulle !
+function testTemplate(items) {
   let svgWidth = 600,
     svgHeight = 600;
   let centerX = svgWidth / 2,
@@ -100,27 +146,6 @@ function starTemplate(items) {
     svg += `<text x="${n.x - 20}" y="${n.y + 5}" font-family="Arial" font-size="14" fill="#023047">${n.label}</text>`;
     if (n !== nodes[0])
       svg += `<line x1="${centerX}" y1="${centerY}" x2="${n.x}" y2="${n.y}" stroke="#023047" stroke-width="2"/>`;
-  });
-  svg += markerDef();
-  svg += "</svg>";
-  return svg;
-}
-
-// 3. Arbre hiérarchique simple
-function treeTemplate(items) {
-  let svgWidth = 600,
-    svgHeight = 600;
-  let levelHeight = 100;
-  let svg = `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">`;
-  let nodes = [];
-  items.forEach((label, i) => {
-    let x = (svgWidth / (items.length + 1)) * (i + 1);
-    let y = levelHeight;
-    nodes.push({ x, y, label });
-  });
-  nodes.forEach((n) => {
-    svg += `<circle cx="${n.x}" cy="${n.y}" r="30" fill="#ffb703" stroke="#023047" stroke-width="2"/>`;
-    svg += `<text x="${n.x - 20}" y="${n.y + 5}" font-family="Arial" font-size="14" fill="#023047">${n.label}</text>`;
   });
   svg += markerDef();
   svg += "</svg>";
