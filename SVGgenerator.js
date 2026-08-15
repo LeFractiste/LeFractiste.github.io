@@ -11,7 +11,7 @@ function SVGgen(type, ...data) {
       return starTemplate(data);
     case "tree":
       return treeTemplate(data);
-    case "random"
+    case "random":
       return testTemplate(data);
     default:
       return `<text x="10" y="20">Type inconnu</text>`;
@@ -102,7 +102,7 @@ function treeTemplate(items) {
   return svg;
 }
 
-// 4. répulsion à partir de positions aléatoires
+// 4. Répulsion à partir de positions aléatoires
 // TODO 3: il manque la ligne 1 et la géométrie est assez nulle !
 function testTemplate(items) {
   let svgWidth = 600,
