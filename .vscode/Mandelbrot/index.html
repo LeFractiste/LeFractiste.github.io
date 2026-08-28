@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mandelbrot Rust/Wasm</title>
+    <style>
+      body {
+        font-family: monospace;
+        background: #121212;
+        color: #eee;
+        text-align: center;
+        margin: 0;
+        padding: 20px;
+      }
+      canvas {
+        border: 1px solid #444;
+        cursor: crosshair;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Mandelbrot - Rust Wasm Engine</h2>
+    <canvas id="canvas" width="600" height="600"></canvas>
+    <div id="info">Chargement...</div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

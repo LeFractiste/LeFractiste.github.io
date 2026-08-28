@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Rust Wasm - Mandelbrot Iter</title>
+  </head>
+  <body>
+    <h2>Test de transfert de paramètres JS <-> Rust</h2>
+    <div id="resultat">Chargement du module Rust Wasm...</div>
+
+    <script type="module">
+      // Import du wrapper généré par wasm-pack
+      import init, { mandelbrot_iter } from "./pkg/mandelbrot.js";
+
+      async function run() {
+        // Initialise le binaire .wasm
+        await init();
+
+        // Test 1: Un point à l'intérieur de l'ensemble (ex: 0, 0)
+        const iterIn = mandelbrot_iter(0.0, 0.0, 1000);
+
+        // Test 2: Un point divergent hors de l'ensemble (ex: 1.0, 1.0)
+        const iterOut = mandelbrot_iter(1.0, 1.0, 1000);
+
+        document.getElementById("resultat").innerHTML = `
+        <p><strong>Point (0, 0) :</strong> ${iterIn} itérations (capturé / intérieur)</p>
+        <p><strong>Point (1, 1) :</strong> ${iterOut} itérations (évasions / extérieur)</p>
+      `;
+      }
+
+      run();
+    </script>
+  </body>
+</html>

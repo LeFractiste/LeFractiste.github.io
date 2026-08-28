@@ -1,0 +1,6 @@
+Exemple de spécification Prompt pour Google AI Studio :
+"Génère un composant Web de fractale de Mandelbrot hybride utilisant Rust/WebAssembly pour le calcul matriciel et HTML5 Canvas pour le rendu."
+Rust (src/lib.rs) : Exporte render_mandelbrot(width, height, xmin, xmax, ymin, ymax, max_iter) retournant un Vec<u8> RGBA (taille w*h*4), avec boucle optimisée pré-calculant $z_{x}^2$ et $z_{y}^2$. Exporte également mandelbrot_iter.
+Architecture JS (app.js) : Charge le module Wasm via init(), utilise ImageData et putImageData().
+IHM : Zoom continu à la molette centré sur le curseur, clic gauche pour recentrer/zoomer x2, clic droit pour basculer les outils d'analyse (orbites / Julia).
+HTML : Inclut <meta name="viewport" content="width=device-width, initial-scale=1" />.
