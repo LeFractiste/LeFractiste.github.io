@@ -1,56 +1,91 @@
 <!doctype html>
-<!-- Page d'édition de code SVG avec SVGgen de graphSVG.gs -->
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <!-- meta viewport: demandé par VScode -->
-    <meta name="viewport" content="width=device-width" />
-    <title>Générateur SVG</title>
-    <link rel="stylesheet" href="style.css" />
-
-    <!-- Load code: d'abord la lib, ensuite l'interface-->
-    <script src="SVGgenerator.js"></script>
-    <script src="SVGgenManualEdit.js"></script>
-
-    <style></style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mandel-dev / Le Fractiste</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #121214;
+        color: #e1e1e6;
+        padding: 2rem;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      h1 {
+        color: #61afef;
+        border-bottom: 1px solid #333;
+        padding-bottom: 0.5rem;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      .card {
+        background: #1e1e24;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 1.5rem;
+        transition:
+          transform 0.2s,
+          border-color 0.2s;
+      }
+      .card:hover {
+        border-color: #61afef;
+        transform: translateY(-2px);
+      }
+      .card h3 {
+        margin-top: 0;
+        color: #98c379;
+      }
+      .card p {
+        font-size: 0.9rem;
+        color: #abb2bf;
+      }
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+    </style>
   </head>
   <body>
-    <h2>Générateur de Graphique SVG</h2>
+    <h1>Mandel-dev — Galerie &amp; Laboratoire Fractale</h1>
+    <p>
+      Plateforme d'exploration et de rendu haute précision (Wasm / Rust / Canvas
+      / DEM).
+    </p>
 
-    <!-- 1. Liste de choix -->
-    <div class="form-group">
-      <label for="shape-select">Forme / Type :</label>
-      <select id="shape-select">
-        <option value="cycle" selected>cycle</option>
-        <option value="tree">tree</option>
-        <option value="star">star</option>
-      </select>
+    <div class="grid">
+      <a href="./mandel-dev/mandel-dev.html" class="card">
+        <h3>🔬 Mandel-V3 (Dev)</h3>
+        <p>
+          Vue jumelée Mandelbrot &amp; Julia, avec rendu DEM, palette HSV
+          dynamic et export d'orbites vers Sheets.
+        </p>
+      </a>
+      <a href="./mandel-V2/mandel-v2.html" class="card">
+        <h3>🏛️ Mandel-V2 (Base)</h3>
+        <p>
+          Version historique de référence pour l'interaction utilisateur et le
+          système de zoom.
+        </p>
+      </a>
+      <a href="./SVGgen-V2/SVGgen.html" class="card">
+        <h3>🎨 Générateur SVG</h3>
+        <p>
+          Outil d'export vectoriel pour l'impression et les schémas structurels.
+        </p>
+      </a>
+      <a href="./articles/didactique.html" class="card">
+        <h3>📚 Pages Didactiques</h3>
+        <p>
+          Explications théoriques sur la géométrie fractale, la méthode DEM et
+          la dynamique des orbites.
+        </p>
+      </a>
     </div>
-
-    <!-- 2. Conteneur des boîtes de texte -->
-    <div class="form-group">
-      <label>Arguments (mots) :</label>
-      <div id="text-boxes-container">
-        <!-- Les champs par défaut seront injectés par le script -->
-      </div>
-      <button type="button" onclick="addTextBox()">+ Ajouter un champ</button>
-    </div>
-
-    <!-- 3. Bouton de lancement -->
-    <div class="form-group">
-      <button type="button" class="btn-action" onclick="btn_generateSVG()">
-        Générer le SVG
-      </button>
-    </div>
-
-    <hr />
-
-    <!-- Zone d'affichage du SVG généré -->
-    <h3>Résultat :</h3>
-    <div id="svg-output">Le SVG apparaîtra ici.</div>
-
-    <!-- Zone Console, mode debug -->
-    <h3>Console</h3>
-    <p id="debug-console" class="console-text">SVG: en attente</p>
   </body>
 </html>

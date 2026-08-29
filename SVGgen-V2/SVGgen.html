@@ -1,0 +1,56 @@
+<!doctype html>
+<!-- Page d'édition de code SVG avec SVGgen de graphSVG.gs -->
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- meta viewport: demandé par VScode -->
+    <meta name="viewport" content="width=device-width" />
+    <title>Générateur SVG</title>
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- Load code: d'abord la lib, ensuite l'interface-->
+    <script src="SVGgenerator.js"></script>
+    <script src="SVGgenManualEdit.js"></script>
+
+    <style></style>
+  </head>
+  <body>
+    <h2>Générateur de Graphique SVG</h2>
+
+    <!-- 1. Liste de choix -->
+    <div class="form-group">
+      <label for="shape-select">Forme / Type :</label>
+      <select id="shape-select">
+        <option value="cycle" selected>cycle</option>
+        <option value="tree">tree</option>
+        <option value="star">star</option>
+      </select>
+    </div>
+
+    <!-- 2. Conteneur des boîtes de texte -->
+    <div class="form-group">
+      <label>Arguments (mots) :</label>
+      <div id="text-boxes-container">
+        <!-- Les champs par défaut seront injectés par le script -->
+      </div>
+      <button type="button" onclick="addTextBox()">+ Ajouter un champ</button>
+    </div>
+
+    <!-- 3. Bouton de lancement -->
+    <div class="form-group">
+      <button type="button" class="btn-action" onclick="btn_generateSVG()">
+        Générer le SVG
+      </button>
+    </div>
+
+    <hr />
+
+    <!-- Zone d'affichage du SVG généré -->
+    <h3>Résultat :</h3>
+    <div id="svg-output">Le SVG apparaîtra ici.</div>
+
+    <!-- Zone Console, mode debug -->
+    <h3>Console</h3>
+    <p id="debug-console" class="console-text">SVG: en attente</p>
+  </body>
+</html>

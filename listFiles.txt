@@ -1,0 +1,18 @@
+Organisation des fichiers sur C:CODEBASE/Github et GitHub
+
+LeFractiste.github.io/
+├── .git/                 (Masqué par défaut)
+├── .gitignore            (Votre fichier créant les règles d'exclusion)
+├── index.html            (Page principale site GitHub)
+├── style.css             (fichier css pour cet html - et le site ?)
+├── Mandel_v2/            (Projet Mandelbrot, version V2 released, à conserver)
+│   ├── Cargo.toml        (config cargo=Rust)
+│   ├── index.html        (html pour git)
+│   ├── app.js            (code applicatif pour le html, interface graphique)
+│   ├── Mandelbrot.js     (business logic Mandelbrot)
+│   ├── palette.js        (objet: business logic + I/F éditeur de palette 1024 couleurs)
+│   ├── src/              (source Rust: lib.rs)
+│   └── pkg/              (package Rust: mandel.wasm + mandel.js) à renommer M-Rust
+├── Mandelbrot/           (idem version en développement)
+├── target/               (fichiers temporaires de compilation Rust)
+├── NoCompile/            (mes vieux codes et tests et code généré non utlisé)

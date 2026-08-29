@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mandel-V31 : Dual Explorer Mandelbrot / Julia</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #18181b;
+        color: #f4f4f5;
+        margin: 0;
+        padding: 15px;
+      }
+      .workspace {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+      }
+      .canvas-card {
+        background: #27272a;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #3f3f46;
+        position: relative;
+      }
+      .canvas-card h4 {
+        margin: 0 0 8px 0;
+        color: #38bdf8;
+        display: flex;
+        justify-content: space-between;
+      }
+      canvas {
+        background: #000;
+        border-radius: 4px;
+        cursor: crosshair;
+      }
+      #controls {
+        margin-top: 15px;
+        background: #27272a;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #3f3f46;
+        max-width: 1030px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .info-bar {
+        font-family: monospace;
+        font-size: 11px;
+        color: #a1a1aa;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="workspace">
+      <!-- Fenêtre Mandelbrot -->
+      <div class="canvas-card">
+        <h4>
+          <span>Plan de Mandelbrot</span>
+          <button id="btnResetMandel" style="font-size: 10px">
+            Reset Zoom
+          </button>
+        </h4>
+        <canvas id="mandelCanvas" width="500" height="500"></canvas>
+        <div id="mandelPos" class="info-bar">c = 0.000000 + 0.000000i</div>
+      </div>
+
+      <!-- Fenêtre Julia Soeur -->
+      <div class="canvas-card">
+        <h4>
+          <span>Ensemble de Julia ($J_c$)</span>
+          <button id="btnResetJulia" style="font-size: 10px">Reset Zoom</button>
+        </h4>
+        <canvas id="juliaCanvas" width="500" height="500"></canvas>
+        <div id="juliaPos" class="info-bar">
+          Target c = -0.700000 + 0.270150i
+        </div>
+      </div>
+    </div>
+
+    <!-- Panneau de Contrôle & Palette -->
+    <div id="controls">
+      <div id="paletteContainer"></div>
+      <div
+        style="margin-top: 10px; display: flex; gap: 10px; align-items: center"
+      >
+        <button
+          id="btnCopyCsv"
+          style="
+            padding: 8px 15px;
+            background: #0284c7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+          "
+        >
+          📋 Copier l'orbite verrouillée (CSV / Sheets)
+        </button>
+        <span id="csvStatus" style="font-size: 12px; color: #4ade80"></span>
+      </div>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

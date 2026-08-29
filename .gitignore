@@ -1,0 +1,12 @@
+# Exclure les fichiers de compilation lourds et temporaires de Rust
+target/
+
+# Exclure la configuration propre à VS Code (optionnel mais conseillé)
+.vscode/
+
+# Exclure mes vieilles versions
+z_old_src/
+
+# Exclure les fichiers système OS
+.DS_Store
+Thumbs.db
