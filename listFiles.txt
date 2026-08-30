@@ -1,5 +1,6 @@
-Organisation des fichiers sur C:CODEBASE/Github et GitHub
+Memo: organisation des fichiers et commandes
 
+Organisation des fichiers sur C:CODEBASE/Github et GitHub  ( /  sur le web !!)
 LeFractiste.github.io/
 ├── .git/                 (Masqué par défaut)
 ├── .gitignore            (Votre fichier créant les règles d'exclusion)
@@ -13,6 +14,21 @@ LeFractiste.github.io/
 │   ├── palette.js        (objet: business logic + I/F éditeur de palette 1024 couleurs)
 │   ├── src/              (source Rust: lib.rs)
 │   └── pkg/              (package Rust: mandel.wasm + mandel.js) à renommer M-Rust
-├── Mandelbrot/           (idem version en développement)
-├── target/               (fichiers temporaires de compilation Rust)
+│   └── target/           (fichiers temporaires de compilation Rust)
+├── Mandelbrot/           (idem version en développement)               
 ├── NoCompile/            (mes vieux codes et tests et code généré non utlisé)
+
+Commandes:
+# Empaqueter tout le dossier (vérifier le CD directory !)
+git add .
+
+# Commiter la correction de structure
+git commit -m "fix(): comment"
+
+# Envoi vers GitHub
+git push origin main
+
+
+#special
+git add path -f   #force l'ajout d'un répertoire/fichier, pour effacer un tag gitignore
+git mv mandel-dev mandel_V3   #renomme un répertoire (avantage: garde les liens)
