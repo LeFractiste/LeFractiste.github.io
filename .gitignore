@@ -1,6 +1,9 @@
 # Exclure les fichiers de compilation lourds et temporaires de Rust
 target/
 
+# NE PAS ignorer pkg/ (nous en avons besoin pour GitHub Pages !)
+!pkg/
+
 # Exclure la configuration propre à VS Code (optionnel mais conseillé)
 .vscode/
 
