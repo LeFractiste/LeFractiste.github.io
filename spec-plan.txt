@@ -1,0 +1,55 @@
+Spécifications d'idées pour le moteur de Fractales
+[V1] Rendu de base Mandelbrot/Julia Canvas2D/Wasm - OK
+[V2] PaletteEditor interactif + export JSON/URL - OK
+[V3] Moteur d'itération optimisé (AVX2/SIMD via Rust Wasm) - OK
+[V4] Intégration de V2 et V3 - troisième codeur.
+[V4-Core] Pipeline d'affichage à 5 champs :
+  - Jauge Intérieure : Ratio pixels intérieurs / total
+  - Question de contrôle : "Stabilité du zoom ?"
+  - État : Vert (Fluide), Orange (Lag), Rouge (Saturation Wasm)
+  - Action associée : Ajuster Max_Iter / Résolution dynamic
+  - Mesure : FPS + Temps de calcul Frame (ms)
+[V4-Zoom] Pre-Transformer & Zoom Continu 2.5D :
+  - Mappage linéaire Canvas (px) -> Plan Complexe (C_re, C_im)
+  - Blending bi-buffer : Fondu/Scaler entre FractImage_N et FractImage_N+1
+  - Rendu progressif multi-passe pendant l'animation
+[V4-Angle] Sortie d'itération étendue :
+  - Restitution de l'argument (angle) du point d'échappement via LUT
+[V5] Graphisme optimisé
+  - Palette de type Fraqtive, en HSV - helper: gestionnaire graphique drag-n-drop
+  - Transformer manuel non linéaire
+  - Zoonorama (transformer adaptatif avancé - moteur polaire)
+  - Anti-aliasing? Affichage fin des frontières?
+  - Modes variables
+  - Création de grandes images en batch (4000x4000, ou un buffer de 1Go précalculé ?)
+
+Version initiale: prio / titre / description
+1.1	2	Dual View Synchronisée	:	Affichage côte à côte de la carte Mandelbrot et du Julia dédié au point c survolé.
+1.2	1	Overlay d'Analyse d'Orbites	:	Tracé vectoriel des sous-suites d'itérations 19k+p pour visualiser les géométries de convergence.
+1.3	3	Suggestion Automatique POI	:	Marqueurs visuels sur l'image indiquant les bifurcations, spirales et minibrots détectés.
+1.4	1	Pont Export Sheets / CSV	:	Exportation textuelle des données d'orbites et métriques pour analyse dans Google Sheets.
+1.5	2	Pipeline Métriques de Forme	:	Extraction textuelle des propriétés géométriques (angles, courbures, lambda) sans flux d'images lourds.
+1.6	2	Moteur Couleurs HSV / Sinus	:	Palette de 1024 couleurs interpolées par fonctions trigonométriques dans l'espace HSV (module palette.js).
+2.1	1	Calcul Évasion Hte Précision	:	Moteur d'itération standard en f64 avec bascule vers précision arbitraire pour zoom profond.
+2.2	2	Détecteur Racines Newton 2D	:	Calcul du centre exact d'un minibrot de période P via méthode de Newton sur f^P(c)-c=0.
+2.3	1	Distance Estimator (DEM)	:	Calcul simultané de z'n pour obtenir la distance exacte aux frontières et tracer les contours fins.
+2.4	2	Filtres Phase Cyclique	:	Coloration continue (NIC) et filtres harmoniques modulo P pour faire apparaître les structures en S.
+2.5	3	Quadtree & Interpolation	:	Subdivision dichotomique évitant de calculer 90% des zones lisses (gain de vitesse x10).
+3.1	1	Core Rust / Wasm	:	Compilation de lib.rs vers mandel.wasm via wasm-pack pour exécution native dans le navigateur.
+3.2	1	Canvas Memory Buffer	:	Transfert direct du buffer d'octets RGBA de Wasm vers Canvas JS via ImageData.
+3.3	1	Architecture Multi-Files	:	Découpage modulaire : index.html, app.js, mandel.js/rs, palette.js pour évolutivité mobile/backend.
+3.4	2	Zoom GPU Continu	:	Étirement bilinéaire temps réel sur Canvas avec remplacement asynchrone par le tampon Wasm.
+3.5	1	Isolation Multi-Pages N-1/N	:	Structure multi-dossiers (v1-stable et v2-dev) pour préserver le banc d'essai N-1.
+
+Prompt Google AI studio
+### DIRECTIVE STRICTE DE DÉVELOPPEMENT (MODE STEP-BY-STEP)
+
+Tu agis en tant que développeur Rust/Wasm/JS sous la direction d'un architecte système.
+Avant de générer le moindre code, tu dois respecter impérativement ces 3 étapes :
+
+1. IMPACT ANALYSIS : Mettre la liste exacte des fichiers modifiés, créés ou supprimés.
+2. INTERFACE SUMMARY : Lister les signatures exactes des fonctions/classes modifiées ou ajoutées.
+3. CODE GENERATION : Fournir des fichiers 100% COMPLETS (aucun "...reste du code inchangé...", aucune omission).
+
+Contrainte : Ne traite QUE le Palier spécifié. Ne touche pas aux fonctionnalités des paliers futurs.
+

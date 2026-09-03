@@ -28,7 +28,21 @@ git commit -m "fix(): comment"
 # Envoi vers GitHub
 git push origin main
 
+# Gestion branches
+git branch  #affiche la branche en cours. * est le parent
+git checkout -b mandel-dev  #crée la branche mandel-dev  (je suis dans zoom)
+git push -u origin mandel-dev  #pour publier la branche vers git, à la fin
+merge         #pour appliquer la branche au main
 
 #special
 git add path -f   #force l'ajout d'un répertoire/fichier, pour effacer un tag gitignore
 git mv mandel-dev mandel_V3   #renomme un répertoire (avantage: garde les liens)
+
+Commandes Rust
+Aller dans le bon répertoire et y importer \src + lib.rs + cargo.toml !
+wasm-pack build --target web   #compiler le truc vers \pkg en créant \target ! 
+
+Next step:
+git add .
+git commit -m "feat(v4): intégration de fractal_core.js et mise à jour du moteur Rust"
+git push origin zoom
