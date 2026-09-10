@@ -7,8 +7,11 @@ target/
 # Exclure la configuration propre à VS Code (optionnel mais conseillé)
 .vscode/
 
-# Exclure mes vieilles versions
+# Exclure mes vieilles versions et backups
 z_old_src/
+*.zip
+*.7z
+cargo.lock
 
 # Exclure les fichiers système OS
 .DS_Store
