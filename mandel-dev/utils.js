@@ -1,19 +1,17 @@
 // Utilitaires associés au calcul de fractales, ou Sheets, ou...
+// Fonctions déclarées static car sans instance de classe !
 
 export class cUtils {
-  constructor() {
-    return;
-  }
   // Calcul de la racine carrée d'un nombre complexe
-  complexSqrt(c) {
+  static complexSqrt(c) {
     const r = Math.hypot(c.re, c.im);
     const re = Math.sqrt((r + c.re) / 2);
     const im = Math.sign(c.im || 1) * Math.sqrt((r - c.re) / 2);
-    return { re, im };
+    return { re: re, im: im };
   }
 
   // Calcule les 2 points fixes pour un paramètre c donné
-  getFixedPoints(c) {
+  static getFixedPoints(c) {
     // Polynome: z^2 - z + c = 0 - zi = 1/2 (1 +/- sqrt_delta)
     const delta = { re: 1 - 4 * c.re, im: -4 * c.im };
     const sqrtD = this.complexSqrt(delta);
@@ -23,13 +21,13 @@ export class cUtils {
     const isStable1 = Math.hypot(2 * z1.re, 2 * z1.im) < 1.0;
     const isStable2 = Math.hypot(2 * z2.re, 2 * z2.im) < 1.0;
     return [
-      { root1: z1, stable: isStable1 },
-      { root2: z2, stable: isStable2 },
+      { root: z1, stable: isStable1 },
+      { root: z2, stable: isStable2 },
     ];
   }
 
   // Formatte une liste de complexes {re, im} en format texte copiable.
-  complexListToString(complexList, decimals) {
+  static complexListToString(complexList, decimals) {
     // Table format ready for copy in Excel/Google Sheets (TSV).
     const maxN = complexList.length;
     if (decimals > 15) decimals = 15;
@@ -45,7 +43,7 @@ export class cUtils {
   }
 
   // Copie dans le presse-papier
-  tryClipBoardCopy(textExpected) {
+  static tryClipBoardCopy(textExpected) {
     navigator.clipboard
       .writeText(textExpected)
       .then(() => {

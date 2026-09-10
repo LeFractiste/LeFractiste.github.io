@@ -1,217 +1,220 @@
-import init, { MandelEngine } from "./pkg/rust_m.js";
+// App.js - 4.2 - copyright LeFractiste 2026
+// Seraitinspiré de Philippe Lhoste 2024 selon Copilot (Hei copi, t'es fou?)
+// TODO 0: init by await mandel.initEngine(MandelEngine)
+// TODO 2: Fast init
+
+import { cFract } from "./mandel.js";
 import { PaletteEditor } from "./palette.js";
-import { cFractParam, cFractImage } from "./fractal_core.js";
 
-// Configuration de base
-const WIDTH = 500;
-const HEIGHT = 500;
-const PAYLOAD_SIZE = 5; // [iter, smooth_iter, z_re, z_im, angle_lut_idx]
+// --- ÉTATS GLOBAUX ---
+let mandel;
+let julia;
+let palette = null;
+let lockedC = null; // Point c verrouillé par clic pour l'analyse d'orbite
 
-let engine = null;
-let wasmMemory = null;
-
-async function run() {
-  // 1. Initialisation Wasm et récupération du module mémoire
-  const wasmModule = await init();
-  wasmMemory = wasmModule.memory;
-
-  // 2. Instanciation du moteur Rust V4
-  try {
-    engine = MandelEngine.new(WIDTH, HEIGHT);
-  } catch (e) {
-    engine = new MandelEngine(WIDTH, HEIGHT);
-  }
-
-  // 3. Objets de domaine et de buffer d'image (fractal_core.js)
-  const mandelParam = new cFractParam(-0.65, 0.0, 2.7, 2.7, 500, 100000.0);
-  const juliaParam = new cFractParam(0.0, 0.0, 4.0, 4.0, 500, 100000.0);
-
-  const mandelImage = new cFractImage(WIDTH, HEIGHT, mandelParam);
-  const juliaImage = new cFractImage(WIDTH, HEIGHT, juliaParam);
-
-  // targetC : Le point 'c' actuellement visualisé dans le canvas Julia.
-  // Il varie en temps réel quand la souris survole le canvas Mandelbrot.
-  let targetC = { x: -0.7, y: 0.27015 };
-
-  // lockedC : Le point 'c' mémorisé lors d'un CLIC sur Mandelbrot.
-  // Il sert de point d'ancrage fixe (par exemple pour calculer/copier l'orbite CSV).
-  let lockedC = { x: -0.7, y: 0.27015 };
-
-  // 4. Éléments DOM & Contextes 2D
-  const mandelCanvas = document.getElementById("mandelCanvas");
-  const juliaCanvas = document.getElementById("juliaCanvas");
-  const ctxMandel = mandelCanvas.getContext("2d");
-  const ctxJulia = juliaCanvas.getContext("2d");
-
-  // 5. Initialisation Éditeur de Palette
-  const palette = new PaletteEditor("paletteContainer", () => {
-    // Redessine instantanément à partir des buffers déjà calculés !
-    drawMandelFromBuffer();
-    drawJuliaFromBuffer();
+// --- INITIALISATION DU MOTEUR & DE L'APPLICATION ---
+async function startApp() {
+  appConsole("Loading...");
+  mandel = new cFract("mandelCanvas", "MANDELBROT", "mandelStatus");
+  julia = new cFract("juliaCanvas", "JULIA", "juliaStatus");
+  // Initialiser l'éditeur de Palette V2/V3 et son callback
+  palette = new PaletteEditor("paletteContainer", (lut) => {
+    mandel.cImage.updatePalette(lut);
+    mandel.render();
+    julia.cImage.updatePalette(lut);
+    julia.render();
   });
+  palette.generateLut();
+  // Amorce de chaque cFract autonome
+  await mandel.init(palette.lut);
+  await julia.init(palette.lut);
+  // Installer les écouteurs d'événements
+  initEventListeners();
+  appConsole("Ready");
+}
 
-  // --- MOTEUR DE RENDU DÉCOUPLE ---
-
-  // Obtient une vue Float32Array directe sur la mémoire Wasm sans copie
-  function getWasmBufferSlice() {
-    const ptr = engine.buffer_ptr();
-    const bufferLength = WIDTH * HEIGHT * PAYLOAD_SIZE;
-    return new Float32Array(wasmMemory.buffer, ptr, bufferLength);
-  }
-
-  // A. Calcul Mandelbrot + Rendu
-  function computeAndRenderMandel() {
-    if (!engine) return;
-
-    // 1. Calcul lourd Rust (remplit le buffer Wasm)
-    engine.compute_full(
-      mandelParam.centerRe,
-      mandelParam.centerIm,
-      mandelParam.spanRe,
-      mandelParam.spanIm,
-      mandelParam.maxIter,
-      mandelParam.r2Max,
-    );
-
-    // 2. Transmutation buffer Wasm -> cFractImage
-    const rawBuffer = getWasmBufferSlice();
-    mandelImage.attachBuffer(rawBuffer);
-
-    // 3. Rendu pixels
-    drawMandelFromBuffer();
-  }
-
-  // B. Rendu visuel Mandelbrot depuis le buffer (changement palette / visuel fast)
-  function drawMandelFromBuffer() {
-    const imgData = mandelImage.renderToImageData(palette);
-    ctxMandel.putImageData(imgData, 0, 0);
-
-    // Dessin du reticule / pointeur c
-    const coords = mandelParam.complexToPixel(
-      targetC.x,
-      targetC.y,
-      WIDTH,
-      HEIGHT,
-    );
-    ctxMandel.strokeStyle = "#00ff00";
-    ctxMandel.lineWidth = 1.5;
-    ctxMandel.beginPath();
-    ctxMandel.arc(coords.px, coords.py, 5, 0, 2 * Math.PI);
-    ctxMandel.stroke();
-  }
-
-  // C. Calcul Julia + Rendu
-  function computeAndRenderJulia() {
-    if (!engine) return;
-    return; // TODO 1: Activer le calcul Julia complet dans le moteur Rust V4
-
-    // Note: Utilise compute_julia_full dans le moteur Rust si disponible
-    if (typeof engine.compute_julia_full === "function") {
-      engine.compute_julia_full(
-        targetC.x,
-        targetC.y,
-        juliaParam.centerRe,
-        juliaParam.centerIm,
-        juliaParam.spanRe,
-        juliaParam.spanIm,
-        juliaParam.maxIter,
-        juliaParam.r2Max,
-      );
-      const rawBuffer = getWasmBufferSlice();
-      juliaImage.attachBuffer(rawBuffer);
-    }
-    drawJuliaFromBuffer();
-  }
-
-  function drawJuliaFromBuffer() {
-    const imgData = juliaImage.renderToImageData(palette);
-    ctxJulia.putImageData(imgData, 0, 0);
-  }
-
-  function renderAll() {
-    computeAndRenderMandel();
-    computeAndRenderJulia();
-  }
-
-  // --- GESTIONNAIRES D'ÉVÉNEMENTS & INTERACTION (ZOOM / SURVOL) ---
-
-  // Survol Mandelbrot : mise à jour dynamic de Julia
-  mandelCanvas.addEventListener("mousemove", (e) => {
-    const rect = mandelCanvas.getBoundingClientRect();
+// --- ÉCOUTEURS D'ÉVÉNEMENTS (INTERACTION UX) ---
+function initEventListeners() {
+  const canvasM = mandel.canvas;
+  const canvasJ = julia.canvas;
+  // SURVOL DE MOUSE (Mandelbrot -> Orbite & Ligne de statut)
+  canvasM.addEventListener("mousemove", (e) => {
+    const rect = canvasM.getBoundingClientRect();
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
-
-    const c = mandelParam.pixelToComplex(px, py, WIDTH, HEIGHT);
-
-    const mandelPosElem = document.getElementById("mandelPos");
-    if (mandelPosElem) {
-      mandelPosElem.innerText = `c = ${c.re.toFixed(6)} + ${c.im.toFixed(6)}i`;
-    }
-
-    if (!e.buttons) {
-      targetC = { x: c.re, y: c.im };
-      const juliaPosElem = document.getElementById("juliaPos");
-      if (juliaPosElem) {
-        juliaPosElem.innerText = `Target c = ${c.re.toFixed(6)} + ${c.im.toFixed(6)}i`;
-      }
-      // Seul Julia et le viseur ont besoin d'être rafraîchis au survol
-      drawMandelFromBuffer();
-      computeAndRenderJulia();
-    }
+    const mouseC = mandel.pixelToComplex({ x: px, y: py });
+    // Met à jour la ligne de statut
+    updateStatusBar("Mandel:", mouseC, px, py);
+    // Calcul et affichage de l'orbite
+    const orbit = mandel.directIter(mouseC);
+    mandel.render();
+    mandel.drawOrbitOverlay(orbit);
+    julia.render();
+    julia.drawOrbitOverlay(orbit);
+    // Affiche le curseur
+    //drawReticle(canvasM, px, py);
   });
-
-  // Clic : Verrouillage du point c
-  mandelCanvas.addEventListener("click", (e) => {
-    const rect = mandelCanvas.getBoundingClientRect();
+  // JULIA: SURVOL DE MOUSE (Mise à jour Ligne de statut)
+  canvasJ.addEventListener("mousemove", (e) => {
+    const rect = canvasM.getBoundingClientRect();
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
-
-    const c = mandelParam.pixelToComplex(px, py, WIDTH, HEIGHT);
-    lockedC = { x: c.re, y: c.im };
-    targetC = { ...lockedC };
-
-    renderAll();
+    const mouseC = julia.pixelToComplex({ x: px, y: py });
+    // Mise à jour de Julia : non
+    // Met à jour la ligne de statut
+    updateStatusBar("Julia:", mouseC, px, py);
+    // Affiche un curseur
+    drawReticle(canvasJ, px, py);
   });
-
-  // Zoom Molette sur Mandelbrot (Ré-encodage Mandel-V2)
-  mandelCanvas.addEventListener("wheel", (e) => {
+  // MANDEL: CLIC - Verrouillage lockedC & Export Orbite vers Sheets
+  canvasM.addEventListener("click", (e) => {
+    const rect = canvasM.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    const targetC = mandel.pixelToComplex({ x: px, y: py });
+    //Affiche le réticule
+    lockedC = targetC;
+    // Met à jour la ligne de statut
+    updateStatusBar("Locked:", lockedC, px, py);
+    drawReticle(canvasM, px, py);
+    // Interaction: changer le paramètre de Julia sur ce point
+    julia.setType("JULIA", lockedC);
+  });
+  // MANDEL: MOLETTE DE SOURIS (Zoom sous le curseur)
+  canvasM.addEventListener("wheel", (e) => {
     e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 0.8 : 1.25; // In = 0.8x span, Out = 1.25x span
-
-    const rect = mandelCanvas.getBoundingClientRect();
+    const rect = canvasM.getBoundingClientRect();
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
-
-    // Recentre progressivement vers le pointeur
-    const mouseC = mandelParam.pixelToComplex(px, py, WIDTH, HEIGHT);
-    mandelParam.centerRe =
-      mouseC.re + (mandelParam.centerRe - mouseC.re) * zoomFactor;
-    mandelParam.centerIm =
-      mouseC.im + (mandelParam.centerIm - mouseC.im) * zoomFactor;
-    mandelParam.spanRe *= zoomFactor;
-    mandelParam.spanIm *= zoomFactor;
-
-    computeAndRenderMandel();
+    const zoomFactor = e.deltaY < 0 ? 0.8 : 1.25; // 0.8 = In, 1.25 = Out
+    mandel.zoom(px, py, zoomFactor);
+    // Rétablir le réticule si un point était verrouillé
+    if (lockedC) {
+      const reticlePx = mandel.complexToPixel(lockedC);
+      drawReticle(canvasM, reticlePx.x, reticlePx.y);
+    }
+    // Met à jour la ligne de statut
+    const c = mandel.pixelToComplex({ x: px, y: py });
+    updateStatusBar("Zoom:", c, px, py);
   });
-
-  // Export CSV de l'orbite (Option préservée)
-  const btnCopy = document.getElementById("btnCopyCsv");
-  if (btnCopy) {
-    btnCopy.addEventListener("click", () => {
-      if (typeof engine.compute_orbit_csv === "function") {
-        const csv = engine.compute_orbit_csv(lockedC.x, lockedC.y);
-        navigator.clipboard.writeText(csv);
-        const status = document.getElementById("csvStatus");
-        if (status) {
-          status.innerText = `Orbite pour c = (${lockedC.x.toFixed(4)}, ${lockedC.y.toFixed(4)}) copiée !`;
-          setTimeout(() => (status.innerText = ""), 3000);
-        }
+  //#new JULIA: MOLETTE DE SOURIS (Zoom sous le curseur)
+  canvasJ.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const rect = canvasJ.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    const zoomFactor = e.deltaY < 0 ? 0.8 : 1.25; // 0.8 = In, 1.25 = Out
+    julia.zoom(px, py, zoomFactor);
+  });
+  // MANDEL: BOUTON INTERFACE RESET ZOOM
+  const btnResetM = document.getElementById("btnResetMandel");
+  if (btnResetM) {
+    btnResetM.addEventListener("click", () => {
+      mandel.resetZoom();
+      //lockedC = null; //mieux de garder le point visible
+      if (lockedC) {
+        const reticlePx = mandel.complexToPixel(lockedC);
+        drawReticle(canvasM, reticlePx.x, reticlePx.y);
       }
     });
   }
+  // JULIA: BOUTON INTERFACE RESET ZOOM
+  const btnResetJ = document.getElementById("btnResetJulia");
+  if (btnResetJ) {
+    btnResetJ.addEventListener("click", () => {
+      julia.resetZoom();
+    });
+  }
+  // LISTBOX INTERFACE CALC MODE  //TODO 2: implement on html !
+  const selectMode = document.getElementById("selectCalcMode");
+  if (selectMode) {
+    selectMode.addEventListener("change", (e) => {
+      const mode = e.target.value; // 'DIRECT' ou 'DEM'
+      mandel.setCalcMode(mode);
+      julia.setCalcMode(mode);
+      //mandel.render(); //auto
+      //julia.render(); //auto
+    });
+  }
+} /*initEventListeners*/
 
-  // Lancement initial
-  renderAll();
+// ---Helpers---
+//TODO 0 : réflexion d'architecture pour décider où ceci est implémenté !
+//Si nous implémentons en rendu opengl rapide lors des transitions de souris,
+//il faut passer par cImage au lieu de cFract (pas de calcul) et regénérer une image
+// avec zoom, centrage, render, puis nouveau lockedC et orbite
+// DESSIN DU RÉTICULE (Aide visuelle sur Mandelbrot)
+function drawReticle(canvas, px, py) {
+  // Rendre l'image de base pour effacer l'ancien réticule
+  mandel.render();
+  const ctx = canvas.getContext("2d");
+  ctx.save();
+  // Croix orthogonale
+  ctx.strokeStyle = "#00ffcc";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px - 10, py);
+  ctx.lineTo(px + 10, py);
+  ctx.moveTo(px, py - 10);
+  ctx.lineTo(px, py + 10);
+  ctx.stroke();
+  // Cercle de ciblage
+  ctx.beginPath();
+  ctx.arc(px, py, 5, 0, 2 * Math.PI);
+  ctx.stroke();
+  //affiche ?
+  ctx.restore();
 }
 
-run();
+// BANDEAU D'INFORMATION ET STATUT
+// TODO 1: en cours - séparation des statuts de App et cFract
+function updateStatusBar(msg, c, px, py) {
+  const appStatus = document.getElementById("appStatusBar");
+  if (appStatus) {
+    appStatus.textContent = `${msg} c = ${c.re.toFixed(7)} ${c.im >= 0 ? "+" : ""}${c.im.toFixed(7)}i  |  Px: (${Math.round(px)}, ${Math.round(py)})`;
+  }
+}
+function appConsole(msg) {
+  const appStatus = document.getElementById("appStatus");
+  if (appStatus) {
+    appStatus.textContent = `[INFO] ${msg} })`;
+  }
+}
+
+//TODO 1: prendre la version de mandel
+//CALCUL ET EXPORTATION D'ORBITE POUR GOOGLE SHEETS
+function exportOrbitToSheets(c) {
+  const maxIter = mandel.param.max_iter;
+  let zRe = 0.0;
+  let zIm = 0.0;
+  // Formatage tabulaire (TSV) prêt à copier-coller dans Excel/Google Sheets
+  let tsvContent = "n\tz_re\tz_im\t|z|^2\n";
+  tsvContent += `0\t0.000000\t0.000000\t0.000000\n`;
+  for (let n = 1; n <= maxIter; n++) {
+    const nextRe = zRe * zRe - zIm * zIm + c.re;
+    const nextIm = 2.0 * zRe * zIm + c.im;
+    zRe = nextRe;
+    zIm = nextIm;
+    const mod2 = zRe * zRe + zIm * zIm;
+    tsvContent += `${n}\t${zRe.toFixed(6)}\t${zIm.toFixed(6)}\t${mod2.toFixed(6)}\n`;
+    if (mod2 > mandel.param.r2_max) break; // Évasion
+  }
+  // Copie dans le presse-papier
+  navigator.clipboard
+    .writeText(tsvContent)
+    .then(() => {
+      console.log(
+        `[Orbites] Données pour c=(${c.re}, ${c.im}) copiées dans le presse-papier !`,
+      );
+      const statusEl = document.getElementById("statusBar");
+      if (statusEl) {
+        statusEl.textContent += `| [Orbite copiée dans le presse-papier]`;
+      }
+    })
+    .catch((err) => {
+      console.error("Erreur lors de la copie dans le presse-papier:", err);
+    });
+}
+
+// Démarrage de l'application dès le chargement du DOM
+window.addEventListener("DOMContentLoaded", startApp);
