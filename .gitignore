@@ -1,5 +1,6 @@
 # Exclure les fichiers de compilation lourds et temporaires de Rust
 target/
+**/target/
 
 # NE PAS ignorer pkg/ (nous en avons besoin pour GitHub Pages !)
 !pkg/
