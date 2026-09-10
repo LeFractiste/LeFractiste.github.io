@@ -136,7 +136,7 @@ export class cFract {
     this.ctx.putImageData(this.cImage.imageData, 0, 0);
     this.drawFixedPointsOverlay();
   }
-  // Affichage complexe - //TODO 2: à passer dans utils ?
+  // Affichage complexe - //TODO 2: à passer dans utils
   complexToString(c, digits = 7) {
     return `${c.re.toFixed(digits)} ${c.im >= 0 ? "+" : ""}${c.im.toFixed(digits)}i`;
   }
@@ -332,13 +332,6 @@ export class cFract {
     ctx.restore();
   } /*drawOrbit*/
 
-  //Calcul d'orbite point image TODO 0: finir & déplacer interface App
-  calcOrbitArray(point) {
-    //TODO: gestion isDirty?
-    const mouseC = this.pixelToComplex(point);
-    this.directIter(mouseC, this.param.max_iter);
-  }
-
   // #new TODO 1: Orbite de Mandelbrot seulement //TODO 3: généraliser à Julia
   computeOrbitCsv(cRe, cIm, maxIter) {
     if (
@@ -420,9 +413,7 @@ export class cFract {
 } /**cFract*/
 
 // cImage: Gestionnaire d'image, agnostique du contenu - reçoit ses buffers
-// TODO: vérifier la méthode mise à jour du buffer App.s (attach buffer / render)
-// Nous avions: return new ImageData(rgbaBuffer, this.width, this.height);
-// et getPixelColor(x, y)
+// Nous avions getPixelColor
 export class cImage {
   constructor(width, height) {
     this.width = width;

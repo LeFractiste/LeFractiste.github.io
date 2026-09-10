@@ -1,7 +1,4 @@
 // App.js - 4.2 - copyright LeFractiste 2026
-// Seraitinspiré de Philippe Lhoste 2024 selon Copilot (Hei copi, t'es fou?)
-// TODO 0: init by await mandel.initEngine(MandelEngine)
-// TODO 2: Fast init
 
 import { cFract } from "./mandel.js";
 import { PaletteEditor } from "./palette.js";
@@ -167,7 +164,6 @@ function drawReticle(canvas, px, py) {
 }
 
 // BANDEAU D'INFORMATION ET STATUT
-// TODO 1: en cours - séparation des statuts de App et cFract
 function updateStatusBar(msg, c, px, py) {
   const appStatus = document.getElementById("appStatusBar");
   if (appStatus) {
