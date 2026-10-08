@@ -18,8 +18,6 @@ export interface IParams {
     max_iter: number;
     r2_max: number;
     juliaC?: ComplexPoint;
-    toMetadata(): string;
-    clone(): IParams;
 }
 /** Interface d'accès minimal au moteur cFract (parent) pour le rendu */
 export interface ICFractParent {
@@ -132,6 +130,8 @@ export interface IPalette {
     nodes: PaletteControlPoint[];
     getColorAt(t: number): ColorRGBA;
 }
+/** Contrat de perception pour l'Agent d' Exploration
+ * @todo 2: définir des types pour les sorties ? */
 export interface IAgentVision {
     /** 1. Mesure le potentiel/gradient local pour détecter le centre du filament */
     getPotentialGradient(c: ComplexPoint): {
