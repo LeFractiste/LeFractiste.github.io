@@ -1,0 +1,34 @@
+{
+  "name": "lefractiste.github.io",
+  "version": "4.6.0",
+  "description": "This GitHub repository / page(s) is here to show my contribution to the Web !\r I am interested in Fractals, Script, VBA for Office, trying anything with IA, while developping tricks to limit cognitive overload.\r Looking for partners: fun fonctions in Script.",
+  "main": "app.js",
+  "scripts": {
+    "docs": "typedoc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LeFractiste/LeFractiste.github.io.git"
+  },
+  "keywords": [
+    "Fractal",
+    "Mandelbrot",
+    "Rust-Wasm rendering",
+    "coding fun",
+    "website",
+    "analysis",
+    "project"
+  ],
+  "author": "LeFractiste",
+  "license": "GNU",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/LeFractiste/LeFractiste.github.io/issues"
+  },
+  "homepage": "https://github.com/LeFractiste/LeFractiste.github.io",
+  "devDependencies": {
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.13.1"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "entryPoints": ["./mandel-dev/src/**/*.ts", ".mandel-dev/src/**/*.js"],
+  "out": "./docs-html",
+  // "plugin": ["typedoc-plugin-markdown"],  pour .md à l aplace de html !
+  "readme": "none",
+  "cleanOutputDir": false, // efface avant de regénérer
+  "githubPages": false,
+  "hideGenerator": true,
+  "hideBreadcrumbs": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "commentStyle": "all",
+  "preserveWatchOutput": true
+}

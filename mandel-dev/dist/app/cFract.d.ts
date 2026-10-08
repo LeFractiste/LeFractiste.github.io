@@ -1,0 +1,41 @@
+import { cFractParams } from "../calc/cFractParams.js";
+import { cImage } from "../pres/cImage.js";
+import { cFractCalc } from "../calc/cFractCalc.js";
+import { ComplexPoint, PixelPoint } from "../fractTypes.js";
+export declare class cFract {
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    cImage: cImage;
+    param: cFractParams;
+    calc: cFractCalc;
+    statusId: string;
+    calcMode: string;
+    calcCount: number;
+    autoCalc: boolean;
+    isBusy: boolean;
+    isDirty: boolean;
+    private wasmEngine;
+    private wasmMemory;
+    private fixedPoints;
+    constructor(canvasId: string, type: string | undefined, statusId: string);
+    init(paletteLut?: Uint8Array): Promise<void>;
+    makeDirty(): void;
+    makeClean(): void;
+    calcFull(): void;
+    render(): void;
+    drawFixedPointsOverlay(): void;
+    setType(type: string, juliaC?: ComplexPoint | null): void;
+    getCenter(): ComplexPoint;
+    setCenter(c: ComplexPoint): void;
+    setCalcMode(mode: string): void;
+    updateAspect(): void;
+    pix2c(point: PixelPoint): ComplexPoint;
+    c2pix(c: ComplexPoint): PixelPoint;
+    zoom(px: number, py: number, zoomFactor: number): void;
+    resetZoom(): void;
+    complexToString(c: ComplexPoint, digits?: number): string;
+    updateStatusBar(c: ComplexPoint, px: number, py: number): void;
+    classConsole(msg: string): void;
+}
+export declare function appInit(containerId?: string): Promise<cFract>;
+//# sourceMappingURL=cFract.d.ts.map

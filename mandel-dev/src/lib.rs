@@ -3,6 +3,7 @@ use wasm_bindgen::prelude::*;
 // Code Rust: moteur de calcul profond, et moteur de rendu graphique
 
 // TODO 1: directIter(zList, maxIter, rsParam) et DEM(zList, rsParam)
+// TODO 1: move the cargo/rust directory one level down
 
 // Taille du buffer par pixel (5 valeurs de type f32)
 const PAYLOAD_SIZE: usize = 5;

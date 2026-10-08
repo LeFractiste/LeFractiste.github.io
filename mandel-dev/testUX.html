@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zoonorama - Test UX & Events</title>
+    <style>
+      body {
+        font-family: monospace;
+        background: #121212;
+        color: #00ffcc;
+        padding: 20px;
+      }
+      canvas {
+        border: 2px solid #00ffcc;
+        background: #000;
+        cursor: crosshair;
+      }
+      #status {
+        margin-top: 10px;
+        background: #222;
+        padding: 10px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Banc d'Essai UX (InputRouter & Canvas)</h2>
+    <canvas id="testCanvas" width="600" height="400"></canvas>
+    <div id="status">Actions enregistrées...</div>
+
+    <script type="module">
+      import { InputRouter } from "./dist/app/inputRouter.js";
+
+      const canvas = document.getElementById("testCanvas");
+      const ctx = canvas.getContext("2d");
+      const status = document.getElementById("status");
+
+      // Simule le parent cFract
+      const mockParent = {
+        pix2c: p => ({ re: (p.x - 300) / 100, im: (200 - p.y) / 100 }),
+        c2pix: c => ({ x: c.re * 100 + 300, y: 200 - c.im * 100 })
+      };
+
+      const router = new InputRouter(mockParent, canvas);
+
+      function log(msg) {
+        status.innerText = msg;
+      }
+
+      function drawGrid(reticlePx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "#333";
+        ctx.beginPath();
+        ctx.moveTo(300, 0);
+        ctx.lineTo(300, 400);
+        ctx.moveTo(0, 200);
+        ctx.lineTo(600, 200);
+        ctx.stroke();
+
+        if (reticlePx) {
+          ctx.strokeStyle = "#ff0055";
+          ctx.beginPath();
+          ctx.arc(reticlePx.x, reticlePx.y, 8, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+
+      drawGrid();
+
+      router.bindDOMEvents({
+        onHover: (c, px) => {
+          log(
+            `Survol -> Pixel: (${px.x}, ${px.y}) | C: ${c.re.toFixed(4)} + i*${c.im.toFixed(4)}`
+          );
+          drawGrid(px);
+        },
+        onClick: (c, px) => {
+          log(
+            `CLIC / SELECTION -> Point fixé à ${c.re.toFixed(4)} + i*${c.im.toFixed(4)}`
+          );
+        },
+        onZoom: (px, factor) => {
+          log(`ZOOM -> Centre (${px.x}, ${px.y}) | Facteur: ${factor}`);
+        },
+        onPan: deltaC => {
+          log(
+            `PAN / DRAG -> Delta C: dRe=${deltaC.re.toFixed(4)}, dIm=${deltaC.im.toFixed(4)}`
+          );
+        }
+      });
+    </script>
+  </body>
+</html>

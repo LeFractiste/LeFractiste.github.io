@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowJs": true, // <--- Permet à TS d'importer du JS
+    "checkJs": false, // <--- Ignore la vérification stricte des types dans le JS
+    "noImplicitAny": false, // <--- Tolère les types 'any' implicites issus du JS
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src", //le fichier tsconfig se trouve dans mandel-dev, qui contient *.js, src/*.ts
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.js" //ajout des js pour typedoc
+  ],
+  "exclude": ["dist", "node_modules", "target", "testarea", "doc*", "**/*.rs"]
+}

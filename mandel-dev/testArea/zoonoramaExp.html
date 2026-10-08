@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zoonorama - Mapping Holomorphe Exponentiel</title>
+    <style>
+      body {
+        background-color: #121212;
+        color: #eee;
+        font-family: sans-serif;
+        padding: 20px;
+      }
+      canvas {
+        border: 1px solid #444;
+        background: #000;
+        display: block;
+        margin-top: 10px;
+      }
+      #statusBar {
+        font-family: monospace;
+        color: #00ffcc;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Zoonorama V2 - Mapping Holomorphe Exponentiel Conforme</h2>
+    <div id="statusBar">Pointe le curseur sur le ruban...</div>
+    <canvas id="zoonoramaCanvas" width="1600" height="200"></canvas>
+
+    <script type="module">
+      import {
+        zoonoramaExpProj,
+        calcPixelDEM,
+        calcMatrixPixelDEM,
+        DemPixToImage,
+        drawTarget,
+        pixelToComplexExp,
+      } from "./projExp.js";
+
+      const canvas = document.getElementById("zoonoramaCanvas");
+      const ctx = canvas.getContext("2d");
+      // Lancement chrono
+      const timerId = "Calcul Zoonorama Exp";
+      console.time(timerId);
+
+      // Cible profonde : Centre de la spirale de Seahorse Valley
+      const cDeep = { re: -0.7436438870371587, im: 0.13182590420531197 }; //{ re: 0.2753584, im: -0.0064039 };
+
+      const A = 1.0;
+      const zoom = 50000.0;
+      const theta = 60 * (Math.PI / 180); // Approche oblique à 60°
+      const L = 8;
+      const H = 200;
+      const W = L * H;
+      const maxIter = 500;
+
+      // Dessin initial de la cible (trace du code)
+      drawTarget(ctx, W, H);
+
+      // Projection: calcul des z0
+      const z0Mat = zoonoramaExpProj(cDeep, A, zoom, theta, L, H); // matrice des projections z0
+
+      // Calcul des distances, en pixels
+      const distMatrix = calcMatrixPixelDEM(z0Mat, cDeep, zoom, maxIter);
+
+      // Calcul et initialisation de l'image
+      const imgData = DemPixToImage(distMatrix, ctx);
+      ctx.putImageData(imgData, 0, 0);
+
+      console.timeEnd(timerId);
+
+      // Dessin de la cible
+      drawTarget(ctx, W - 20, H / 2);
+
+      // Inspection directe via pixelToComplexExp
+      canvas.addEventListener("click", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const px = Math.floor(e.clientX - rect.left);
+        const py = Math.floor(e.clientY - rect.top);
+
+        if (px >= 0 && px < canvas.width && py >= 0 && py < canvas.height) {
+          const z = pixelToComplexExp(px, py, cDeep, A, zoom, theta, L, H);
+          const distPix = calcPixelDEM(z, cDeep, zoom, W, maxIter);
+          document.getElementById("statusBar").textContent =
+            `P=(${px}, ${py}) | z = ${z.re.toFixed(10)} ${z.im >= 0 ? "+" : ""}` +
+            `${z.im.toFixed(10)}i | dist/Pixel=${distPix.toFixed(2)}`;
+        }
+      });
+    </script>
+  </body>
+</html>

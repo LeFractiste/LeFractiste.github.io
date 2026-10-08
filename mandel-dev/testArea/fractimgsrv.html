@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LeFractiste - Image & Analysis Server</title>
+    <link rel="stylesheet" href="./style-LeFractiste.css" />
+  </head>
+  <body>
+    <header class="srv-header">
+      <h1>LeFractiste - Server View</h1>
+    </header>
+
+    <main class="srv-container">
+      <!-- Conteneur cible où htmlHelper injectera le canvas et la statusbar -->
+      <div id="MANDELBROT"></div>
+
+      <div class="controls-panel">
+        <button id="btnReset" class="btn">Reset Zoom</button>
+        <button id="btnCopyUrl" class="btn">Copier l'URL (Deep Link)</button>
+      </div>
+    </main>
+
+    <script type="module">
+      import { runImageServer } from "../dist/app/html-helper.js";
+
+      // Initialisation du serveur au chargement du DOM
+      document.addEventListener("DOMContentLoaded", () => {
+        runImageServer("MANDELBROT");
+      });
+    </script>
+  </body>
+</html>

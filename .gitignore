@@ -1,3 +1,6 @@
+# Exclure les dépendances Node.js (TypeDoc, etc.)
+node_modules/
+**/node_modules/
 # Exclure les fichiers de compilation lourds et temporaires de Rust
 target/
 **/target/
