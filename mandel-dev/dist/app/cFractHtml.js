@@ -1,17 +1,17 @@
 // app/cFractHtml.ts - Copyright LeFractiste 2026
+// Exports: htmlFractContainer, htmlSetupOptions, setupFractalCanvas, parseHashParams, todo_paramstoURL
 import { cFractParams } from "../calc/cFractParams"; //utile ?
-import { cFract } from "../app/cFract.js"; //nécessaire ?
 /** Initialise le div html avec canvas, boutons, statusBar,...
  * @todo: bouton ZoomReset serait ajouté par le constructeur de cFract ?  (ici canvas minimum) */
 export function setupFractalCanvas(options) {
     const { containerId, width = 800, height = 600, showStatusBar = true } = options;
+    const ftype = containerId || "MANDELBROT";
     const container = document.getElementById(containerId);
     if (!container)
         throw new Error(`[htmlHelper] Conteneur #${containerId} introuvable`);
     // Nettoyage et injection de la structure HTML
     const canvasId = `${containerId}-canvas`;
     const statusId = `${containerId}-statusBar`;
-    const type = containerId; //TODO : gérer via params !
     container.innerHTML = `
     <div class="cfract-card">
       <div class="cfract-canvas-wrapper">
@@ -25,7 +25,7 @@ export function setupFractalCanvas(options) {
     const statusEl = container.querySelector(".cfract-status");
     return {
         canvasId,
-        type: containerId,
+        type: ftype,
         statusId,
         containerEl: container,
         canvasEl,
@@ -38,29 +38,17 @@ export function parseHashParams() {
     const paramsData = new URLSearchParams(hash);
     const type = paramsData.get("type") || "MANDELBROT"; //type
     const params = new cFractParams(type);
-    (parseFloat(paramsData.get("re") || "-0.75"), //centreRe
-        parseFloat(paramsData.get("im") || "0.0"), //centreIm
-        parseFloat(paramsData.get("span") || "3.0"), //spanRe
-        paramsData.get("calc") || "DIRECT"); //mode
+    params.center = {
+        re: parseFloat(paramsData.get("re") || "-0.75"), //centreRe
+        im: parseFloat(paramsData.get("im") || "0.0") //centreIm
+    };
+    params.dia = parseFloat(paramsData.get("dia") || "3.0"); //spanRe
+    //error: params.setCalcMode(paramsData.get("calc") || "DIRECT");      //mode
+    return params;
 }
-/** Lance le serveur d'image sur base des paramètres - ce module est une miniApp ! L'appeler doGet ?
- * todo: à appeler depuis le constructeur de cFract. C'est app le serveur d'image, qui initie cFract je pense
- */
-export async function runImageServer(containerId) {
-    // 1. Instanciation du DOM via htmlHelper
-    const containerName = containerId || "MANDELBROT";
-    const FC = setupFractalCanvas(containerName, 800, 600); //fractContainer
-    // 2. Initialisation du moteur cFract
-    const engine = new cFract(FC.canvasId, FC.type, FC.statusId);
-    await engine.init();
-    // 3. Application des paramètres d'URL
-    const cfg = parseHashParams();
-    engine.setType(cfg.type);
-    engine.setCenter({ re: cfg.re, im: cfg.im });
-    engine.param.span.re = cfg.span; //contourne l'interface setSpan qui n'existe pas encore !
-    engine.updateAspect();
-    engine.setCalcMode(cfg.mode);
-    // 4. Calcul et rendu initial
-    engine.makeDirty();
+// todo 2: Updates URL with (some) params
+export function todo_paramsToURL(params) {
+    const data = `re:${params.center.re}, im:${params.center.im}, dia:${params.dia}`;
+    // update url
 }
 //# sourceMappingURL=cFractHtml.js.map

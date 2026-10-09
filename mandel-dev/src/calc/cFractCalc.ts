@@ -17,7 +17,7 @@ export class cFractCalc {
   }
 
   /* Computation mode: // 'DEM', 'DIRECT', etc. */
-  setCalcMode(mode): void {
+  setCalcMode(mode: string): void {
     //this.calcMode = mode; //@todo 2: sécuriser l'interface!
     //this.makeDirty();
   }

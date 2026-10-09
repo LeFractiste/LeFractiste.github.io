@@ -20,7 +20,7 @@ import {
 export class InputRouter implements IInputRouter {
   public activeMode: AppMode = "PAN_ZOOM";
   public handles: InteractiveHandle[] = [];
-  public canvasEl: HTMLCanvasElement;
+  public canvasEl: HTMLCanvasElement; //node.js
   private parent: ICFractParent;
   private isDragging = false;
   private lastMouse: PixelPoint = { x: 0, y: 0 };
@@ -32,17 +32,19 @@ export class InputRouter implements IInputRouter {
     this.canvasEl = canvasEl;
   }
 
+  //interface - not defined yet
+  public registerHandle(handle: InteractiveHandle): void {}
+
   /** Attache les écouteurs natifs DOM au canvas (Mouse & Touch) */
   public bindDOMEvents(cb: EventRouterCallbacks): void {
     this.canvasEl.style.touchAction = "none"; // Bloque le scroll natif mobile
     this.bindMouseEvents(cb);
     this.bindTouchEvents(cb);
   }
-  /** @todo: implement interfaces*/
-  public RegisterHandle(handle: InteractiveHandle): void {}
+
   public dispatch(command: UserCommand): void {}
 
-  // #region Private Mouse Listeners
+  // #region Mouse Listeners
   // Ajout des events MOUSE - les callbacks peuvent être indéfinis !
   private bindMouseEvents(cb: EventRouterCallbacks): void {
     let hasMoved: boolean;
@@ -78,7 +80,7 @@ export class InputRouter implements IInputRouter {
         const dy = e.clientY - this.lastMouse.y;
         if (Math.hypot(dx, dy) > 3) hasMoved = true;
         this.lastMouse = { x: e.clientX, y: e.clientY };
-        if (cb.onPan) cb.onPan(this.calculateDeltaC(dx, dy));
+        if (cb.onPan) cb.onPan(this.pix2cVector(dx, dy));
       }
     });
     // MOUSE UP: envoie onClick(c) et clôture isDragging
@@ -89,12 +91,12 @@ export class InputRouter implements IInputRouter {
       }
       this.isDragging = false;
     });
-  }
+  } /*class InputRouter */
   // #endregion
 
-  // #region Private Touch Listeners (Smartphone)
+  // #region Touch Listeners
 
-  // Ajout des events TOUCH - les callbacks peuvent être indéfinis !
+  // Ajout des events TOUCH Smartphone - les callbacks peuvent être indéfinis !
   private bindTouchEvents(cb: EventRouterCallbacks): void {
     let hasMoved: boolean;
     // TOUCHSTART: initie isDragging, lastMove et touchStartThis
@@ -120,7 +122,7 @@ export class InputRouter implements IInputRouter {
         const dx = touch.clientX - this.lastMouse.x;
         const dy = touch.clientY - this.lastMouse.y;
         this.lastMouse = { x: touch.clientX, y: touch.clientY };
-        cb.onPan(this.calculateDeltaC(dx, dy));
+        cb.onPan(this.pix2cVector(dx, dy));
       } else if (e.touches.length === 2 && cb.onZoom) {
         const dist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
@@ -149,12 +151,14 @@ export class InputRouter implements IInputRouter {
   // #endregion
 
   // #region helpers
+  // Read pixel, for window-level events
   private getCanvasPx(clientX: number, clientY: number): PixelPoint {
     const rect = this.canvasEl.getBoundingClientRect();
     return { x: clientX - rect.left, y: clientY - rect.top };
   }
 
-  private calculateDeltaC(dxPx: number, dyPx: number): ComplexPoint {
+  // Computes a complex vector from delta pixels
+  private pix2cVector(dxPx: number, dyPx: number): ComplexPoint {
     const p0 = this.parent.pix2c({ x: 0, y: 0 });
     const p1 = this.parent.pix2c({ x: dxPx, y: dyPx });
     return { re: p0.re - p1.re, im: p0.im - p1.im };

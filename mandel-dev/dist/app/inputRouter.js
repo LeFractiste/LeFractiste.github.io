@@ -7,7 +7,7 @@
 export class InputRouter {
     activeMode = "PAN_ZOOM";
     handles = [];
-    canvasEl;
+    canvasEl; //node.js
     parent;
     isDragging = false;
     lastMouse = { x: 0, y: 0 };
@@ -17,16 +17,16 @@ export class InputRouter {
         this.parent = parent;
         this.canvasEl = canvasEl;
     }
+    //interface - not defined yet
+    registerHandle(handle) { }
     /** Attache les écouteurs natifs DOM au canvas (Mouse & Touch) */
     bindDOMEvents(cb) {
         this.canvasEl.style.touchAction = "none"; // Bloque le scroll natif mobile
         this.bindMouseEvents(cb);
         this.bindTouchEvents(cb);
     }
-    /** @todo: implement interfaces*/
-    RegisterHandle(handle) { }
     dispatch(command) { }
-    // #region Private Mouse Listeners
+    // #region Mouse Listeners
     // Ajout des events MOUSE - les callbacks peuvent être indéfinis !
     bindMouseEvents(cb) {
         let hasMoved;
@@ -66,7 +66,7 @@ export class InputRouter {
                     hasMoved = true;
                 this.lastMouse = { x: e.clientX, y: e.clientY };
                 if (cb.onPan)
-                    cb.onPan(this.calculateDeltaC(dx, dy));
+                    cb.onPan(this.pix2cVector(dx, dy));
             }
         });
         // MOUSE UP: envoie onClick(c) et clôture isDragging
@@ -77,10 +77,10 @@ export class InputRouter {
             }
             this.isDragging = false;
         });
-    }
+    } /*class InputRouter */
     // #endregion
-    // #region Private Touch Listeners (Smartphone)
-    // Ajout des events TOUCH - les callbacks peuvent être indéfinis !
+    // #region Touch Listeners
+    // Ajout des events TOUCH Smartphone - les callbacks peuvent être indéfinis !
     bindTouchEvents(cb) {
         let hasMoved;
         // TOUCHSTART: initie isDragging, lastMove et touchStartThis
@@ -104,7 +104,7 @@ export class InputRouter {
                 const dx = touch.clientX - this.lastMouse.x;
                 const dy = touch.clientY - this.lastMouse.y;
                 this.lastMouse = { x: touch.clientX, y: touch.clientY };
-                cb.onPan(this.calculateDeltaC(dx, dy));
+                cb.onPan(this.pix2cVector(dx, dy));
             }
             else if (e.touches.length === 2 && cb.onZoom) {
                 const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -127,11 +127,13 @@ export class InputRouter {
     }
     // #endregion
     // #region helpers
+    // Read pixel, for window-level events
     getCanvasPx(clientX, clientY) {
         const rect = this.canvasEl.getBoundingClientRect();
         return { x: clientX - rect.left, y: clientY - rect.top };
     }
-    calculateDeltaC(dxPx, dyPx) {
+    // Computes a complex vector from delta pixels
+    pix2cVector(dxPx, dyPx) {
         const p0 = this.parent.pix2c({ x: 0, y: 0 });
         const p1 = this.parent.pix2c({ x: dxPx, y: dyPx });
         return { re: p0.re - p1.re, im: p0.im - p1.im };

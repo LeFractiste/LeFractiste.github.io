@@ -5,7 +5,7 @@ export declare class cFractCalc {
     private wasmMemory;
     constructor(wasmEngine?: any, wasmMemory?: any);
     setWasmReference(wasmEngine: any, wasmMemory: any): void;
-    setCalcMode(mode: any): void;
+    setCalcMode(mode: string): void;
     directIter(z0: ComplexPoint, c: ComplexPoint, maxIter: number, r2Max: number): number;
     computeWasmPayload(param: cFractParams, width: number, height: number, calcMode: string): Float32Array;
 }

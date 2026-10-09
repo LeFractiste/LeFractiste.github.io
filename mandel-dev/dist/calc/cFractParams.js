@@ -6,20 +6,28 @@
  * @todo: Eliminer MaxIter ? Le calculer pour la bonne résolution DEM
  */
 export class cFractParams {
-    type; //supprimer !
+    type; //à supprimer quand Rust changera (exige JuliaC alors que Mandelbrot=(JuliaC= Undefined)
     center;
-    spanRe;
+    aspectRatio = 4 / 3; //800-600 par défaut!
+    dia;
     max_iter;
     r2_max;
     juliaC; //exigé par rust-m, à rendre optionel?
+    angleDeg = 0.0;
     constructor(type = "MANDELBROT") {
         this.type = type;
         this.center = type === "MANDELBROT" ? { re: -0.7, im: 0.0 } : { re: 0.0, im: 0.0 };
-        this.spanRe = 3.0;
+        this.dia = 3.0;
         this.max_iter = type === "MANDELBROT" ? 300 : 100;
         this.r2_max = 100000.0;
         // Toujours initialisé pour satisfaire Rust-M même en Mandelbrot
         this.juliaC = { re: -0.7, im: 0.27015 };
+    }
+    get span() {
+        return {
+            re: this.dia,
+            im: this.dia / this.aspectRatio
+        };
     }
     static newMandelbrot() {
         return new cFractParams("MANDELBROT");
@@ -34,18 +42,18 @@ export class cFractParams {
         return JSON.stringify({
             type: this.type,
             center: [this.center.re, this.center.im],
-            span: [this.span.re, this.span.im],
+            dia: [this.span.re, this.span.im],
             max_iter: this.max_iter,
             r2_max: this.r2_max,
             juliaC: [this.juliaC.re, this.juliaC.im]
         });
     }
-    //Clonage de l'objet
-    clone() {
-        const p = new cFractParams(this.type, this.center.re, this.center.im, this.span.re, this.max_iter, this.r2_max, this.juliaC);
-        p.span.im = this.span.im;
-        return p;
-    }
+    /** Clonage de l'objet //not used
+    clone(): cFractParams {
+      const p = new cFractParams(this.type);
+      p.center = this.center; //etc
+      return p;
+    } */
     /** @todo : gérer le recalcul automatique avec calc.callback ou param.onchange ? */
     makeDirty() { }
     // Gestion du type (encore non utilisé)
@@ -61,8 +69,6 @@ export class cFractParams {
         this.center = { re: c.re, im: c.im };
         this.makeDirty();
     }
-    //moved to calc !
-    setCalcMode() { }
     // helper: aspect ratio adjustment
     updateAspect(width, height) {
         const aspect = height / width;

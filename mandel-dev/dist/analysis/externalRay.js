@@ -74,6 +74,7 @@ export function externalRayVectorField(c, config) {
  * Implémentation du moteur de trajectoire de Rayon Externe
  */
 export class ExternalRayTrajectory {
+    type = "extRay";
     current;
     config;
     constructor(startPoint, config) {

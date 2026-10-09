@@ -9,20 +9,29 @@
 import { IParams, ComplexPoint, PixelPoint, FractType } from "../fractTypes.js";
 
 export class cFractParams implements IParams {
-  type: string; //supprimer !
-  center: ComplexPoint;
-  spanRe: number;
-  max_iter: number;
-  r2_max: number;
-  juliaC: ComplexPoint; //exigé par rust-m, à rendre optionel?
+  public type: string; //à supprimer quand Rust changera (exige JuliaC alors que Mandelbrot=(JuliaC= Undefined)
+  public center: ComplexPoint;
+  public aspectRatio: number = 4 / 3; //800-600 par défaut!
+  public dia: number;
+  public max_iter: number;
+  public r2_max: number;
+  public juliaC: ComplexPoint; //exigé par rust-m, à rendre optionel?
+  public angleDeg: number = 0.0;
   constructor(type = "MANDELBROT") {
     this.type = type;
     this.center = type === "MANDELBROT" ? { re: -0.7, im: 0.0 } : { re: 0.0, im: 0.0 };
-    this.spanRe = 3.0;
+    this.dia = 3.0;
     this.max_iter = type === "MANDELBROT" ? 300 : 100;
     this.r2_max = 100000.0;
     // Toujours initialisé pour satisfaire Rust-M même en Mandelbrot
     this.juliaC = { re: -0.7, im: 0.27015 };
+  }
+
+  public get span(): { re: number; im: number } {
+    return {
+      re: this.dia,
+      im: this.dia / this.aspectRatio
+    };
   }
 
   static newMandelbrot(): cFractParams {
@@ -39,26 +48,18 @@ export class cFractParams implements IParams {
     return JSON.stringify({
       type: this.type,
       center: [this.center.re, this.center.im],
-      span: [this.span.re, this.span.im],
+      dia: [this.span.re, this.span.im],
       max_iter: this.max_iter,
       r2_max: this.r2_max,
       juliaC: [this.juliaC.re, this.juliaC.im]
     });
   }
-  //Clonage de l'objet
+  /** Clonage de l'objet //not used
   clone(): cFractParams {
-    const p = new cFractParams(
-      this.type,
-      this.center.re,
-      this.center.im,
-      this.span.re,
-      this.max_iter,
-      this.r2_max,
-      this.juliaC
-    );
-    p.span.im = this.span.im;
+    const p = new cFractParams(this.type);
+    p.center = this.center; //etc
     return p;
-  }
+  } */
 
   /** @todo : gérer le recalcul automatique avec calc.callback ou param.onchange ? */
   makeDirty(): void {}
@@ -76,9 +77,6 @@ export class cFractParams implements IParams {
     this.center = { re: c.re, im: c.im };
     this.makeDirty();
   }
-
-  //moved to calc !
-  setCalcMode(): void {}
 
   // helper: aspect ratio adjustment
   updateAspect(width: number, height: number): void {

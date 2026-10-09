@@ -12,12 +12,17 @@ export interface PixelPoint {
 export type FractType = "MAIN" | "MANDELBROT" | "JULIA";
 export type CalcMode = "DIRECT" | "DEM";
 export interface IParams {
-    type?: string;
     center: ComplexPoint;
-    _spanRe: number;
+    dia: number;
+    span: {
+        re: number;
+        im: number;
+    };
     max_iter: number;
     r2_max: number;
     juliaC?: ComplexPoint;
+    angleDeg?: number;
+    aspectRatio: number;
 }
 /** Interface d'accès minimal au moteur cFract (parent) pour le rendu */
 export interface ICFractParent {
@@ -80,6 +85,7 @@ export interface AppState {
     deepAnchor?: ComplexPoint;
 }
 export type HandleType = "cDeep" | "zoonoramaA" | "zoonoramaB" | "paletteNode";
+/** Object for mouse interaction */
 export interface InteractiveHandle {
     id: string;
     type: HandleType;
@@ -95,7 +101,10 @@ export interface UserCommand {
     type: UserActionType;
     payload?: any;
 }
-/** Contrat du Gestionnaire d'Événements : EventRouterCallBacks  */
+/** Contrat du Gestionnaire d'Événements : EventRouterCallBacks
+ * todo 2: rendre cohérent - tout en pix, avec pC optionnel ou non fourni, à calculer par le callback ?)
+ * todo 2: ajouter la rotation: roller+right click / two fingers rotation / angles entiers à ajouter à URL
+ */
 export interface EventRouterCallbacks {
     onHover?: (pC: ComplexPoint, pPx: PixelPoint) => void;
     onClick?: (pC: ComplexPoint, pPx: PixelPoint) => void;

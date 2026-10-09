@@ -1,4 +1,5 @@
 // app/cFractHtml.ts - Copyright LeFractiste 2026
+// Exports: htmlFractContainer, htmlSetupOptions, setupFractalCanvas, parseHashParams, todo_paramstoURL
 
 /** // Helper d'injection HTML/CSS pour cFract
  * @todo: placer les appels dans l'autre sens - mandel appelle helper-html ! */
@@ -7,7 +8,7 @@ import { ICFractParent, ComplexPoint, FractType } from "../fractTypes.js";
 import { cFractParams } from "../calc/cFractParams"; //utile ?
 import { cFract } from "../app/cFract.js"; //nécessaire ?
 
-export interface FractContainer {
+export interface htmlFractContainer {
   canvasId: string;
   type: FractType;
   statusId: string;
@@ -16,8 +17,8 @@ export interface FractContainer {
   statusEl: HTMLElement;
 }
 
-export interface FractSetupOptions {
-  containerId: FractType;
+export interface htmlSetupOptions {
+  containerId: string;
   width?: number;
   height?: number;
   showControls?: boolean; //non implémenté?
@@ -26,14 +27,14 @@ export interface FractSetupOptions {
 
 /** Initialise le div html avec canvas, boutons, statusBar,...
  * @todo: bouton ZoomReset serait ajouté par le constructeur de cFract ?  (ici canvas minimum) */
-export function setupFractalCanvas(options: FractSetupOptions): FractContainer {
+export function setupFractalCanvas(options: htmlSetupOptions): htmlFractContainer {
   const { containerId, width = 800, height = 600, showStatusBar = true } = options;
+  const ftype: FractType = (containerId as FractType) || ("MANDELBROT" as FractType);
   const container = document.getElementById(containerId);
   if (!container) throw new Error(`[htmlHelper] Conteneur #${containerId} introuvable`);
   // Nettoyage et injection de la structure HTML
   const canvasId = `${containerId}-canvas`;
   const statusId = `${containerId}-statusBar`;
-  const type = containerId; //TODO : gérer via params !
   container.innerHTML = `
     <div class="cfract-card">
       <div class="cfract-canvas-wrapper">
@@ -47,7 +48,7 @@ export function setupFractalCanvas(options: FractSetupOptions): FractContainer {
   const statusEl = container.querySelector(".cfract-status") as HTMLElement;
   return {
     canvasId,
-    type: containerId,
+    type: ftype,
     statusId,
     containerEl: container,
     canvasEl,
@@ -61,30 +62,17 @@ export function parseHashParams(): cFractParams {
   const paramsData = new URLSearchParams(hash);
   const type: string = paramsData.get("type") || "MANDELBROT"; //type
   const params = new cFractParams(type);
-  (parseFloat(paramsData.get("re") || "-0.75"), //centreRe
-    parseFloat(paramsData.get("im") || "0.0"), //centreIm
-    parseFloat(paramsData.get("span") || "3.0"), //spanRe
-    paramsData.get("calc") || "DIRECT"); //mode
+  params.center = {
+    re: parseFloat(paramsData.get("re") || "-0.75"), //centreRe
+    im: parseFloat(paramsData.get("im") || "0.0") //centreIm
+  };
+  params.dia = parseFloat(paramsData.get("dia") || "3.0"); //spanRe
+  //error: params.setCalcMode(paramsData.get("calc") || "DIRECT");      //mode
+  return params;
 }
 
-/** Lance le serveur d'image sur base des paramètres - ce module est une miniApp ! L'appeler doGet ?
- * todo: à appeler depuis le constructeur de cFract. C'est app le serveur d'image, qui initie cFract je pense
- */
-export async function runImageServer(containerId: string) {
-  // 1. Instanciation du DOM via htmlHelper
-  const containerName: FractType =
-    (containerId as FractType) || ("MANDELBROT" as FractType);
-  const FC = setupFractalCanvas(containerName, 800, 600); //fractContainer
-  // 2. Initialisation du moteur cFract
-  const engine = new cFract(FC.canvasId, FC.type, FC.statusId);
-  await engine.init();
-  // 3. Application des paramètres d'URL
-  const cfg = parseHashParams();
-  engine.setType(cfg.type);
-  engine.setCenter({ re: cfg.re, im: cfg.im });
-  engine.param.span.re = cfg.span; //contourne l'interface setSpan qui n'existe pas encore !
-  engine.updateAspect();
-  engine.setCalcMode(cfg.mode);
-  // 4. Calcul et rendu initial
-  engine.makeDirty();
+// todo 2: Updates URL with (some) params
+export function todo_paramsToURL(params: cFractParams): void {
+  const data = `re:${params.center.re}, im:${params.center.im}, dia:${params.dia}`;
+  // update url
 }

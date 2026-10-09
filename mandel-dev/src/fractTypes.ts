@@ -28,14 +28,16 @@ export type FractType = "MAIN" | "MANDELBROT" | "JULIA";
 export type CalcMode = "DIRECT" | "DEM";
 
 export interface IParams {
-  type?: string; //inutile: if (Param.JuliaC) {type="JULIA";}
+  //type?: string; //inutile: if (Param.JuliaC) {type="JULIA";}
   center: ComplexPoint;
-  _spanRe: number;
+  dia: number; //todo 2: renommer radius plus tard
+  span: { re: number; im: number }; // Propriété calculée
   max_iter: number; //renommer iterMax et R2Max dès que compilable
   r2_max: number;
   juliaC?: ComplexPoint;
-  //get span() : ComplexPoint; //pour compatibilité
-  // @todo 2: décider où va la conversion (besoin de taille d'image) - Mandel
+  angleDeg?: number;
+  aspectRatio: number;
+  // @todo 2: décider où va la conversion (besoin de taille d'image) - cFract ou params --> params
   //set span(c: ComplexPoint);
   //toMetadata(): string;
   //clone(): IParams;
@@ -123,7 +125,7 @@ export interface AppState {
 // Objets Graphiques Interactifs (Handles / Controls)
 export type HandleType = "cDeep" | "zoonoramaA" | "zoonoramaB" | "paletteNode";
 
-// @todo: InteractiveHandle.posC ne doit-il pas être un posPix ? (IHM)
+/** Object for mouse interaction */
 export interface InteractiveHandle {
   id: string;
   type: HandleType;
@@ -151,7 +153,10 @@ export interface UserCommand {
   payload?: any;
 }
 
-/** Contrat du Gestionnaire d'Événements : EventRouterCallBacks  */
+/** Contrat du Gestionnaire d'Événements : EventRouterCallBacks
+ * todo 2: rendre cohérent - tout en pix, avec pC optionnel ou non fourni, à calculer par le callback ?)
+ * todo 2: ajouter la rotation: roller+right click / two fingers rotation / angles entiers à ajouter à URL
+ */
 export interface EventRouterCallbacks {
   onHover?: (pC: ComplexPoint, pPx: PixelPoint) => void;
   onClick?: (pC: ComplexPoint, pPx: PixelPoint) => void;

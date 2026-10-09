@@ -14,14 +14,13 @@ export declare class InputRouter implements IInputRouter {
     private touchStartDist;
     /** @todo: modifier la déclaration pour injecter les événements via mandel.onHoover */
     constructor(parent: ICFractParent, canvasEl: HTMLCanvasElement);
+    registerHandle(handle: InteractiveHandle): void;
     /** Attache les écouteurs natifs DOM au canvas (Mouse & Touch) */
     bindDOMEvents(cb: EventRouterCallbacks): void;
-    /** @todo: implement interfaces*/
-    RegisterHandle(handle: InteractiveHandle): void;
     dispatch(command: UserCommand): void;
     private bindMouseEvents;
     private bindTouchEvents;
     private getCanvasPx;
-    private calculateDeltaC;
+    private pix2cVector;
 }
 //# sourceMappingURL=inputRouter.d.ts.map

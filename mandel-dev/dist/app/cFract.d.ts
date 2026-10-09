@@ -1,12 +1,12 @@
-import { cFractParams } from "../calc/cFractParams.js";
 import { cImage } from "../pres/cImage.js";
 import { cFractCalc } from "../calc/cFractCalc.js";
+import { cFractParams } from "../calc/cFractParams.js";
 import { ComplexPoint, PixelPoint } from "../fractTypes.js";
 export declare class cFract {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     cImage: cImage;
-    param: cFractParams;
+    params: cFractParams;
     calc: cFractCalc;
     statusId: string;
     calcMode: string;
@@ -38,4 +38,8 @@ export declare class cFract {
     classConsole(msg: string): void;
 }
 export declare function appInit(containerId?: string): Promise<cFract>;
+/** Lance le serveur d'image sur base des paramètres - ce module est une miniApp ! L'appeler doGet ?
+ * todo: à appeler depuis le constructeur de cFract. C'est app le serveur d'image, qui initie cFract je pense
+ */
+export declare function runImageServer(containerId: string): Promise<void>;
 //# sourceMappingURL=cFract.d.ts.map

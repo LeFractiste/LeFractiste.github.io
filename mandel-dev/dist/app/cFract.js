@@ -1,16 +1,26 @@
 // app/cFract.ts - Copyright LeFractiste 2026
 // Contrôleur principal et façade publique
+//TODO 1 : implémenter selectCalcMode
+//TODO 2 : vitesse de chargement : init bmp pour mandel
+//TODO 2 : regrouper les CSS dans un CSS de site ? (harmonie)
+//TODO 0 : génération du html, galère non débuggable !
+//TODO 0 : migration ts, galère !
+//TODO 0 : migration params, galère
+//TODO 1 : serveur d'image et url variable
+//TODO 3 : SEO site + copyright + pub Utube
 import init, { MandelEngine } from "../../pkg/rust_m.js";
-import { cFractParams } from "../calc/cFractParams.js";
 import { cImage } from "../pres/cImage.js";
 import { cFractCalc } from "../calc/cFractCalc.js";
+import { setupFractalCanvas, parseHashParams } from "../app/cFractHtml.js";
 import { cFractDraw } from "../pres/fractDraw.js";
+import { cFractParams } from "../calc/cFractParams.js";
 export class cFract {
     canvas;
     ctx;
     cImage;
-    param;
+    params;
     calc;
+    //Calc variables: //todo 2: ce bloc de varaibles doit-il aller dans calc ?
     statusId;
     calcMode;
     calcCount;
@@ -28,7 +38,7 @@ export class cFract {
             throw new Error(`Canvas #${canvasId} introuvable`);
         this.ctx = this.canvas.getContext("2d");
         this.cImage = new cImage(this.canvas.width, this.canvas.height);
-        this.param = new cFractParams(type);
+        this.params = new cFractParams(type);
         this.calc = new cFractCalc();
         this.updateAspect();
         this.calcMode = "DEM"; // Enum: 'DIRECT', 'DEM', 'DEM_QUAD', 'DELEGATE'
@@ -72,8 +82,8 @@ export class cFract {
         this.calcCount++;
         try {
             if (this.wasmEngine) {
-                const payload = this.calc.computeWasmPayload(this.param, this.canvas.width, this.canvas.height, this.calcMode);
-                this.cImage.updateFromWasmPayload(payload, this.param.max_iter);
+                const payload = this.calc.computeWasmPayload(this.params, this.canvas.width, this.canvas.height, this.calcMode);
+                this.cImage.updateFromWasmPayload(payload, this.params.max_iter);
             }
         }
         catch (err) {
@@ -88,20 +98,20 @@ export class cFract {
         this.drawFixedPointsOverlay();
     }
     drawFixedPointsOverlay() {
-        cFractDraw.drawFixedPointsOverlay(this.ctx, this.param, this.canvas.width, this.canvas.height, this.fixedPoints);
+        cFractDraw.drawFixedPointsOverlay(this.ctx, this.params, this.canvas.width, this.canvas.height, this.fixedPoints);
     }
     // #region Getters & Setters
     setType(type, juliaC = null) {
-        this.param.type = type;
+        this.params.type = type;
         if (juliaC)
-            this.param.juliaC = { ...juliaC };
+            this.params.juliaC = { ...juliaC };
         this.makeDirty();
     }
     getCenter() {
-        return { ...this.param.center };
+        return { ...this.params.center };
     }
     setCenter(c) {
-        this.param.center = { re: c.re, im: c.im };
+        this.params.center = { re: c.re, im: c.im };
         this.makeDirty();
     }
     setCalcMode(mode) {
@@ -109,13 +119,13 @@ export class cFract {
         this.makeDirty();
     }
     updateAspect() {
-        this.param.updateAspect(this.canvas.width, this.canvas.height);
+        this.params.updateAspect(this.canvas.width, this.canvas.height);
     }
     pix2c(point) {
-        return this.param.pix2c(point, this.canvas.width, this.canvas.height);
+        return this.params.pix2c(point, this.canvas.width, this.canvas.height);
     }
     c2pix(c) {
-        return this.param.c2pix(c, this.canvas.width, this.canvas.height);
+        return this.params.c2pix(c, this.canvas.width, this.canvas.height);
     }
     zoom(px, py, zoomFactor) {
         const mouseC = this.pix2c({ x: px, y: py });
@@ -124,16 +134,16 @@ export class cFract {
         const h = this.canvas.height;
         const alpha = px / w - 0.5;
         const beta = 0.5 - py / h;
-        this.param.center.re += alpha * this.param.span.re * (1 - zoomFactor);
-        this.param.center.im += beta * this.param.span.im * (1 - zoomFactor);
-        this.param.span.re *= zoomFactor;
-        this.param.span.im *= zoomFactor;
+        this.params.center.re += alpha * this.params.span.re * (1 - zoomFactor);
+        this.params.center.im += beta * this.params.span.im * (1 - zoomFactor);
+        this.params.span.re *= zoomFactor;
+        this.params.span.im *= zoomFactor;
         this.makeDirty();
     }
     resetZoom() {
-        this.param.center.re = this.param.type === "JULIA" ? 0.0 : -0.7;
-        this.param.center.im = 0.0;
-        this.param.span.re = 3.0;
+        this.params.center.re = this.params.type === "JULIA" ? 0.0 : -0.7;
+        this.params.center.im = 0.0;
+        this.params.dia = 3.0;
         this.updateAspect();
         this.makeDirty();
     }
@@ -146,8 +156,8 @@ export class cFract {
         if (!status)
             return;
         let msg = `${this.complexToString(c)} | counter: ${this.calcCount}`;
-        if (this.param.type === "JULIA") {
-            msg += ` | JULIA: ${this.complexToString(this.param.juliaC)}`;
+        if (this.params.type === "JULIA") {
+            msg += ` | JULIA: ${this.complexToString(this.params.juliaC)}`;
         }
         msg += ` | px=${Math.floor(px)} py=${Math.floor(py)}`;
         status.textContent = msg;
@@ -161,13 +171,32 @@ export class cFract {
 }
 export async function appInit(containerId = "MANDELBROT") {
     // 1. Déduction des paramètres depuis l'URL ou fallback par défaut
-    const param = parseUrlToParams() || new cFractParam(containerId);
+    const param = parseHashParams() || new cFractParams(containerId);
     // 2. Préparation du DOM
     const containerInfo = setupFractalCanvas({ containerId: param.type });
     // 3. Création et initialisation du moteur cFract
     const engine = new cFract(containerInfo.canvasId, param.type, containerInfo.statusId);
-    engine.param = param; // Injection des paramètres
+    engine.params = param; // Injection des paramètres
     await engine.init();
     return engine;
+}
+/** Lance le serveur d'image sur base des paramètres - ce module est une miniApp ! L'appeler doGet ?
+ * todo: à appeler depuis le constructeur de cFract. C'est app le serveur d'image, qui initie cFract je pense
+ */
+export async function runImageServer(containerId) {
+    // 1. Instanciation du DOM via htmlHelper
+    const options = { containerId: containerId };
+    const FC = setupFractalCanvas(options);
+    // 2. Initialisation du moteur cFract
+    const engine = new cFract(FC.canvasId, FC.type, FC.statusId);
+    await engine.init();
+    // 3. Application des paramètres d'URL
+    const cfg = parseHashParams();
+    engine.setType(cfg.type);
+    engine.setCenter(cfg.center);
+    engine.params.dia = cfg.dia; //contourne l'interface setSpan qui n'existe pas encore !
+    engine.updateAspect();
+    // 4. Calcul et rendu initial
+    engine.makeDirty();
 }
 //# sourceMappingURL=cFract.js.map

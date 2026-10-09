@@ -1,4 +1,4 @@
-import type { ComplexPoint, Trajectory, ExternalRayConfig } from "../fractTypes.js";
+import type { ComplexPoint, TrajectoryType, Trajectory, ExternalRayConfig } from "../fractTypes.js";
 export declare function t_externalRay(): ComplexPoint[];
 /**
  * Calcule la valeur du potentiel d'échappement G(c) et son gradient local gradG(c)
@@ -15,6 +15,7 @@ export declare function externalRayVectorField(c: ComplexPoint, config: External
  * Implémentation du moteur de trajectoire de Rayon Externe
  */
 export declare class ExternalRayTrajectory implements Trajectory {
+    type: TrajectoryType;
     current: ComplexPoint;
     private config;
     constructor(startPoint: ComplexPoint, config: ExternalRayConfig);

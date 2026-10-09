@@ -2,7 +2,7 @@
  * @todo: placer les appels dans l'autre sens - mandel appelle helper-html ! */
 import { FractType } from "../fractTypes.js";
 import { cFractParams } from "../calc/cFractParams";
-export interface FractContainer {
+export interface htmlFractContainer {
     canvasId: string;
     type: FractType;
     statusId: string;
@@ -10,8 +10,8 @@ export interface FractContainer {
     canvasEl: HTMLCanvasElement;
     statusEl: HTMLElement;
 }
-export interface FractSetupOptions {
-    containerId: FractType;
+export interface htmlSetupOptions {
+    containerId: string;
     width?: number;
     height?: number;
     showControls?: boolean;
@@ -19,10 +19,7 @@ export interface FractSetupOptions {
 }
 /** Initialise le div html avec canvas, boutons, statusBar,...
  * @todo: bouton ZoomReset serait ajouté par le constructeur de cFract ?  (ici canvas minimum) */
-export declare function setupFractalCanvas(options: FractSetupOptions): FractContainer;
+export declare function setupFractalCanvas(options: htmlSetupOptions): htmlFractContainer;
 export declare function parseHashParams(): cFractParams;
-/** Lance le serveur d'image sur base des paramètres - ce module est une miniApp ! L'appeler doGet ?
- * todo: à appeler depuis le constructeur de cFract. C'est app le serveur d'image, qui initie cFract je pense
- */
-export declare function runImageServer(containerId: string): Promise<void>;
+export declare function todo_paramsToURL(params: cFractParams): void;
 //# sourceMappingURL=cFractHtml.d.ts.map

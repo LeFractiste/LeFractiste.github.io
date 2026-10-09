@@ -1,4 +1,9 @@
-import type { ComplexPoint, Trajectory, ExternalRayConfig } from "../fractTypes.js";
+import type {
+  ComplexPoint,
+  TrajectoryType,
+  Trajectory,
+  ExternalRayConfig
+} from "../fractTypes.js";
 
 // Module de fonctions TS ExternalRay
 // @todo 2:  (à découper en interface-->utils? et fonctions (classe extRay?)
@@ -101,6 +106,7 @@ export function externalRayVectorField(
  * Implémentation du moteur de trajectoire de Rayon Externe
  */
 export class ExternalRayTrajectory implements Trajectory {
+  public type: TrajectoryType = "extRay";
   public current: ComplexPoint;
   private config: ExternalRayConfig;
 

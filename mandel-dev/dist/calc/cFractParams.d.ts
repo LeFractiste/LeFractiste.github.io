@@ -9,20 +9,30 @@ import { IParams, ComplexPoint, PixelPoint, FractType } from "../fractTypes.js";
 export declare class cFractParams implements IParams {
     type: string;
     center: ComplexPoint;
-    spanRe: number;
+    aspectRatio: number;
+    dia: number;
     max_iter: number;
     r2_max: number;
     juliaC: ComplexPoint;
+    angleDeg: number;
     constructor(type?: string);
+    get span(): {
+        re: number;
+        im: number;
+    };
     static newMandelbrot(): cFractParams;
     static newJulia(c: ComplexPoint): cFractParams;
     toMetadata(): string;
-    clone(): cFractParams;
+    /** Clonage de l'objet //not used
+    clone(): cFractParams {
+      const p = new cFractParams(this.type);
+      p.center = this.center; //etc
+      return p;
+    } */
     /** @todo : gérer le recalcul automatique avec calc.callback ou param.onchange ? */
     makeDirty(): void;
     setType(type: FractType, juliaC?: null): void;
     setCenter(c: ComplexPoint): void;
-    setCalcMode(): void;
     updateAspect(width: number, height: number): void;
     pix2c(point: PixelPoint, width: number, height: number): ComplexPoint;
     /** Transformation (linéaire) du plan //@todo: erreur, tester
