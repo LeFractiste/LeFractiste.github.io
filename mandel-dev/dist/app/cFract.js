@@ -1,13 +1,26 @@
 // app/cFract.ts - Copyright LeFractiste 2026
-// Contrôleur principal et façade publique
-//TODO 1 : implémenter selectCalcMode
-//TODO 2 : vitesse de chargement : init bmp pour mandel
-//TODO 2 : regrouper les CSS dans un CSS de site ? (harmonie)
-//TODO 0 : génération du html, galère non débuggable !
-//TODO 0 : migration ts, galère !
-//TODO 0 : migration params, galère
-//TODO 1 : serveur d'image et url variable
-//TODO 3 : SEO site + copyright + pub Utube
+/** Contrôleur principal et façade publique
+ * Refactoring - actions en cours, migration vers ts
+ * Plan V4: affichier c en hover et ajouter le touch zoom
+ * Code de test + typeDoc + myGenDoc  (test: debuggage sous Navigateur, eq, assert, testStates) - frame de debug.AI ? Jester?
+ * Plan V5: ordre de récupération: basic.html + bmp, fractTypes + cFract + cFractParams + overlay, + cImage + cCalc.test
+ * Suite: cCalc(iter),  DEM + palette, mouseEvents
+ * @todo 0: migration ts, galère !
+ * @todo 0: migration params, galère*
+ * @todo 0: génération du html, galère non débuggable ! Revenir en arrière, et générer du code console ?
+ * @todo 1: Utiliser le parent pour accéder à params (pour calc, analysis, input Router, fractDraw, externalRay = tous)
+ * @todo 2: Gérer param.calcMode et implémenter cFractCalc.setMode ?
+ * @todo 2: Mandel utilise html-helper pour faire url<-->params
+ * @todo 1: Aménager l'interface de création de Julia ou Mandelbrot. Eliminer type. Constructor(string) ?
+ * @todo 2: MaxIter ? Le calculer pour la bonne résolution DEM. Critère: un point "noir" est à une distance/pixel > 2
+ * @todo 2: extRay: avancer jusqu'au dernier pixel, puis zoomer (x10) et avancer jusqu'au derier pixel.
+ * @todo 3: historique de zoom : push, pop position (&vecteur: dia/rotation)
+ * @todo 1: html - ajout automatisé de boutons d'interface maxIter & setCalc (interface UX(btnX): html.addBtn(X, onclick): id=btnX, onClickX?)
+ * @todo 2: vitesse de chargement : init bmp pour mandel
+ * @todo 0: regrouper les CSS dans un CSS de site ? (harmonie) 50%: couleurs des palletes et boutons
+ * @todo 1: serveur d'image et url variable. 50%: manque update url (revoir svg)
+ * @todo 3: SEO site + copyright + pub Utube
+ */
 import init, { MandelEngine } from "../../pkg/rust_m.js";
 import { cImage } from "../pres/cImage.js";
 import { cFractCalc } from "../calc/cFractCalc.js";

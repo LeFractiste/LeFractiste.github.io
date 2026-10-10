@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Wasm Minimal</title>
+  </head>
+  <body>
+    <canvas
+      id="fractCanvas"
+      width="800"
+      height="600"
+      style="border: 1px solid #ccc"
+    ></canvas>
+
+    <script type="module">
+      // 1. Charger directement le wrapper Wasm/Rust
+      import initWasm, { calc_mandelbrot } from "./dist/calc/rust_m.js"; // Ajuste le chemin selon ton dossier dist
+      import { cFractParams } from "./dist/calc/cFractParams.js";
+
+      async function runMinimalTest() {
+        console.log("1. Initialisation du module Wasm...");
+        await initWasm(); // Charge le fichier .wasm
+        console.log("2. Wasm chargé avec succès !");
+
+        // 2. Préparer des paramètres par défaut vides
+        const params = new cFractParams(); // Utilise les valeurs par défaut
+        const width = 800;
+        const height = 600;
+
+        // 3. Allouer le buffer mémoire pour les itérations
+        const bufferSize = width * height;
+        console.log(`3. Calcul de ${bufferSize} pixels via Rust...`);
+
+        // 4. Appeler directement la fonction Rust
+        // Signature type: calc_mandelbrot(width, height, center_re, center_im, span_re, span_im, max_iter, r2_max, julia_re, julia_im)
+        const t0 = performance.now();
+        const rawData = calc_mandelbrot(
+          width,
+          height,
+          params.center.re,
+          params.center.im,
+          params.spanRe,
+          params.spanRe * (height / width),
+          params.max_iter,
+          params.r2_max,
+          params.juliaC.re,
+          params.juliaC.im
+        );
+        const t1 = performance.now();
+        console.log(`4. Calcul Wasm terminé en ${(t1 - t0).toFixed(2)} ms !`, rawData);
+
+        // 5. Rendu minimaliste sur le canvas
+        const canvas = document.getElementById("fractCanvas");
+        const ctx = canvas.getContext("2d");
+        const imgData = ctx.createImageData(width, height);
+
+        for (let i = 0; i < bufferSize; i++) {
+          const iter = rawData[i];
+          const pixelIdx = i * 4;
+          // Nuances de gris simplifiées
+          const color = iter % 256;
+          imgData.data[pixelIdx] = color; // R
+          imgData.data[pixelIdx + 1] = color; // G
+          imgData.data[pixelIdx + 2] = color; // B
+          imgData.data[pixelIdx + 3] = 255; // Alpha
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+        console.log("5. Image affichée sur le canvas !");
+      }
+
+      runMinimalTest().catch(err => console.error("Erreur lors du test minimal:", err));
+    </script>
+  </body>
+</html>

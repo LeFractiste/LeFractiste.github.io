@@ -1,9 +1,5 @@
 /** calc/cFractParam.ts - Copyright LeFractiste 2026
- *  Classe de metadonnées pour le calcul
- *
- * @todo  mandel utilise html-helper pour faire url<-->params
- * @todo  aménager l'interface de création de Julia ou Mandelbrot. Eliminer type. Constructor(string) ?
- * @todo: Eliminer MaxIter ? Le calculer pour la bonne résolution DEM
+ *  Classe de metadonnées pour le calcul : seule source de donnée pour le calcul !  (il manque des paramètres encore)
  */
 
 import { IParams, ComplexPoint, PixelPoint, FractType } from "../fractTypes.js";
@@ -44,7 +40,7 @@ export class cFractParams implements IParams {
   }
 
   // Métadonnées d'export (Format propre pour Exif/PNG/HEIC JSON)
-  toMetadata(): string {
+  public toMetadata(): string {
     return JSON.stringify({
       type: this.type,
       center: [this.center.re, this.center.im],
@@ -54,6 +50,23 @@ export class cFractParams implements IParams {
       juliaC: [this.juliaC.re, this.juliaC.im]
     });
   }
+
+  /** Exporte la structure exacte attendue par les fonctions de Wasm-Rust */
+  public toRustArgs(width: number, height: number) {
+    return {
+      width,
+      height,
+      center_re: this.center.re,
+      center_im: this.center.im,
+      span_Re: this.span.re,
+      span_Im: this.span.im,
+      max_iter: this.max_iter,
+      r2_max: this.r2_max,
+      julia_re: this.juliaC.re,
+      julia_im: this.juliaC.im
+    };
+  }
+
   /** Clonage de l'objet //not used
   clone(): cFractParams {
     const p = new cFractParams(this.type);

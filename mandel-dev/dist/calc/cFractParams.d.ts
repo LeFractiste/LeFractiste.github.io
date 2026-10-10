@@ -1,9 +1,5 @@
 /** calc/cFractParam.ts - Copyright LeFractiste 2026
- *  Classe de metadonnées pour le calcul
- *
- * @todo  mandel utilise html-helper pour faire url<-->params
- * @todo  aménager l'interface de création de Julia ou Mandelbrot. Eliminer type. Constructor(string) ?
- * @todo: Eliminer MaxIter ? Le calculer pour la bonne résolution DEM
+ *  Classe de metadonnées pour le calcul : seule source de donnée pour le calcul !  (il manque des paramètres encore)
  */
 import { IParams, ComplexPoint, PixelPoint, FractType } from "../fractTypes.js";
 export declare class cFractParams implements IParams {
@@ -23,6 +19,19 @@ export declare class cFractParams implements IParams {
     static newMandelbrot(): cFractParams;
     static newJulia(c: ComplexPoint): cFractParams;
     toMetadata(): string;
+    /** Exporte la structure exacte attendue par les fonctions de Wasm-Rust */
+    toRustArgs(width: number, height: number): {
+        width: number;
+        height: number;
+        center_re: number;
+        center_im: number;
+        span_Re: number;
+        span_Im: number;
+        max_iter: number;
+        r2_max: number;
+        julia_re: number;
+        julia_im: number;
+    };
     /** Clonage de l'objet //not used
     clone(): cFractParams {
       const p = new cFractParams(this.type);

@@ -1,16 +1,33 @@
 // calc/cFractCalc.ts - Algorithmes de calcul & Pont Wasm
 import { cFractParams } from "../calc/cFractParams.js";
 import { ComplexPoint } from "../fractTypes.js";
+import initWasm, * as wasmModule from "../../pkg/rust_m.js"; //todo 0: initWasm ou InitSync ou __wbg_Init ? Pq sans {}
 
+/** Expose compute algorithms and Wasm bridge */
 export class cFractCalc {
+  private width: number = 800;
+  private height: number = 600;
   private wasmEngine: any;
   private wasmMemory: any;
+  private isWasmReady = false;
+  private iterBuffer: Uint32Array;
 
-  constructor(wasmEngine: any = null, wasmMemory: any = null) {
-    this.wasmEngine = wasmEngine;
-    this.wasmMemory = wasmMemory;
+  /* Constructeur V2: assez nul - //todo 2: passer parent simplement */
+  constructor(width: number = 800, height: number = 600) {
+    this.width = width;
+    this.height = height;
+    this.iterBuffer = new Uint32Array(width * height);
   }
 
+  // Launch the module
+  public async init(): Promise<void> {
+    if (!this.isWasmReady) {
+      await initWasm(); //correct?
+      this.isWasmReady = true;
+    }
+  }
+
+  // External init (obsolete)
   public setWasmReference(wasmEngine: any, wasmMemory: any): void {
     this.wasmEngine = wasmEngine;
     this.wasmMemory = wasmMemory;
@@ -23,7 +40,12 @@ export class cFractCalc {
   }
 
   // Calcul d'orbite z(n+1):= z^2 + c (@todo: déléguer au Wasm)
-  directIter(z0: ComplexPoint, c: ComplexPoint, maxIter: number, r2Max: number): number {
+  public directIter(
+    z0: ComplexPoint,
+    c: ComplexPoint,
+    maxIter: number,
+    r2Max: number
+  ): number {
     if (this.wasmEngine && typeof this.wasmEngine.compute_orbit_iter === "function") {
       return this.wasmEngine.compute_orbit_iter(z0.re, z0.im, c.re, c.im, maxIter, r2Max);
     }
@@ -43,8 +65,45 @@ export class cFractCalc {
     return iter;
   }
 
+  /** Calcul principal, avec fallback */
+  public calcFullJS(params: cFractParams): Uint32Array {
+    const w = this.width;
+    const h = this.height;
+    const maxIter = params.max_iter;
+    const r2Max = params.r2_max;
+
+    const centerRe = params.center.re;
+    const centerIm = params.center.im;
+    const spanRe = params.span.re;
+    const spanIm = params.span.im;
+
+    /*if (this.wasmEngine && typeof this.wasmEngine.compute_orbit_iter === "function") {
+      return this.wasmEngine.compute_full();
+    }/**/
+
+    let idx = 0;
+    for (let py = 0; py < h; py++) {
+      const cy = centerIm - (py / h - 0.5) * spanIm;
+      for (let px = 0; px < w; px++) {
+        const cx = centerRe + (px / w - 0.5) * spanRe;
+        // Algorithme de Mandelbrot de base en JS
+        let zx = 0;
+        let zy = 0;
+        let iter = 0;
+        while (zx * zx + zy * zy <= r2Max && iter < maxIter) {
+          const tmp = zx * zx - zy * zy + cx;
+          zy = 2 * zx * zy + cy;
+          zx = tmp;
+          iter++;
+        }
+        this.iterBuffer[idx++] = iter;
+      }
+    }
+    return this.iterBuffer;
+  }
+
   // Exécution Wasm complète sur toute la grille de pixels
-  computeWasmPayload(
+  public computeWasmPayload(
     param: cFractParams,
     width: number,
     height: number,
