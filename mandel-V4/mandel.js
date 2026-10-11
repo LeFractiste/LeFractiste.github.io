@@ -14,7 +14,8 @@ import { cUtils } from "./utils.js"; //fonctions utilitaires
 // Size of pixel computed data
 const PAYLOAD_SIZE = 5; // [iter, smooth_iter, z_re, z_im, distance/escape angle]
 
-// cFractParam: Classe de metadonnées pour le calcul
+// #region cFractParam
+/* Classe de metadonnées pour le calcul */
 export class cFractParam {
   constructor(
     type = "MANDELBROT", // "MANDELBROT" ou "JULIA"
@@ -24,7 +25,7 @@ export class cFractParam {
     spanIm = 3.0, //sera écrasé
     maxIter = 100,
     r2Max = 100000.0,
-    juliaC = { re: -0.7, im: 0.27015 }, // Utilisé si type === "JULIA"
+    juliaC = { re: -0.7, im: 0.27015 } // Utilisé si type === "JULIA"
   ) {
     this.type = type; // "MANDELBROT" ou "JULIA"
     this.center = { re: centerRe, im: centerIm };
@@ -41,7 +42,7 @@ export class cFractParam {
       span: [this.span.re, this.span.im],
       max_iter: this.max_iter,
       r2_max: this.r2_max,
-      juliaC: [this.juliaC.re, this.juliaC.im],
+      juliaC: [this.juliaC.re, this.juliaC.im]
     });
   }
   //Clonage de l'objet
@@ -53,12 +54,14 @@ export class cFractParam {
       this.span.re,
       this.max_iter,
       this.r2_max,
-      { ...this.juliaC },
+      { ...this.juliaC }
     );
     p.span.im = this.span.im;
     return p;
   }
 }
+
+// #region cFract
 
 // Classe exportée vers l'extérieur: gère tout.
 export class cFract {
@@ -119,7 +122,8 @@ export class cFract {
     //Attache les événements autonomes
     //this.attachEvents();
   }
-  // #Region Manage - Gestion des étapes du calcul (asynchrone)
+  // #region Manage
+
   // Relance calcFull après changement de paramètre
   makeDirty() {
     this.isDirty = true;
@@ -141,7 +145,7 @@ export class cFract {
     return `${c.re.toFixed(digits)} ${c.im >= 0 ? "+" : ""}${c.im.toFixed(digits)}i`;
   }
   // Gestion du statut : affichage de c
-  updateStatusBar(c, px, py) {
+  updateStatusBar(c, px, py, data) {
     const status = document.getElementById(this.statusId);
     if (!status) return;
     let msg = this.complexToString(c) + ` | counter: ${this.calcCount}`;
@@ -152,6 +156,7 @@ export class cFract {
     }
     //position fenêtre
     msg += `  | px=${Math.floor(px)} py=${Math.floor(py)}`;
+    if (data) msg += ` | ${data}`;
     status.textContent = msg;
   }
   //Gestion du statut : affichage debug
@@ -161,9 +166,8 @@ export class cFract {
       status.textContent = `[INFO] ${msg} })`;
     }
   }
-  //
-  //#Region setters --- getters, setters & states ---
-  //
+  // #region setters
+
   // Gestion du type (encore non utilisé)
   setType(type, juliaC = null) {
     this.param.type = type; // 'MANDELBROT' ou 'JULIA'
@@ -207,7 +211,6 @@ export class cFract {
     const cF = this.param;
     // Fixed pointc, et affichage
     const mouseC = this.pixelToComplex({ x: px, y: py });
-    this.updateStatusBar(mouseC, px, py);
     // Ratio normalisé du pointeur par rapport au centre du canvas (-0.5 à +0.5)
     const w = this.canvas.width;
     const h = this.canvas.height;
@@ -219,6 +222,8 @@ export class cFract {
     // Ajustement final des échelles (spans)
     cF.span.re *= zoomFactor;
     cF.span.im *= zoomFactor;
+    // affichage
+    this.updateStatusBar(mouseC, px, py, `dia=${cF.span.re.toPrecision(1)}`);
     // Relance
     this.makeDirty();
   }
@@ -227,13 +232,20 @@ export class cFract {
     cF.center.re = cF.type === "JULIA" ? 0.0 : -0.7;
     cF.center.im = 0.0;
     cF.span.re = 3.0;
+    cF.max_iter = 100;
     this.updateAspect(); // Calcule span.im
     this.makeDirty();
   }
-  //Calcul d'orbite z(n+1):= z^2 + c (TODO: déléguer au Wasm)
-  /* return this.wasmEngine.compute_orbit_array(
+
+  // #region calc
+
+  /** Compute orbit of z0 z(n+1):= z^2 + c (TODO: déléguer au Wasm)
+   * with mechanism to update max_Iter
+   * return this.wasmEngine.compute_orbit_array(
         z0.re, z0.im, c.re, c.im, maxIter); */
-  directIter(z0, maxIter = this.param.max_iter) {
+  directIter(z0, toIter = this.param.max_iter) {
+    // Prepares extension of max_Iter when toIter <=0
+    const maxIter = toIter > 0 ? toIter : Math.round(1.1 * this.param.max_iter);
     const r2max = this.param.r2_max;
     const c = this.param.type === "JULIA" ? this.param.juliaC : z0;
     const cRe = c.re;
@@ -250,7 +262,11 @@ export class cFract {
       zRe = tmp;
       mod2 = zx2 + zy2;
       orbit.push({ re: zRe, im: zIm });
-      if (mod2 > r2max) break; // escaped
+      if (mod2 > r2max) {
+        // Escape: increases max_Iter to n (todo 2 : use DEM to be stable !)
+        if (n > this.param.max_iter) this.param.max_iter = n;
+        break; // escaped
+      }
     }
     return orbit;
   } /*directIter*/
@@ -271,17 +287,13 @@ export class cFract {
       this.param.span.im,
       this.param.max_iter,
       this.param.r2_max,
-      calcModeInt,
+      calcModeInt
     );
     // Extraction memoire: nouvelle méthode
     const ptr = this.wasmEngine.buffer_ptr(); // Float32 Wasm
     const payloadLen = this.canvas.width * this.canvas.height * PAYLOAD_SIZE;
     // Création d'une vue Float32Array directe sur la mémoire Wasm
-    const wasmBuffer = new Float32Array(
-      this.wasmMemory.buffer,
-      ptr,
-      payloadLen,
-    );
+    const wasmBuffer = new Float32Array(this.wasmMemory.buffer, ptr, payloadLen);
     // Transmutation du payload Wasm en ImageData via la LUT
     this.cImage.updateFromWasmPayload(wasmBuffer, this.param.max_iter);
     this.makeClean();
@@ -289,12 +301,11 @@ export class cFract {
 
   // Affiche les points fixes sur le canvas
   drawFixedPointsOverlay() {
-    const c =
-      this.param.type === "JULIA" ? this.param.juliaC : this.param.center;
+    const c = this.param.type === "JULIA" ? this.param.juliaC : this.param.center;
     const fixedPoints = cUtils.getFixedPoints(c);
     const ctx = this.ctx;
     ctx.save();
-    fixedPoints.forEach((fp) => {
+    fixedPoints.forEach(fp => {
       const pt = this.complexToPixel(fp.root);
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, 6, 0, 2 * Math.PI);
@@ -334,10 +345,7 @@ export class cFract {
 
   // #new TODO 1: Orbite de Mandelbrot seulement //TODO 3: généraliser à Julia
   computeOrbitCsv(cRe, cIm, maxIter) {
-    if (
-      this.wasmEngine &&
-      typeof this.wasmEngine.compute_orbit_csv === "function"
-    ) {
+    if (this.wasmEngine && typeof this.wasmEngine.compute_orbit_csv === "function") {
       return this.wasmEngine.compute_orbit_csv(cRe, cIm, maxIter);
     }
     return "#Not initialized";
@@ -348,7 +356,7 @@ export class cFract {
     let dragStart = { x: 0, y: 0 };
 
     // ZOOM À LA MOLETTE
-    this.canvas.addEventListener("wheel", (e) => {
+    this.canvas.addEventListener("wheel", e => {
       e.preventDefault();
       const rect = this.canvas.getBoundingClientRect();
       const px = e.clientX - rect.left;
@@ -358,7 +366,7 @@ export class cFract {
     });
 
     // GLISSER-DÉPLACER (DRAG) POUR DÉPLACER LE CENTRE (1/3)
-    this.canvas.addEventListener("mousedown", (e) => {
+    this.canvas.addEventListener("mousedown", e => {
       if (e.button === 0) {
         // Clic gauche
         isDragging = true;
@@ -367,19 +375,14 @@ export class cFract {
     });
 
     // GLISSER-DÉPLACER (DRAG) POUR DÉPLACER LE CENTRE (2/3)
-    window.addEventListener("mousemove", (e) => {
+    window.addEventListener("mousemove", e => {
       // Mise à jour de la barre de statut de ce cFract
       const rect = this.canvas.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
       const cF = this.param;
       // Dans la fenêtre ?
-      if (
-        px >= 0 &&
-        px <= this.canvas.width &&
-        py >= 0 &&
-        py <= this.canvas.height
-      ) {
+      if (px >= 0 && px <= this.canvas.width && py >= 0 && py <= this.canvas.height) {
         const mouseC = this.pixelToComplex({ x: px, y: py });
         this.updateStatusBar(mouseC, px, py);
         // Notification externe (ex: Mandelbrot avertit App pour rafraîchir Julia)
