@@ -106,6 +106,7 @@ export interface UserCommand {
  * todo 2: ajouter la rotation: roller+right click / two fingers rotation / angles entiers à ajouter à URL
  */
 export interface EventRouterCallbacks {
+    defaultCallback?: () => void;
     onHover?: (pC: ComplexPoint, pPx: PixelPoint) => void;
     onClick?: (pC: ComplexPoint, pPx: PixelPoint) => void;
     onZoom?: (centerPx: PixelPoint, factor: number) => void;
@@ -126,18 +127,31 @@ export interface ColorRGBA {
     b: number;
     a: number;
 }
+export interface IPalOptions {
+    cyclesH: number;
+    cyclesS: number;
+    cyclesV: number;
+    phaseH: number;
+    offsetV: number;
+    size: number;
+}
 export interface PaletteControlPoint {
     index: number;
     color: ColorRGBA;
     handleId?: string;
 }
 export interface IPalette {
-    demColor0: ColorRGBA;
+    IdxColor0: ColorRGBA;
     demColorClose: ColorRGBA;
     iterColorN: ColorRGBA;
     drawColor: ColorRGBA;
     nodes: PaletteControlPoint[];
-    getColorAt(t: number): ColorRGBA;
+    getColorAt(IterSmooth: number): ColorRGBA;
+}
+export interface IPaletteEditor {
+    container: HTMLElement;
+    params: IPalOptions;
+    lut: Uint8Array;
 }
 /** Contrat de perception pour l'Agent d' Exploration
  * @todo 2: définir des types pour les sorties ? */

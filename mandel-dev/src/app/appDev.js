@@ -2,8 +2,8 @@
 
 // App.js - 4.6 dev - copyright LeFractiste 2026
 
-import { cFract } from "./mandel.js";
-import { PaletteEditor } from "../pres/palette.js";
+import { cFract } from "../../testArea/mandel.js";
+import { PaletteEditor } from "../../testArea/palette.js";
 import { t_test } from "../analysis/analysis.js";
 import { InputRouter } from "./inputRouter.js";
 

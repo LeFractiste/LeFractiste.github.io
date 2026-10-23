@@ -9,11 +9,11 @@
 // MandelController: wrapper for the WebAssembly engine (MandelEngine)
 // Rust Webassembly module : for orbits and fractal calculations
 
-import init, { MandelEngine } from "../../pkg/rust_m.js"; //Web assembly package
+import init, { MandelEngine } from "../pkg/rust_m.js"; //Web assembly package
 import { cUtils } from "./utils.js"; //fonctions utilitaires
-import { IParams, cFractParams } from "../calc/cFractParams.js"; //migration en cours
-import { InputRouter } from "./inputRouter.js";
-import { cImage } from "../pres/cImage.js";
+import { IParams, cFractParams } from "../src/calc/cFractParams.js"; //migration en cours
+import { InputRouter } from "../src/app/inputRouter.js";
+import { cImage } from "../src/pres/cImage.js";
 
 // Size of pixel computed data
 const PAYLOAD_SIZE = 5; // [iter, smooth_iter, z_re, z_im, distance/escape angle]

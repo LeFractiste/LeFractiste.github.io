@@ -18,7 +18,7 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.js" //ajout des js pour typedoc
+    "src/**/*.js" //ajout des js de src pour typedoc
   ],
   "exclude": ["dist", "node_modules", "target", "testarea", "doc*", "**/*.rs"]
 }

@@ -95,6 +95,10 @@ export interface ExternalRayConfig {
   bailout: number;
 }
 
+// Valeur mémorisée de calcul à définir (intégrer DEM dedans)
+/* type ou class IterSmooth : number {
+} /**/
+
 /** Analyse de point */
 export interface PointAnalysisResult {
   escaped: boolean;
@@ -157,7 +161,9 @@ export interface UserCommand {
  * todo 2: rendre cohérent - tout en pix, avec pC optionnel ou non fourni, à calculer par le callback ?)
  * todo 2: ajouter la rotation: roller+right click / two fingers rotation / angles entiers à ajouter à URL
  */
+
 export interface EventRouterCallbacks {
+  defaultCallback?: () => void;
   onHover?: (pC: ComplexPoint, pPx: PixelPoint) => void;
   onClick?: (pC: ComplexPoint, pPx: PixelPoint) => void;
   onZoom?: (centerPx: PixelPoint, factor: number) => void;
@@ -176,6 +182,7 @@ export interface IInputRouter {
 // #endregion
 
 // #region Palette
+
 // Gestion Simplifiée de la Palette
 // ColorRGBA, PaletteControlPoint, IPalette
 export interface ColorRGBA {
@@ -185,19 +192,37 @@ export interface ColorRGBA {
   a: number;
 }
 
+// Options de palette continue
+export interface IPalOptions {
+  cyclesH: number;
+  cyclesS: number;
+  cyclesV: number;
+  phaseH: number;
+  offsetV: number;
+  size: number;
+}
+
 export interface PaletteControlPoint {
-  index: number; // Position dans la rampe [0..1]
+  index: number; // rename ColorIndex - Position dans la rampe [0..1] ?
   color: ColorRGBA;
   handleId?: string; // Lié à un handle graphique si en mode édition
 }
 
+// Options de palette fractale
 export interface IPalette {
-  demColor0: ColorRGBA;
+  IdxColor0: ColorRGBA;
   demColorClose: ColorRGBA;
   iterColorN: ColorRGBA;
   drawColor: ColorRGBA; //overlayColor
   nodes: PaletteControlPoint[];
-  getColorAt(t: number): ColorRGBA;
+  getColorAt(IterSmooth: number): ColorRGBA; //number -> type IterCalc
+}
+
+/* Palette editor */
+export interface IPaletteEditor {
+  container: HTMLElement; //rename: id
+  params: IPalOptions; //rename options
+  lut: Uint8Array; //rename lookUpTable --> palette ?
 }
 // #endregion
 

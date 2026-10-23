@@ -36,6 +36,6 @@ export class cFract {
     getOrbitCsv(): string;
     attachEvents(onPointSelected?: null): void;
 } /**cFract*/
-import { cImage } from "../pres/cImage.js";
-import { MandelEngine } from "../../pkg/rust_m.js";
+import { cImage } from "../src/pres/cImage.js";
+import { MandelEngine } from "../pkg/rust_m.js";
 //# sourceMappingURL=mandel.d.ts.map

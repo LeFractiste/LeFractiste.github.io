@@ -5,7 +5,7 @@
 // TODO 2: recherche des bons zooms pour un cDeep - comment est défini un mniJulia ?
 
 // #region Imports & Index
-import { cUtils } from "../app/utils.js";
+import { cUtils } from "../../testArea/utils.js";
 import { t_externalRay } from "./externalRay.js";
 import type { ComplexPoint, PointAnalysisResult, ICFractParent } from "../fractTypes.js";
 import {
