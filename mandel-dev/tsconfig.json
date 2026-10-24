@@ -10,7 +10,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src", //le fichier tsconfig se trouve dans mandel-dev, qui contient *.js, src/*.ts
+    "rootDir": "./src", //le fichier tsconfig se trouve dans mandel-dev, qui contient (*.js), src/*.ts
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -20,5 +20,5 @@
     "src/**/*.ts", //ts refactoring
     "src/**/*.js" //ajout des js pour typedoc
   ],
-  "exclude": ["dist", "node_modules", "pkg", "target", "testarea", "docs", "**/*.rs"]
+  "exclude": ["dist", "node_modules", "pkg", "target", "testdev", "docs", "**/*.rs"]
 }

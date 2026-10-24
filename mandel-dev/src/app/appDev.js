@@ -4,7 +4,7 @@
 
 console.log("AddDev 1");
 
-import { PaletteEditor } from "../pres/palette.js";
+import { PaletteEditor } from "../../testdev/palette.js";
 import { t_test } from "../analysis/analysis.js";
 import { InputRouter } from "../app/inputRouter.js";
 import { cFract } from "../app/cFract.js"; // main Object
