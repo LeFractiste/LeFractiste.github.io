@@ -1,4 +1,4 @@
-// Module analysis.math - V1.0 - Copyright LeFractiste 2026
+// Module analysis.math - V1.1 - Copyright LeFractiste 2026
 
 // #region Imports & Documentation
 import { ComplexPoint, PointAnalysisResult } from "../fractTypes.js";
@@ -11,11 +11,12 @@ import { ComplexPoint, PointAnalysisResult } from "../fractTypes.js";
  */
 // #endregion
 
-// #region Core Math Analysis
+// #region ANALYSE
 export function analyzePointMath(
   c_re: number,
   c_im: number,
-  maxIter = 1000
+  maxIter = 1000,
+  maxR2 = 4 //100000 fonctionne? (petite triche en fait: angle au rayon 2 correct - Hubbard tree à faire)
 ): PointAnalysisResult {
   let z_re = 0,
     z_im = 0,
@@ -45,8 +46,7 @@ export function analyzePointMath(
         }
       }
     }
-    if (mod2 > 4.0) {
-      //encore ce 4 qui devrait être grand je crois
+    if (mod2 > maxR2) {
       let externalAngle = (Math.atan2(z_im, z_re) / (2 * Math.PI) + 1) % 1;
       let mod = Math.sqrt(mod2),
         dz_mod = Math.hypot(dz_re, dz_im);
@@ -71,6 +71,8 @@ export function analyzePointMath(
     angleAntenna: Math.atan2(dz_im, dz_re)
   };
 }
+
+// #region MINIBROT
 
 // Raffinement du centre exact par Newton 2D : F_P(c) = 0
 export function findMinibrotCenterMath(
@@ -108,7 +110,7 @@ export function findMinibrotCenterMath(
 }
 // #endregion
 
-// #region QuadTree Spatial Scan
+// #region QUADTREE
 export class QuadNode {
   public children: QuadNode[] = [];
   public data: any = null;

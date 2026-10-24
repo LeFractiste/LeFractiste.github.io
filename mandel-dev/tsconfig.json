@@ -17,8 +17,8 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "src/**/*.ts",
+    "src/**/*.ts", //ts refactoring
     "src/**/*.js" //ajout des js pour typedoc
   ],
-  "exclude": ["dist", "node_modules", "target", "testarea", "doc*", "**/*.rs"]
+  "exclude": ["dist", "node_modules", "pkg", "target", "testarea", "docs", "**/*.rs"]
 }

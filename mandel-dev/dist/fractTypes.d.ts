@@ -1,4 +1,4 @@
-/** Point dans les plans complexe et écran (pixels)
+/** Point dans le plans complexe
  * //@todo 2: préparer le passage à la précision multiple!
  */
 export interface ComplexPoint {
@@ -11,34 +11,59 @@ export interface PixelPoint {
 }
 export type FractType = "MAIN" | "MANDELBROT" | "JULIA";
 export type CalcMode = "DIRECT" | "DEM";
-export interface IParams {
+export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
+/** Defines the shared parameters
+ * @todo 2: add width/height and r2max/iterMax
+ * */
+export interface IAlgoParams {
+    cDeep?: ComplexPoint;
+    iterTry?: number; /** @todo: to compute new iterMax when zooming */
+    max_iter?: number;
+    r2_max?: number;
+    juliaC?: ComplexPoint;
+    dirty: boolean;
+}
+export interface IViewportParams {
     center: ComplexPoint;
     dia: number;
-    span: {
-        re: number;
-        im: number;
-    };
-    max_iter: number;
-    r2_max: number;
-    juliaC?: ComplexPoint;
+    size?: PixelPoint;
     angleDeg?: number;
     aspectRatio: number;
+    span: ComplexPoint;
+    pixelVector?: ComplexPoint;
+    pix2c(pix: PixelPoint): ComplexPoint;
+    c2pix(c: ComplexPoint): PixelPoint;
 }
-/** Interface d'accès minimal au moteur cFract (parent) pour le rendu */
-export interface ICFractParent {
-    canvas: CanvasRenderingContext2D;
-    render(): void;
-    palette: {
+export interface IParams extends IViewportParams, IAlgoParams {
+    aspectRatio: number;
+}
+/** Interface d'accès minimal au moteur cFract (parent)
+ * @todo 1: move functions to params !
+ */
+export interface IParent {
+    params: IParams;
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    palette?: {
         orbitColor?: string;
         trajectoryColor?: string;
         pointColor?: string;
     };
-    c2pix(p: ComplexPoint): PixelPoint;
-    pix2c(pt: PixelPoint): ComplexPoint;
-    setCenter(c: ComplexPoint): void;
-    setSpan(span: number): void;
-    resetZoom(): void;
-    setCalcMode(cmode: CalcMode): void;
+    initParent(paletteLut?: Uint8Array): void;
+    render(): void;
+}
+export interface ICalcOptions {
+    mode: CalcMode;
+    resX: number;
+    resY: number;
+}
+export interface CalcAppState {
+    currentMode: AppMode;
+    isDirty: boolean;
+    overlayDirty: boolean;
+    selectedPoint?: ComplexPoint;
+    lockedPoint?: ComplexPoint;
+    deepAnchor?: ComplexPoint;
 }
 /** Types de trajectoires/collections pour adapter le mode de dessin */
 export type TrajectoryType = "extRay" | "orbit" | "minibrots";
@@ -54,7 +79,7 @@ export interface Trajectory {
     current: ComplexPoint;
     type: TrajectoryType;
     points?: ComplexPoint[];
-    parent?: ICFractParent;
+    parent?: IParent;
     moveAlong?(stepSize: number, field: (p: ComplexPoint) => ComplexPoint): ComplexPoint;
     draw?(options?: DrawOptions): void;
 }
@@ -76,14 +101,6 @@ export interface PointAnalysisResult {
     angleAntenna?: number;
 }
 export type AppMode = "PAN_ZOOM" | "ZOONORAMA_EXPLORE" | "EXTERNAL_RAY" | "PALETTE_EDIT";
-export interface AppState {
-    currentMode: AppMode;
-    isDirty: boolean;
-    overlayDirty: boolean;
-    selectedPoint?: ComplexPoint;
-    lockedPoint?: ComplexPoint;
-    deepAnchor?: ComplexPoint;
-}
 export type HandleType = "cDeep" | "zoonoramaA" | "zoonoramaB" | "paletteNode";
 /** Object for mouse interaction */
 export interface InteractiveHandle {
@@ -116,8 +133,8 @@ export interface IInputRouter {
     activeMode: AppMode;
     handles: InteractiveHandle[];
     canvasEl: HTMLCanvasElement;
-    registerHandle: (handle: InteractiveHandle) => void;
     bindDOMEvents: (cb: EventRouterCallbacks) => void;
+    registerHandle: (handle: InteractiveHandle) => void;
     dispatch: (command: UserCommand) => void;
 }
 export interface ColorRGBA {

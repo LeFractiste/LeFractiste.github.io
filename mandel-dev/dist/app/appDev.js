@@ -1,9 +1,11 @@
-"use strict";
 // App.js - 4.6 dev - copyright LeFractiste 2026
-import { cFract } from "./mandel.js";
+/** @todo: passer aussi en ts ! */
+console.log("AddDev 1");
 import { PaletteEditor } from "../pres/palette.js";
 import { t_test } from "../analysis/analysis.js";
-import { InputRouter } from "./inputRouter.js";
+import { InputRouter } from "../app/inputRouter.js";
+import { cFract } from "../app/cFract.js"; // main Object
+console.log("AppDev 2");
 // --- ÉTATS GLOBAUX ---
 /** @type {cFract} */
 let mandel;
@@ -51,10 +53,10 @@ function setupAppRouter() {
         onClick: (targetC, px) => {
             lockedC = targetC;
             updateStatusBar("Locked:", lockedC, px.x, px.y);
-            julia.setType("JULIA", lockedC);
+            julia.del_setType("JULIA", lockedC);
         },
-        onZoom: (centerPx, factor) => mandel.zoom(centerPx.x, centerPx.y, factor),
-        onPan: deltaC => mandel.setCenter(deltaC)
+        onZoom: (centerPx, factor) => mandel.del_zoom(centerPx.x, centerPx.y, factor),
+        onPan: deltaC => mandel.del_setCenter(deltaC)
     });
     const routerJulia = new InputRouter(julia, julia.canvas);
     routerJulia.bindDOMEvents({
@@ -62,8 +64,8 @@ function setupAppRouter() {
             updateStatusBar("Julia:", mouseC, px.x, px.y);
         },
         onClick: undefined,
-        onZoom: (centerPx, factor) => julia.zoom(centerPx.x, centerPx.y, factor),
-        onPan: deltaC => julia.setCenter(deltaC)
+        onZoom: (centerPx, factor) => julia.del_zoom(centerPx.x, centerPx.y, factor),
+        onPan: deltaC => julia.del_setCenter(deltaC)
     });
 }
 // --- ÉCOUTEURS D'ÉVÉNEMENTS (INTERACTION UX) ---
@@ -104,10 +106,10 @@ function oldEventListeners() {
     const btnResetM = document.getElementById("btnResetMandel");
     if (btnResetM) {
         btnResetM.addEventListener("click", () => {
-            mandel.resetZoom();
+            mandel.del_resetZoom();
             //lockedC = null; //mieux de garder le point visible
             if (lockedC) {
-                const reticlePx = mandel.c2pix(lockedC);
+                const reticlePx = mandel.del_c2pix(lockedC);
                 drawReticle(canvasM, reticlePx.x, reticlePx.y);
             }
         });
@@ -116,7 +118,7 @@ function oldEventListeners() {
     const btnResetJ = document.getElementById("btnResetJulia");
     if (btnResetJ) {
         btnResetJ.addEventListener("click", () => {
-            julia.resetZoom();
+            julia.del_resetZoom();
         });
     }
     // LISTBOX INTERFACE CALC MODE  //@todo 2: implement on html !
@@ -124,8 +126,8 @@ function oldEventListeners() {
     if (selectMode) {
         selectMode.addEventListener("change", e => {
             const mode = e.target.value; // 'DIRECT' ou 'DEM'
-            mandel.setCalcMode(mode);
-            julia.setCalcMode(mode);
+            mandel.del_setCalcMode(mode);
+            julia.del_setCalcMode(mode);
             //mandel.render(); //auto
             //julia.render(); //auto
         });

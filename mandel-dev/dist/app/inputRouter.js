@@ -1,6 +1,7 @@
 /**
  * Routeur d'événements unifié (InputRouter) - Mouse, touch et gestures.
- * - Gère le Pan (Glisser), Zoom (Molette & Pinch), Survol et Clics et Touches.
+ * - Gère le Pan (Glisser), Zoom (Molette & Pinch), Survol (Hoover) et Clics et Touches.
+ * - Gère les callbacks (cb)
  * - Anticipe @todo:  la sélection de points complexes et la manipulation de poignées (Handles).
  */
 // #region InputRouter Class
@@ -9,6 +10,7 @@ export class InputRouter {
     handles = [];
     canvasEl; //node.js
     parent;
+    params;
     isDragging = false;
     lastMouse = { x: 0, y: 0 };
     touchStartDist = 0; // Pour le Pinch-to-zoom Smartphone
@@ -16,6 +18,7 @@ export class InputRouter {
     constructor(parent, canvasEl) {
         this.parent = parent;
         this.canvasEl = canvasEl;
+        this.params = this.parent.params;
     }
     //interface - not defined yet
     registerHandle(handle) { }
@@ -25,6 +28,7 @@ export class InputRouter {
         this.bindMouseEvents(cb);
         this.bindTouchEvents(cb);
     }
+    //interface - not defined yet
     dispatch(command) { }
     // #region Mouse Listeners
     // Ajout des events MOUSE - les callbacks peuvent être indéfinis !
@@ -58,7 +62,7 @@ export class InputRouter {
                 return;
             } //sortie écran
             if (cb.onHover && !this.isDragging)
-                cb.onHover(this.parent.pix2c(pt), pt);
+                cb.onHover(this.params.pix2c(pt), pt);
             if (this.isDragging) {
                 const dx = e.clientX - this.lastMouse.x;
                 const dy = e.clientY - this.lastMouse.y;
@@ -72,7 +76,7 @@ export class InputRouter {
         // MOUSE UP: envoie onClick(c) et clôture isDragging
         window.addEventListener("mouseup", e => {
             if (this.isDragging && cb.onClick && !hasMoved) {
-                const pC = this.parent.pix2c(this.lastMouse);
+                const pC = this.params.pix2c(this.lastMouse);
                 cb.onClick(pC, this.lastMouse);
             }
             this.isDragging = false;
@@ -119,7 +123,7 @@ export class InputRouter {
         // TOUCHEND: fin move ou onClick
         this.canvasEl.addEventListener("touchend", () => {
             if (this.isDragging && !hasMoved && cb.onClick) {
-                cb.onClick(this.parent.pix2c(this.lastMouse), this.lastMouse);
+                cb.onClick(this.params.pix2c(this.lastMouse), this.lastMouse);
             }
             this.isDragging = false;
             this.touchStartDist = 0;
@@ -134,8 +138,8 @@ export class InputRouter {
     }
     // Computes a complex vector from delta pixels
     pix2cVector(dxPx, dyPx) {
-        const p0 = this.parent.pix2c({ x: 0, y: 0 });
-        const p1 = this.parent.pix2c({ x: dxPx, y: dyPx });
+        const p0 = this.params.pix2c({ x: 0, y: 0 });
+        const p1 = this.params.pix2c({ x: dxPx, y: dyPx });
         return { re: p0.re - p1.re, im: p0.im - p1.im };
     }
 }

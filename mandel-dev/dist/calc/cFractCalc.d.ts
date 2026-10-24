@@ -1,20 +1,50 @@
+import { ComplexPoint, CalcMode, ICalcOptions } from "../fractTypes.js";
 import { cFractParams } from "../calc/cFractParams.js";
-import { ComplexPoint } from "../fractTypes.js";
-/** Expose compute algorithms and Wasm bridge */
+import { cFract } from "../app/cFract.js";
+/** Copy of all data required for Wasm-Rust and computing */
+export declare class CalcOptions implements ICalcOptions {
+    typeName: string;
+    resX: number;
+    resY: number;
+    mode: CalcMode;
+    center_re: number;
+    center_im: number;
+    span_re: number;
+    span_im: number;
+    iterMax: number;
+    r2max: number;
+    isJulia: boolean;
+    juliaC_re: number;
+    juliaC_im: number;
+    readonly PAYLOAD_SIZE = 5;
+    get payloadLen(): number;
+    get calcMode(): number;
+    /** Constructor: attendue par les fonctions de Wasm-Rust */
+    constructor(params: cFractParams, canvas: HTMLCanvasElement);
+}
+/** cFractCalc: Expose compute algorithms and Wasm bridge */
 export declare class cFractCalc {
-    private width;
-    private height;
+    private parent;
+    options: CalcOptions;
+    isBusy: boolean;
+    calcCount: number;
     private wasmEngine;
     private wasmMemory;
+    private calcBuffer;
     private isWasmReady;
     private iterBuffer;
-    constructor(width?: number, height?: number);
-    init(): Promise<void>;
-    setWasmReference(wasmEngine: any, wasmMemory: any): void;
+    private Z0buffer;
+    private ZNdataBuffer;
+    get wasmActive(): boolean;
+    constructor(parent: cFract);
+    initCalc(): Promise<void>;
     setCalcMode(mode: string): void;
-    directIter(z0: ComplexPoint, c: ComplexPoint, maxIter: number, r2Max: number): number;
+    recalcAll(): void;
+    /** Calcul d'orbite z(n+1):= z^2 + c
+     * @todo 2: déléguer iter au Wasm */
+    directIter(z0: ComplexPoint, maxIter?: number): number;
     /** Calcul principal, avec fallback */
-    calcFullJS(params: cFractParams): Uint32Array;
-    computeWasmPayload(param: cFractParams, width: number, height: number, calcMode: string): Float32Array;
+    calcFull(): Uint32Array;
+    computeWasmPayload(): Float32Array;
 }
 //# sourceMappingURL=cFractCalc.d.ts.map

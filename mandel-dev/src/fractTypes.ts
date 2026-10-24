@@ -1,23 +1,26 @@
 // src/fractTypes.ts - V0.2 - copyright LeFractiste 2026
 
-// Helper pour cFract: défint les interfaces principales de l'application / package.
+// Helper pour cFract: définit les interfaces publiques principales de l'application / package.
 // Sert à cadrer le refactoring (et la génération de code compatible du legacy).
 // Utile pour donner à App les billes pour utiliser les données générées.
 
 // Pour la V0.3:
-// @todo 2: cFract pourrait partager une copie des objets, comme cela App ne doit pas les instancier ? (cDeep, cPath ?)
+// @todo 2: cFract partage une copie des objets, comme cela App ne doit pas les instancier ? (cDeep, cPath ?)
 // @todo 2: définir les interfaces associées aux aspects html (div.content, image, events)
 // @todo 2: définir les interfaces associées au code Rust et aux calculs distribués partout, y compris les outputs (distance/potential -> palette)
 
 // #region Params
 
-/** Point dans les plans complexe et écran (pixels)
+console.log("fractTypes 1");
+
+/** Point dans le plans complexe
  * //@todo 2: préparer le passage à la précision multiple!
  */
 export interface ComplexPoint {
   re: number;
   im: number;
 }
+// Coordonnées canvas ou écran (souvent entier) - y positive down !
 export interface PixelPoint {
   x: number;
   y: number;
@@ -25,44 +28,90 @@ export interface PixelPoint {
 
 // Classes - Main sera le Mandelbrot d'analyse, avec les objets Julia + analyse / palette associés
 export type FractType = "MAIN" | "MANDELBROT" | "JULIA";
-export type CalcMode = "DIRECT" | "DEM";
+// Computation mode, handled by cFractCalc
+export type CalcMode = "DIRECT" | "DEM"; // todo 2+3: | "Hybrid" | "QuadHybrid" | "BigNumQH";
+// Error levels for cTest
+export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
 
-export interface IParams {
+/** Defines the shared parameters
+ * @todo 2: add width/height and r2max/iterMax
+ * */
+export interface IAlgoParams {
   //type?: string; //inutile: if (Param.JuliaC) {type="JULIA";}
-  center: ComplexPoint;
-  dia: number; //todo 2: renommer radius plus tard
-  span: { re: number; im: number }; // Propriété calculée
-  max_iter: number; //renommer iterMax et R2Max dès que compilable
-  r2_max: number;
-  juliaC?: ComplexPoint;
-  angleDeg?: number;
-  aspectRatio: number;
-  // @todo 2: décider où va la conversion (besoin de taille d'image) - cFract ou params --> params
-  //set span(c: ComplexPoint);
-  //toMetadata(): string;
-  //clone(): IParams;
+  parent?: IParent;
+  cDeep?: ComplexPoint; // point of interest - mouse hover/zoom
+  iterTry?: number; /** @todo: to compute new iterMax when zooming */
+  max_iter: number; //à renommer iterMax et R2Max dès que compilable //@todo 2: remove: for calc only
+  r2_max: number; //à renommer R2max
+  juliaC?: ComplexPoint; //defined for Julia and MandelMain. Undefined for Mandelbrot set
+  // Used for auto recalc
+  dirty: boolean; //for asynchroneous recalc
 }
 
-/** Interface d'accès minimal au moteur cFract (parent) pour le rendu */
-export interface ICFractParent {
+export interface IViewportParams {
+  center: ComplexPoint; // centre of image
+  dia: number; //diameter represented around centre.re //@todo 2: depending on min(W,H)
+  size: PixelPoint; //computed window x=width (to right), y=height (to bottom)
+  angleDeg?: number; //rotation around re axis //@todo: not implemented
+  aspectRatio: number; //canvas width/heigth
+  span: ComplexPoint; // Propriété calculée
+  //pixelVector2c?: ComplexPoint; // pix2c(deltax, deltay);
+
+  pix2c(pix: PixelPoint): ComplexPoint;
+  c2pix(c: ComplexPoint): PixelPoint;
+
+  //c2pix and pix2c ? (no: different projection = other params & arguments)
+}
+
+// Composition d'interfaces :
+export interface IParams extends IViewportParams, IAlgoParams {}
+
+/** Interface d'accès minimal au moteur cFract (parent)
+ * @todo 1: move functions to params !
+ */
+export interface IParent {
   // Graphisme
-  canvas: CanvasRenderingContext2D;
-  render(): void;
-  palette: {
+  params: IParams;
+  calc: ICalc;
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  palette?: {
     orbitColor?: string;
     trajectoryColor?: string;
     pointColor?: string;
   };
-  // Projection
-  c2pix(p: ComplexPoint): PixelPoint;
-  pix2c(pt: PixelPoint): ComplexPoint;
-  // Navigation - une sous classe navigation?
-  setCenter(c: ComplexPoint): void;
-  setSpan(span: number): void;
-  resetZoom(): void;
-  // Calcul
-  setCalcMode(cmode: CalcMode): void;
+  initParent(paletteLut?: Uint8Array): void;
+  del_render(): void;
+  updateStatusBar(c: ComplexPoint, px: number, py: number): void;
+  classConsole(msg: string): void;
   // orbit
+}
+
+// #region Calc
+// CalcOptions: required to launch cFractCalc
+export interface ICalcOptions {
+  mode: CalcMode;
+  resX: number; // different for Rust in case of fast zoom and QuadTree
+  resY: number;
+}
+
+// For calc state machine
+export interface CalcAppState {
+  currentMode: AppMode;
+  isDirty: boolean; // Nécessite un re-calcul du canvas principal
+  overlayDirty: boolean; // Nécessite un re-calcul de l'overlay vectoriel
+  selectedPoint?: ComplexPoint;
+  lockedPoint?: ComplexPoint;
+  deepAnchor?: ComplexPoint; // Point 'S' d'intérêt pour la descente
+}
+
+export interface ICalc {
+  options: ICalcOptions;
+  isBusy: boolean;
+  calcCount: number;
+  calcBuffer: Float32Array;
+  wasmActive: boolean;
+  initCalc(): void;
 }
 
 // #end region
@@ -83,7 +132,7 @@ export interface Trajectory {
   current: ComplexPoint;
   type: TrajectoryType;
   points?: ComplexPoint[];
-  parent?: ICFractParent;
+  parent?: IParent;
   moveAlong?(stepSize: number, field: (p: ComplexPoint) => ComplexPoint): ComplexPoint;
   draw?(options?: DrawOptions): void;
 }
@@ -111,14 +160,6 @@ export interface PointAnalysisResult {
 // App: mode à revoir ?
 export type AppMode = "PAN_ZOOM" | "ZOONORAMA_EXPLORE" | "EXTERNAL_RAY" | "PALETTE_EDIT";
 
-export interface AppState {
-  currentMode: AppMode;
-  isDirty: boolean; // Nécessite un re-calcul du canvas principal
-  overlayDirty: boolean; // Nécessite un re-calcul de l'overlay vectoriel
-  selectedPoint?: ComplexPoint;
-  lockedPoint?: ComplexPoint;
-  deepAnchor?: ComplexPoint; // Point 'S' d'intérêt pour la descente
-}
 // #endregion
 
 // #region Graph
@@ -169,8 +210,9 @@ export interface IInputRouter {
   activeMode: AppMode;
   handles: InteractiveHandle[];
   canvasEl: HTMLCanvasElement;
-  registerHandle: (handle: InteractiveHandle) => void;
   bindDOMEvents: (cb: EventRouterCallbacks) => void;
+  registerHandle: (handle: InteractiveHandle) => void;
+
   dispatch: (command: UserCommand) => void;
 }
 // #endregion

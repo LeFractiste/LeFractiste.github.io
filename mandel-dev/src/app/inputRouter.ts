@@ -2,9 +2,10 @@
 import {
   ComplexPoint,
   PixelPoint,
-  ICFractParent,
+  IParent,
+  IParams,
   InteractiveHandle,
-  EventRouterCallbacks,
+  EventRouterCallbacks, //cb events: onPan, onHoover, onZoom, onClick
   IInputRouter,
   UserCommand,
   AppMode
@@ -12,7 +13,8 @@ import {
 
 /**
  * Routeur d'événements unifié (InputRouter) - Mouse, touch et gestures.
- * - Gère le Pan (Glisser), Zoom (Molette & Pinch), Survol et Clics et Touches.
+ * - Gère le Pan (Glisser), Zoom (Molette & Pinch), Survol (Hoover) et Clics et Touches.
+ * - Gère les callbacks (cb)
  * - Anticipe @todo:  la sélection de points complexes et la manipulation de poignées (Handles).
  */
 
@@ -21,15 +23,18 @@ export class InputRouter implements IInputRouter {
   public activeMode: AppMode = "PAN_ZOOM";
   public handles: InteractiveHandle[] = [];
   public canvasEl: HTMLCanvasElement; //node.js
-  private parent: ICFractParent;
+  private parent: IParent;
+  private params: IParams;
+
   private isDragging = false;
   private lastMouse: PixelPoint = { x: 0, y: 0 };
   private touchStartDist = 0; // Pour le Pinch-to-zoom Smartphone
 
   /** @todo: modifier la déclaration pour injecter les événements via mandel.onHoover */
-  constructor(parent: ICFractParent, canvasEl: HTMLCanvasElement) {
+  constructor(parent: IParent, canvasEl: HTMLCanvasElement) {
     this.parent = parent;
     this.canvasEl = canvasEl;
+    this.params = this.parent.params;
   }
 
   //interface - not defined yet
@@ -42,12 +47,14 @@ export class InputRouter implements IInputRouter {
     this.bindTouchEvents(cb);
   }
 
+  //interface - not defined yet
   public dispatch(command: UserCommand): void {}
 
   // #region Mouse Listeners
   // Ajout des events MOUSE - les callbacks peuvent être indéfinis !
   private bindMouseEvents(cb: EventRouterCallbacks): void {
     let hasMoved: boolean;
+
     // MOUSE WHEEL: zoom on point
     this.canvasEl.addEventListener("wheel", e => {
       e.preventDefault();
@@ -74,7 +81,7 @@ export class InputRouter implements IInputRouter {
         this.isDragging = false;
         return;
       } //sortie écran
-      if (cb.onHover && !this.isDragging) cb.onHover(this.parent.pix2c(pt), pt);
+      if (cb.onHover && !this.isDragging) cb.onHover(this.params.pix2c(pt), pt);
       if (this.isDragging) {
         const dx = e.clientX - this.lastMouse.x;
         const dy = e.clientY - this.lastMouse.y;
@@ -86,7 +93,7 @@ export class InputRouter implements IInputRouter {
     // MOUSE UP: envoie onClick(c) et clôture isDragging
     window.addEventListener("mouseup", e => {
       if (this.isDragging && cb.onClick && !hasMoved) {
-        const pC = this.parent.pix2c(this.lastMouse);
+        const pC = this.params.pix2c(this.lastMouse);
         cb.onClick(pC, this.lastMouse);
       }
       this.isDragging = false;
@@ -142,7 +149,7 @@ export class InputRouter implements IInputRouter {
     // TOUCHEND: fin move ou onClick
     this.canvasEl.addEventListener("touchend", () => {
       if (this.isDragging && !hasMoved && cb.onClick) {
-        cb.onClick(this.parent.pix2c(this.lastMouse), this.lastMouse);
+        cb.onClick(this.params.pix2c(this.lastMouse), this.lastMouse);
       }
       this.isDragging = false;
       this.touchStartDist = 0;
@@ -159,8 +166,8 @@ export class InputRouter implements IInputRouter {
 
   // Computes a complex vector from delta pixels
   private pix2cVector(dxPx: number, dyPx: number): ComplexPoint {
-    const p0 = this.parent.pix2c({ x: 0, y: 0 });
-    const p1 = this.parent.pix2c({ x: dxPx, y: dyPx });
+    const p0 = this.params.pix2c({ x: 0, y: 0 });
+    const p1 = this.params.pix2c({ x: dxPx, y: dyPx });
     return { re: p0.re - p1.re, im: p0.im - p1.im };
   }
   // #endregion

@@ -5,7 +5,7 @@ import { ComplexPoint, PointAnalysisResult } from "../fractTypes.js";
  * - findMinibrotCenterMath: Raffinement du centre exact d'un minibrot par Newton.
  * - QuadNode: Structure spatiale récursive pour balayage rapide de zones.
  */
-export declare function analyzePointMath(c_re: number, c_im: number, maxIter?: number): PointAnalysisResult;
+export declare function analyzePointMath(c_re: number, c_im: number, maxIter?: number, maxR2?: number): PointAnalysisResult;
 export declare function findMinibrotCenterMath(cInit_re: number, cInit_im: number, period: number, maxSteps?: number): ComplexPoint;
 export declare class QuadNode {
     x: number;

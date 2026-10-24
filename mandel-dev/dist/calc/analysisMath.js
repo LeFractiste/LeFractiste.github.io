@@ -1,4 +1,4 @@
-// Module analysis.math - V1.0 - Copyright LeFractiste 2026
+// Module analysis.math - V1.1 - Copyright LeFractiste 2026
 /**
  * Calculs purs d'analyse fractale (Orbite, Newton 2D, Quadtree).
  * - analyzePointMath: Analyse du comportement d'un point c (échappement, DEM, période).
@@ -6,8 +6,9 @@
  * - QuadNode: Structure spatiale récursive pour balayage rapide de zones.
  */
 // #endregion
-// #region Core Math Analysis
-export function analyzePointMath(c_re, c_im, maxIter = 1000) {
+// #region ANALYSE
+export function analyzePointMath(c_re, c_im, maxIter = 1000, maxR2 = 4 //100000 fonctionne? (petite triche en fait: angle au rayon 2 correct - Hubbard tree à faire)
+) {
     let z_re = 0, z_im = 0, dz_re = 0, dz_im = 0;
     let orbit = [];
     let detectedPeriod = 0, minDiff = Infinity;
@@ -32,8 +33,7 @@ export function analyzePointMath(c_re, c_im, maxIter = 1000) {
                 }
             }
         }
-        if (mod2 > 4.0) {
-            //encore ce 4 qui devrait être grand je crois
+        if (mod2 > maxR2) {
             let externalAngle = (Math.atan2(z_im, z_re) / (2 * Math.PI) + 1) % 1;
             let mod = Math.sqrt(mod2), dz_mod = Math.hypot(dz_re, dz_im);
             let demDistance = (2 * mod * Math.log(mod)) / dz_mod;
@@ -57,6 +57,7 @@ export function analyzePointMath(c_re, c_im, maxIter = 1000) {
         angleAntenna: Math.atan2(dz_im, dz_re)
     };
 }
+// #region MINIBROT
 // Raffinement du centre exact par Newton 2D : F_P(c) = 0
 export function findMinibrotCenterMath(cInit_re, cInit_im, period, maxSteps = 10) {
     let c_re = cInit_re, c_im = cInit_im;
@@ -85,7 +86,7 @@ export function findMinibrotCenterMath(cInit_re, cInit_im, period, maxSteps = 10
     return { re: c_re, im: c_im };
 }
 // #endregion
-// #region QuadTree Spatial Scan
+// #region QUADTREE
 export class QuadNode {
     x;
     y;

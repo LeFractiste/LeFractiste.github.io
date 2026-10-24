@@ -8,9 +8,9 @@ import type { ComplexPoint, PointAnalysisResult, ICFractParent } from "../fractT
 export declare function t_test(): void;
 export declare function t_analysis(cDeep?: ComplexPoint): string;
 export declare class cFractAnalysis {
-    parent?: ICFractParent | undefined;
+    parent?: ICFractParent;
     detectedMinibrots: ComplexPoint[];
-    constructor(parent?: ICFractParent | undefined);
+    constructor(parent?: ICFractParent);
     analyzePoint(c_re: number, c_im: number, maxIter?: number): PointAnalysisResult;
     findMinibrotCenter(cInit_re: number, cInit_im: number, period: number, maxSteps?: number): ComplexPoint;
     generateReportText(analysisResult: PointAnalysisResult): string;

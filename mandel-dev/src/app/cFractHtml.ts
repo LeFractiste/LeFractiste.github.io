@@ -4,11 +4,11 @@
 /** // Helper d'injection HTML/CSS pour cFract
  * @todo: placer les appels dans l'autre sens - mandel appelle helper-html ! */
 
-import { ICFractParent, ComplexPoint, FractType } from "../fractTypes.js";
+import { FractType } from "../fractTypes.js";
 import { cFractParams } from "../calc/cFractParams"; //utile ?
-import { cFract } from "../app/cFract.js"; //nécessaire ?
 
-export interface htmlFractContainer {
+// IHTMLFractContainer: links to HTML container
+export interface IHTMLFractContainer {
   canvasId: string;
   type: FractType;
   statusId: string;
@@ -16,18 +16,26 @@ export interface htmlFractContainer {
   canvasEl: HTMLCanvasElement;
   statusEl: HTMLElement;
 }
-
-export interface htmlSetupOptions {
+// IHTMLSetupOptions: contents of HTML container
+export interface IHTMLSetupOptions {
   containerId: string;
   width?: number;
   height?: number;
   showControls?: boolean; //non implémenté?
   showStatusBar?: boolean; //true
 }
+// IHTMLSearchOptions: data for URL (Mandelbrot only)
+export type HTMLSearchOptions = {
+  typeName: String; //Mandelbrot!
+  re: number;
+  im: number;
+  dia: number;
+  //pal?: string; //à faire: nom de palette
+};
 
 /** Initialise le div html avec canvas, boutons, statusBar,...
  * @todo: bouton ZoomReset serait ajouté par le constructeur de cFract ?  (ici canvas minimum) */
-export function setupFractalCanvas(options: htmlSetupOptions): htmlFractContainer {
+export function setupFractalCanvas(options: IHTMLSetupOptions): IHTMLFractContainer {
   const { containerId, width = 800, height = 600, showStatusBar = true } = options;
   const ftype: FractType = (containerId as FractType) || ("MANDELBROT" as FractType);
   const container = document.getElementById(containerId);
@@ -56,23 +64,22 @@ export function setupFractalCanvas(options: htmlSetupOptions): htmlFractContaine
   };
 }
 
-// Lit les paramètres dans l'url, si définis - devrait renvoyer un objet Params je pense
-export function parseHashParams(): cFractParams {
+// Lit les paramètres dans l'url, si définis - devrait recevoir un objet Params je pense
+export function updateParamsFromURL(params: cFractParams) {
   const hash = window.location.hash.substring(1);
   const paramsData = new URLSearchParams(hash);
-  const type: string = paramsData.get("type") || "MANDELBROT"; //type
-  const params = new cFractParams(type);
-  params.center = {
-    re: parseFloat(paramsData.get("re") || "-0.75"), //centreRe
-    im: parseFloat(paramsData.get("im") || "0.0") //centreIm
-  };
-  params.dia = parseFloat(paramsData.get("dia") || "3.0"); //spanRe
+  if (params.typeName !== "MANDELBROT") return;
+  // params.typeName: paramsData.get("type") || "MANDELBROT"; //type
+  const re: number = parseFloat(paramsData.get("re") || "-0.75") as number; //centreRe
+  const im: number = parseFloat(paramsData.get("im") || "0.0") as number; //centreIm
+  const dia: number = parseFloat(paramsData.get("dia") || "3.0") as number; //spanRe
   //error: params.setCalcMode(paramsData.get("calc") || "DIRECT");      //mode
-  return params;
+  params.center = { re: re, im: im };
+  params.dia = dia;
 }
 
 // todo 2: Updates URL with (some) params
-export function todo_paramsToURL(params: cFractParams): void {
-  const data = `re:${params.center.re}, im:${params.center.im}, dia:${params.dia}`;
+export function updateURLfromParams(params: cFractParams): void {
+  const data = `re=${params.center.re},im=${params.center.im},dia=${params.dia}`;
   // update url
 }

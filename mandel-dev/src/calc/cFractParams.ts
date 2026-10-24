@@ -1,33 +1,41 @@
-/** calc/cFractParam.ts - Copyright LeFractiste 2026
+/** calc/cFractParam.ts - V0.4 - Copyright LeFractiste 2026
  *  Classe de metadonnées pour le calcul : seule source de donnée pour le calcul !  (il manque des paramètres encore)
  */
 
-import { IParams, ComplexPoint, PixelPoint, FractType } from "../fractTypes.js";
+console.log("cFractParams 1");
+
+import { IParams, ComplexPoint, PixelPoint, IParent } from "../fractTypes.js";
+import { cUtils } from "../calc/utils.js";
+import { cTest } from "../analysis/cTest.js";
+
+const T = new cTest("cFractCalc");
+console.log("cFractParams 2");
 
 export class cFractParams implements IParams {
-  public type: string; //à supprimer quand Rust changera (exige JuliaC alors que Mandelbrot=(JuliaC= Undefined)
-  public center: ComplexPoint;
+  public parent: IParent | undefined; //access to cFract (for all)
+  public typeName: string; //à supprimer quand Rust changera (exige JuliaC alors que Mandelbrot=(JuliaC= Undefined)
+  public size: PixelPoint = { x: 400, y: 300 };
+  private _center: ComplexPoint; //controled property
   public aspectRatio: number = 4 / 3; //800-600 par défaut!
   public dia: number;
   public max_iter: number;
   public r2_max: number;
   public juliaC: ComplexPoint; //exigé par rust-m, à rendre optionel?
+  public dirty: boolean;
   public angleDeg: number = 0.0;
-  constructor(type = "MANDELBROT") {
-    this.type = type;
-    this.center = type === "MANDELBROT" ? { re: -0.7, im: 0.0 } : { re: 0.0, im: 0.0 };
-    this.dia = 3.0;
-    this.max_iter = type === "MANDELBROT" ? 300 : 100;
+  //public FractConsole: event;
+
+  constructor(typeName: string = "MANDELBROT", parent?: IParent) {
+    if (parent) this.parent = parent;
+    this.typeName = typeName;
+    this._center =
+      typeName === "MANDELBROT" ? { re: -0.7, im: 0.0 } : { re: 0.0, im: 0.0 };
+    this.dia = 2.25; // 2.25
+    this.max_iter = typeName === "MANDELBROT" ? 300 : 100;
     this.r2_max = 100000.0;
     // Toujours initialisé pour satisfaire Rust-M même en Mandelbrot
     this.juliaC = { re: -0.7, im: 0.27015 };
-  }
-
-  public get span(): { re: number; im: number } {
-    return {
-      re: this.dia,
-      im: this.dia / this.aspectRatio
-    };
+    this.dirty = true;
   }
 
   static newMandelbrot(): cFractParams {
@@ -38,33 +46,16 @@ export class cFractParams implements IParams {
     params.juliaC = c;
     return params;
   }
-
   // Métadonnées d'export (Format propre pour Exif/PNG/HEIC JSON)
   public toMetadata(): string {
     return JSON.stringify({
-      type: this.type,
+      type: this.typeName,
       center: [this.center.re, this.center.im],
-      dia: [this.span.re, this.span.im],
+      vector: [this.dia, this.angleDeg],
       max_iter: this.max_iter,
       r2_max: this.r2_max,
       juliaC: [this.juliaC.re, this.juliaC.im]
     });
-  }
-
-  /** Exporte la structure exacte attendue par les fonctions de Wasm-Rust */
-  public toRustArgs(width: number, height: number) {
-    return {
-      width,
-      height,
-      center_re: this.center.re,
-      center_im: this.center.im,
-      span_Re: this.span.re,
-      span_Im: this.span.im,
-      max_iter: this.max_iter,
-      r2_max: this.r2_max,
-      julia_re: this.juliaC.re,
-      julia_im: this.juliaC.im
-    };
   }
 
   /** Clonage de l'objet //not used
@@ -75,64 +66,73 @@ export class cFractParams implements IParams {
   } */
 
   /** @todo : gérer le recalcul automatique avec calc.callback ou param.onchange ? */
-  makeDirty(): void {}
 
   // Gestion du type (encore non utilisé)
-  setType(type: FractType, juliaC = null) {
-    this.type = type; // 'MANDELBROT' ou 'JULIA'
-    if (juliaC) this.juliaC = juliaC;
-    this.makeDirty();
+  public setJuliaC(juliaC: ComplexPoint) {
+    this.juliaC = juliaC;
+    this.dirty = true;
+    this.displayState("[Zoom]");
   }
-
+  // Computed span, so that dia is represented
+  public get span(): ComplexPoint {
+    if (this.size.y > this.size.x) {
+      return { re: this.dia, im: this.dia / this.aspectRatio };
+    } else {
+      return { re: this.dia * this.aspectRatio, im: this.dia };
+    }
+  }
   // Centrage (pan)
-  setCenter(c: ComplexPoint) {
-    //modifié: était setCenter(re, im) !
-    this.center = { re: c.re, im: c.im };
-    this.makeDirty();
+  // GETTER: direct access
+  public get center(): ComplexPoint {
+    return this._center;
+  }
+  // SETTER: activates dirty for recalc
+  public set center(c: ComplexPoint) {
+    this._center = c;
+    this.dirty = true;
+    this.displayState("[Drag]");
+  }
+  // Vector: diameter and rotation angle in deg
+  setVector(dia: number, angleDeg: number = 0.0) {
+    this.dia = dia;
+    this.angleDeg = angleDeg;
+    this.dirty = true;
+    this.displayState("[Vector]");
+  }
+  initSize(size: PixelPoint) {
+    this.size = size;
+    this.aspectRatio = size.y / size.x;
+    this.dirty = true;
+    this.displayState("[Size]");
   }
 
-  // helper: aspect ratio adjustment
-  updateAspect(width: number, height: number): void {
-    const aspect = height / width;
-    this.span.im = this.span.re * aspect;
-  }
-  // Transformation (linéaire) du plan //@todo: erreur, tester
-  pix2c(point: PixelPoint, width: number, height: number): ComplexPoint {
-    const re = this.center.re + (point.x / width - 0.5) * this.span.re;
-    const im = this.center.im - (point.y / height - 0.5) * this.span.im;
+  // Transformation (linéaire) du plan - canvas vers complexe
+  pix2c(point: PixelPoint): ComplexPoint {
+    const cF = this;
+    const re = cF.center.re + (point.x / cF.size.x - 0.5) * cF.span.re;
+    const im = cF.center.im - (point.y / cF.size.y - 0.5) * cF.span.im;
     return { re, im };
   }
-  /** Transformation (linéaire) du plan //@todo: erreur, tester
-  js-pix2c(point) {
-    const cF = this.param;
-    const re = cF.center.re + (point.x / this.canvas.width - 0.5) * cF.span.re;
-    const im = cF.center.im - (point.y / this.canvas.height - 0.5) * cF.span.im;
-    return { re: re, im: im };*/
-
-  c2pix(c: ComplexPoint, width: number, height: number): PixelPoint {
-    const px = ((c.re - this.center.re) / this.span.re + 0.5) * width;
-    const py = (0.5 - (c.im - this.center.im) / this.span.im) * height;
-    return { x: px, y: py };
-  }
-  /*jsc2pix(c) {
-    const cF = this.param;
-    const px = ((c.re - cF.center.re) / cF.span.re + 0.5) * this.canvas.width;
-    const py = (0.5 - (c.im - cF.center.im) / cF.span.im) * this.canvas.height;
+  // Transformation linéaire du plan - complexe vers canvas
+  c2pix(c: ComplexPoint): PixelPoint {
+    const cF = this;
+    const px = ((c.re - cF.center.re) / cF.span.re + 0.5) * cF.size.x;
+    const py = (0.5 - (c.im - cF.center.im) / cF.span.im) * cF.size.y;
     return { x: px, y: py };
   }
 
-  //Zoom around a fixed point (used for Mouse scroll)
+  // Zoom around a fixed point (used for Mouse scroll)
   // Algorithme: l'écart sous la souris est réduit par (1 - zoomFactor)
-  zoom(px, py, zoomFactor) : void {
-    const cF = this.param;
+  zoom(pix: PixelPoint, zoomFactor: number): void {
+    const cF: cFractParams = this;
     // Fixed pointc, et affichage
-    const mouseC = this.pix2c({ x: px, y: py });
-    this.updateStatusBar(mouseC, px, py);
+    const mouseC = this.pix2c(pix);
+    //todo: event ! this.parent.updateStatusBar(mouseC, pix);
     // Ratio normalisé du pointeur par rapport au centre du canvas (-0.5 à +0.5)
-    const w = this.canvas.width;
-    const h = this.canvas.height;
-    const alpha = px / w - 0.5;
-    const beta = 0.5 - py / h;
+    const w = this.size.x;
+    const h = this.size.y;
+    const alpha = pix.x / w - 0.5;
+    const beta = 0.5 - pix.y / h;
     // Déplacement du centre : l'écart sous la souris est réduit par (1 - zoomFactor)
     cF.center.re += alpha * cF.span.re * (1 - zoomFactor);
     cF.center.im += beta * cF.span.im * (1 - zoomFactor);
@@ -140,14 +140,29 @@ export class cFractParams implements IParams {
     cF.span.re *= zoomFactor;
     cF.span.im *= zoomFactor;
     // Relance
-    this.makeDirty();
+    this.dirty = true;
+    this.displayState("[Zoom]");
   }
-  resetZoom() : void {
-    const cF = this.param;
-    cF.center.re = cF.type === "JULIA" ? 0.0 : -0.7;
+  resetZoom(): void {
+    const cF = this;
+    cF.center.re = cF.typeName === "JULIA" ? 0.0 : -0.7;
     cF.center.im = 0.0;
-    cF.span.re = 3.0;
-    this.updateAspect(); // Calcule span.im
-    this.makeDirty();
-  } /**/
-}
+    cF.dia = 2.25; // 9/4
+    this.dirty = true;
+    this.displayState("[Reset]");
+  }
+  displayState(action: string): void {
+    const status = document.getElementById(this.statusId);
+    if (!status) return;
+
+    let msg = `${cUtils.complexToString(c)} | counter: ${this.calcCount}`;
+    if (this.params.typeName === "JULIA") {
+      msg += ` | JULIA: ${cUtils.complexToString(this.params.juliaC)}`;
+    }
+    msg += ` | px=${Math.floor(px)} py=${Math.floor(py)}`;
+    status.textContent = msg;
+    if (this.parent) {
+      this.parent.classConsole(msg);
+    }
+  }
+} /** */

@@ -1,12 +1,15 @@
+// ExternalRay.ts  -  Copyright LeFractiste 2026
+
+// @todo 2:  (à découper en interface-->utils? et fonctions (classe extRay?)
+
+console.log("$(fileName) = ExternalRay");
+
 import type {
   ComplexPoint,
   TrajectoryType,
   Trajectory,
   ExternalRayConfig
 } from "../fractTypes.js";
-
-// Module de fonctions TS ExternalRay
-// @todo 2:  (à découper en interface-->utils? et fonctions (classe extRay?)
 
 //Test external Ray (implementé en ts)
 export function t_externalRay(): ComplexPoint[] {

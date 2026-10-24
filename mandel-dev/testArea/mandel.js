@@ -9,6 +9,8 @@
 // MandelController: wrapper for the WebAssembly engine (MandelEngine)
 // Rust Webassembly module : for orbits and fractal calculations
 
+console.log("mandel.js loaded");
+
 import init, { MandelEngine } from "../../pkg/rust_m.js"; //Web assembly package
 import { cUtils } from "./utils.js"; //fonctions utilitaires
 import { IParams, cFractParams } from "../calc/cFractParams.js"; //migration en cours
