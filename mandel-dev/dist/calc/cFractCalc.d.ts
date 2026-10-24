@@ -1,7 +1,7 @@
 import { cFractParams } from "../calc/cFractParams.js";
-import { ComplexPoint } from "../fractTypes.js";
+import { ComplexPoint, ICalc } from "../fractTypes.js";
 /** Expose compute algorithms and Wasm bridge */
-export declare class cFractCalc {
+export declare class cFractCalc implements ICalc {
     private width;
     private height;
     private wasmEngine;
@@ -10,7 +10,7 @@ export declare class cFractCalc {
     private iterBuffer;
     constructor(width?: number, height?: number);
     init(): Promise<void>;
-    setWasmReference(wasmEngine: any, wasmMemory: any): void;
+    private setWasmReference;
     setCalcMode(mode: string): void;
     directIter(z0: ComplexPoint, c: ComplexPoint, maxIter: number, r2Max: number): number;
     /** Calcul principal, avec fallback */

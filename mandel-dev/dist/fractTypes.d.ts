@@ -24,9 +24,15 @@ export interface IParams {
     angleDeg?: number;
     aspectRatio: number;
 }
+export interface ICalc {
+}
 /** Interface d'accès minimal au moteur cFract (parent) pour le rendu */
 export interface ICFractParent {
-    canvas: CanvasRenderingContext2D;
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    cImage: cImage;
+    params: IParams;
+    calc: ICalc;
     render(): void;
     palette: {
         orbitColor?: string;
@@ -76,6 +82,8 @@ export interface PointAnalysisResult {
     angleAntenna?: number;
 }
 export type AppMode = "PAN_ZOOM" | "ZOONORAMA_EXPLORE" | "EXTERNAL_RAY" | "PALETTE_EDIT";
+export type ErrorLevel = "OK" | "WARNING" | "ERROR";
+export type LogLevel = "ALL" | "NOTRACE" | "NOLOG" | "NOWARN";
 export interface AppState {
     currentMode: AppMode;
     isDirty: boolean;

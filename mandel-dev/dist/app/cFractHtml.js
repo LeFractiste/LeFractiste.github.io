@@ -1,6 +1,6 @@
 // app/cFractHtml.ts - Copyright LeFractiste 2026
 // Exports: htmlFractContainer, htmlSetupOptions, setupFractalCanvas, parseHashParams, todo_paramstoURL
-import { cFractParams } from "../calc/cFractParams"; //utile ?
+import { cFractParams } from "../calc/cFractParams.js"; //utile ?
 /** Initialise le div html avec canvas, boutons, statusBar,...
  * @todo: bouton ZoomReset serait ajouté par le constructeur de cFract ?  (ici canvas minimum) */
 export function setupFractalCanvas(options) {

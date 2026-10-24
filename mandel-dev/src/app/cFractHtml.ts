@@ -5,7 +5,7 @@
  * @todo: placer les appels dans l'autre sens - mandel appelle helper-html ! */
 
 import { ICFractParent, ComplexPoint, FractType } from "../fractTypes.js";
-import { cFractParams } from "../calc/cFractParams"; //utile ?
+import { cFractParams } from "../calc/cFractParams.js"; //utile ?
 import { cFract } from "../app/cFract.js"; //nécessaire ?
 
 export interface htmlFractContainer {

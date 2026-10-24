@@ -8,8 +8,10 @@
  
 // #region TODO
  * @todo 0: code/refactor : migration ts, galère !
+ * @todo 1: code/refactor/appDev.js --> ts !  oui, il faut le faire, après diminution AddDev --> cFract functions / events !
  * @todo 0: code/refact: migration params, galère*
  * @todo 0: génération du html, galère non débuggable ! Revenir en arrière, et générer du code console ?
+ * @todo 1: 
  * @todo 1: code/parent: Utiliser le parent pour accéder à params (pour calc, analysis, input Router, fractDraw, externalRay = tous)
  * @todo 2: code/calc: Gérer param.calcMode et implémenter cFractCalc.setMode ?
  * @todo 2: code/HTML : Mandel utilise html-helper pour faire url<-->params
@@ -40,10 +42,10 @@ import {
 } from "../app/cFractHtml.js";
 import { cFractDraw } from "../pres/fractDraw.js";
 import { cFractParams } from "../calc/cFractParams.js";
-import { ComplexPoint, PixelPoint } from "../fractTypes.js";
+import { ComplexPoint, PixelPoint, ICFractParent } from "../fractTypes.js";
 
 // #region CFRACT
-export class cFract {
+export class cFract implements ICFractParent {
   public canvas: HTMLCanvasElement;
   public ctx: CanvasRenderingContext2D;
   public cImage: cImage;
@@ -139,6 +141,10 @@ export class cFract {
   render(): void {
     this.ctx.putImageData(this.cImage.imageData, 0, 0);
     this.drawFixedPointsOverlay();
+  }
+
+  drawOrbitOverlay(orbit: ComplexPoint[]): void {
+    cFractDraw.drawComplexPath(this, orbit);
   }
 
   drawFixedPointsOverlay(): void {

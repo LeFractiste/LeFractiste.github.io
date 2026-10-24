@@ -1,10 +1,10 @@
 // calc/cFractCalc.ts - Algorithmes de calcul & Pont Wasm
 import { cFractParams } from "../calc/cFractParams.js";
-import { ComplexPoint } from "../fractTypes.js";
+import { ComplexPoint, ICalc } from "../fractTypes.js";
 import initWasm, * as wasmModule from "../../pkg/rust_m.js"; //todo 0: initWasm ou InitSync ou __wbg_Init ? Pq sans {}
 
 /** Expose compute algorithms and Wasm bridge */
-export class cFractCalc {
+export class cFractCalc implements ICalc {
   private width: number = 800;
   private height: number = 600;
   private wasmEngine: any;
@@ -28,13 +28,13 @@ export class cFractCalc {
   }
 
   // External init (obsolete)
-  public setWasmReference(wasmEngine: any, wasmMemory: any): void {
+  private setWasmReference(wasmEngine: any, wasmMemory: any): void {
     this.wasmEngine = wasmEngine;
     this.wasmMemory = wasmMemory;
   }
 
   /* Computation mode: // 'DEM', 'DIRECT', etc. */
-  setCalcMode(mode: string): void {
+  public setCalcMode(mode: string): void {
     //this.calcMode = mode; //@todo 2: sécuriser l'interface!
     //this.makeDirty();
   }

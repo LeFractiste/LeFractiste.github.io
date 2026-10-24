@@ -25,33 +25,33 @@ export class cFractDraw {
         }
         ctx.restore();
     }
-}
-/* Gère le tracé vectoriel au-dessus du canvas de pixels
- *(points fixes, axes, orbites, repères). */
-export function drawComplexPath(parent, points, options = {}) {
-    if (!parent || !parent.canvas || points.length === 0)
-        return;
-    const ctx = parent.canvas;
-    const color = options.color || parent.palette?.trajectoryColor || "#ff0055";
-    const lineWidth = options.lineWidth || 1.5;
-    ctx.save();
-    ctx.beginPath();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
-    const startPix = parent.c2pix(points[0]);
-    ctx.moveTo(startPix.x, startPix.y);
-    for (let i = 1; i < points.length; i++) {
-        const pix = parent.c2pix(points[i]);
-        ctx.lineTo(pix.x, pix.y);
-    }
-    ctx.stroke();
-    if (options.showPoints) {
-        ctx.fillStyle = parent.palette?.pointColor || "#ffffff";
-        for (const pt of points) {
-            const pix = parent.c2pix(pt);
-            ctx.fillRect(pix.x - 1.5, pix.y - 1.5, 3, 3);
+    /* Gère le tracé vectoriel au-dessus du canvas de pixels
+     *(points fixes, axes, orbites, repères). */
+    static drawComplexPath(parent, points, options = {}) {
+        if (!parent || !parent.canvas || points.length === 0)
+            return;
+        const ctx = parent.canvas;
+        const color = options.color || parent.palette?.trajectoryColor || "#ff0055";
+        const lineWidth = options.lineWidth || 1.5;
+        ctx.save();
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        const startPix = parent.c2pix(points[0]);
+        ctx.moveTo(startPix.x, startPix.y);
+        for (let i = 1; i < points.length; i++) {
+            const pix = parent.c2pix(points[i]);
+            ctx.lineTo(pix.x, pix.y);
         }
+        ctx.stroke();
+        if (options.showPoints) {
+            ctx.fillStyle = parent.palette?.pointColor || "#ffffff";
+            for (const pt of points) {
+                const pix = parent.c2pix(pt);
+                ctx.fillRect(pix.x - 1.5, pix.y - 1.5, 3, 3);
+            }
+        }
+        ctx.restore();
     }
-    ctx.restore();
 }
 //# sourceMappingURL=fractDraw.js.map

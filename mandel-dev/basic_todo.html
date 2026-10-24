@@ -14,6 +14,7 @@
     ></canvas>
 
     <script type="module">
+      // Pas forcément pertinent-  contient des illusions du copain : wasm.calc_Mandelbrot = null
       // 1. Charger directement le wrapper Wasm/Rust
       import initWasm, { calc_mandelbrot } from "./dist/calc/rust_m.js"; // Ajuste le chemin selon ton dossier dist
       import { cFractParams } from "./dist/calc/cFractParams.js";

@@ -1,7 +1,7 @@
 /** // Helper d'injection HTML/CSS pour cFract
  * @todo: placer les appels dans l'autre sens - mandel appelle helper-html ! */
 import { FractType } from "../fractTypes.js";
-import { cFractParams } from "../calc/cFractParams";
+import { cFractParams } from "../calc/cFractParams.js";
 export interface htmlFractContainer {
     canvasId: string;
     type: FractType;
