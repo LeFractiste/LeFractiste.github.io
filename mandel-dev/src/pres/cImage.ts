@@ -6,15 +6,15 @@
  * @todo: doit-on avoir 1024 couleurs, ou 256 couleurs (bitmap sur un octet)
  */
 
-import { ColorRGBA } from "../fractTypes.js";
+import { ColorRGBA, Iimage } from "../fractTypes.js";
 
 const PAYLOAD_SIZE = 5; // [iter, smooth_iter, z_re, z_im, distance/escape angle]
 
-export class cImage {
+export class cImage implements Iimage {
   width: number;
   height: number;
   imageData: ImageData;
-  lut: Uint8Array;
+  private lut: Uint8Array;
 
   constructor(width: number, height: number) {
     this.width = width;

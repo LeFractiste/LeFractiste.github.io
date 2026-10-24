@@ -1,11 +1,11 @@
-// src/fractTypes.ts - V0.2 - copyright LeFractiste 2026
+// src/fractTypes.ts - V0.3 - copyright LeFractiste 2026
 
 // Helper pour cFract: définit les interfaces publiques principales de l'application / package.
 // Sert à cadrer le refactoring (et la génération de code compatible du legacy).
 // Utile pour donner à App les billes pour utiliser les données générées.
 
 // Pour la V0.3:
-// @todo 2: cFract partage une copie des objets, comme cela App ne doit pas les instancier ? (cDeep, cPath ?)
+// @todo 2: cFract pourrait partager une copie des objets, comme cela App ne doit pas les instancier ? (cDeep, cPath ?)
 // @todo 2: définir les interfaces associées aux aspects html (div.content, image, events)
 // @todo 2: définir les interfaces associées au code Rust et aux calculs distribués partout, y compris les outputs (distance/potential -> palette)
 
@@ -30,20 +30,18 @@ export interface PixelPoint {
 export type FractType = "MAIN" | "MANDELBROT" | "JULIA";
 // Computation mode, handled by cFractCalc
 export type CalcMode = "DIRECT" | "DEM"; // todo 2+3: | "Hybrid" | "QuadHybrid" | "BigNumQH";
-// Error levels for cTest
-export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
 
 /** Defines the shared parameters
  * @todo 2: add width/height and r2max/iterMax
  * */
 export interface IAlgoParams {
   //type?: string; //inutile: if (Param.JuliaC) {type="JULIA";}
-  parent?: IParent;
+  typeName: string;
   cDeep?: ComplexPoint; // point of interest - mouse hover/zoom
   iterTry?: number; /** @todo: to compute new iterMax when zooming */
   max_iter: number; //à renommer iterMax et R2Max dès que compilable //@todo 2: remove: for calc only
   r2_max: number; //à renommer R2max
-  juliaC?: ComplexPoint; //defined for Julia and MandelMain. Undefined for Mandelbrot set
+  juliaC: ComplexPoint; //defined for Julia and MandelMain. Undefined for Mandelbrot set
   // Used for auto recalc
   dirty: boolean; //for asynchroneous recalc
 }
@@ -75,13 +73,14 @@ export interface IParent {
   calc: ICalc;
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  cImage: Iimage;
   palette?: {
     orbitColor?: string;
     trajectoryColor?: string;
     pointColor?: string;
   };
   initParent(paletteLut?: Uint8Array): void;
-  del_render(): void;
+  render(): void;
   updateStatusBar(c: ComplexPoint, px: number, py: number): void;
   classConsole(msg: string): void;
   // orbit
@@ -106,8 +105,8 @@ export interface CalcAppState {
 }
 
 export interface ICalc {
-  options: ICalcOptions;
   isBusy: boolean;
+  autoCalc: boolean;
   calcCount: number;
   calcBuffer: Float32Array;
   wasmActive: boolean;
@@ -144,6 +143,10 @@ export interface ExternalRayConfig {
   bailout: number;
 }
 
+// Valeur mémorisée de calcul à définir (intégrer DEM dedans)
+/* type ou class IterSmooth : number {
+} /**/
+
 /** Analyse de point */
 export interface PointAnalysisResult {
   escaped: boolean;
@@ -160,6 +163,19 @@ export interface PointAnalysisResult {
 // App: mode à revoir ?
 export type AppMode = "PAN_ZOOM" | "ZOONORAMA_EXPLORE" | "EXTERNAL_RAY" | "PALETTE_EDIT";
 
+// Error levels for cTest
+export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
+// Log levels for cTest
+export type LogLevel = "ALL" | "NOTRACE" | "NOLOG" | "NOWARN";
+
+export interface AppState {
+  currentMode: AppMode;
+  isDirty: boolean; // Nécessite un re-calcul du canvas principal
+  overlayDirty: boolean; // Nécessite un re-calcul de l'overlay vectoriel
+  selectedPoint?: ComplexPoint;
+  lockedPoint?: ComplexPoint;
+  deepAnchor?: ComplexPoint; // Point 'S' d'intérêt pour la descente
+}
 // #endregion
 
 // #region Graph
@@ -199,6 +215,7 @@ export interface UserCommand {
  * todo 2: ajouter la rotation: roller+right click / two fingers rotation / angles entiers à ajouter à URL
  */
 export interface EventRouterCallbacks {
+  defaultCallback?: () => void;
   onHover?: (pC: ComplexPoint, pPx: PixelPoint) => void;
   onClick?: (pC: ComplexPoint, pPx: PixelPoint) => void;
   onZoom?: (centerPx: PixelPoint, factor: number) => void;
@@ -217,7 +234,16 @@ export interface IInputRouter {
 }
 // #endregion
 
-// #region Palette
+// #region Pres
+
+export interface Iimage {
+  width: number;
+  height: number;
+  imageData: ImageData;
+  updatePalette(lookUpTable: Uint8Array): void;
+  updateFromWasmPayload(wasmFloatBuffer: Float32Array, maxIter?: number): void;
+}
+
 // Gestion Simplifiée de la Palette
 // ColorRGBA, PaletteControlPoint, IPalette
 export interface ColorRGBA {
@@ -227,19 +253,41 @@ export interface ColorRGBA {
   a: number;
 }
 
+// Options de palette continue
+export interface IPalOptions {
+  cyclesH: number;
+  cyclesS: number;
+  cyclesV: number;
+  phaseH: number;
+  offsetV: number;
+  size: number;
+}
+
 export interface PaletteControlPoint {
-  index: number; // Position dans la rampe [0..1]
+  index: number; // rename ColorIndex - Position dans la rampe [0..1] ?
   color: ColorRGBA;
   handleId?: string; // Lié à un handle graphique si en mode édition
 }
 
 export interface IPalette {
-  demColor0: ColorRGBA;
-  demColorClose: ColorRGBA;
-  iterColorN: ColorRGBA;
-  drawColor: ColorRGBA; //overlayColor
+  // lut
+  indexColor0: number;
+  indexColorClose: number;
+  indexColorLines: number;
+  indexColorPoints: number;
+  pixelsClose: number;
+  readonly SIZE: number;
   nodes: PaletteControlPoint[];
-  getColorAt(t: number): ColorRGBA;
+  drawColor: PaletteControlPoint; //overlayColor
+
+  getColorAt(IterSmooth: number): ColorRGBA; //number -> type IterCalc
+}
+
+/* Palette editor */
+export interface IPaletteEditor {
+  container: HTMLElement; //rename: id
+  params: IPalOptions; //rename options
+  lut: Uint8Array; //rename lookUpTable --> palette ?
 }
 // #endregion
 

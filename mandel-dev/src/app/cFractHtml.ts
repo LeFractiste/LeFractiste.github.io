@@ -4,8 +4,8 @@
 /** // Helper d'injection HTML/CSS pour cFract
  * @todo: placer les appels dans l'autre sens - mandel appelle helper-html ! */
 
-import { FractType } from "../fractTypes.js";
-import { cFractParams } from "../calc/cFractParams"; //utile ?
+import { FractType, IParams } from "../fractTypes.js";
+//import { cFractParams } from "../calc/cFractParams"; //utile ?
 
 // IHTMLFractContainer: links to HTML container
 export interface IHTMLFractContainer {
@@ -64,8 +64,8 @@ export function setupFractalCanvas(options: IHTMLSetupOptions): IHTMLFractContai
   };
 }
 
-// Lit les paramètres dans l'url, si définis - devrait recevoir un objet Params je pense
-export function updateParamsFromURL(params: cFractParams) {
+// Lit les paramètres dans l'url, et modifie params (en direct)
+export function updateParamsFromURL(params: IParams) {
   const hash = window.location.hash.substring(1);
   const paramsData = new URLSearchParams(hash);
   if (params.typeName !== "MANDELBROT") return;
@@ -76,10 +76,11 @@ export function updateParamsFromURL(params: cFractParams) {
   //error: params.setCalcMode(paramsData.get("calc") || "DIRECT");      //mode
   params.center = { re: re, im: im };
   params.dia = dia;
+  params.dirty = true;
 }
 
 // todo 2: Updates URL with (some) params
-export function updateURLfromParams(params: cFractParams): void {
+export function updateURLfromParams(params: IParams): void {
   const data = `re=${params.center.re},im=${params.center.im},dia=${params.dia}`;
   // update url
 }

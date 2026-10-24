@@ -1,4 +1,4 @@
-import type { ComplexPoint, PointAnalysisResult, ICFractParent } from "../fractTypes.js";
+import type { ComplexPoint, PointAnalysisResult } from "../fractTypes.js";
 /**
  * Combined Exports:
  * - cFractAnalysis: Classe de pilotage d'analyse liée ou autonome.
@@ -8,9 +8,8 @@ import type { ComplexPoint, PointAnalysisResult, ICFractParent } from "../fractT
 export declare function t_test(): void;
 export declare function t_analysis(cDeep?: ComplexPoint): string;
 export declare class cFractAnalysis {
-    parent?: ICFractParent;
     detectedMinibrots: ComplexPoint[];
-    constructor(parent?: ICFractParent);
+    constructor();
     analyzePoint(c_re: number, c_im: number, maxIter?: number): PointAnalysisResult;
     findMinibrotCenter(cInit_re: number, cInit_im: number, period: number, maxSteps?: number): ComplexPoint;
     generateReportText(analysisResult: PointAnalysisResult): string;

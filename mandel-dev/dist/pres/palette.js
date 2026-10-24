@@ -1,25 +1,35 @@
-"use strict";
-// Palette.js - 1.5 dev - copyright LeFractiste 2026
+// Palette.ts - 1.6=refactoring ts - copyright LeFractiste 2026
+export class ContPalette {
+    cyclesH = 1.0;
+    cyclesS = 0.0;
+    cyclesV = 2.0;
+    phaseH = 0.0;
+    offsetV = 0.5;
+    size = 1024; //@todo 0:semble 256 dans drawPreview
+    // Paramètres par défaut de la palette HSV (1024 couleurs)
+    constructor() { }
+}
+// Editeur de palette, version 1  (version 2: avec handles + colorer ITerSmooth et DEM en range 1.0)
 export class PaletteEditor {
+    container;
+    params; //rename options
+    lut; //rename lookUpTable --> palette ?
+    onChange;
+    previewCanvas; //à nettoyer null plus tard
+    previewCtx; //à nettoyer null
     constructor(containerId, onChangeCallback) {
-        this.container = document.getElementById(containerId);
-        this.onChange = onChangeCallback;
         // Paramètres par défaut de la palette HSV (1024 couleurs)
-        this.params = {
-            cyclesH: 1.0,
-            cyclesS: 0.0,
-            cyclesV: 2.0,
-            phaseH: 0.0,
-            offsetV: 0.5,
-            size: 1024
-        }; //@todo 0:semble 256 dans drawPreview
+        this.params = new ContPalette();
         this.lut = new Uint8Array(this.params.size * 4); // Lookup Table RGBA
-        this.initUI();
-        // Mettre à jour la LookUpTable (lut) interne SANS déclencher onChange à la construction
-        this.generateLut();
-    }
-    //HTML update and interaction
-    initUI() {
+        this.generateLut(); // calcul ok? sans déclencher onChange à la construction interne SANS déclencher onChange à la construction
+        const container = document.getElementById(containerId);
+        if (container)
+            this.container = container;
+        else {
+            throw new Error(`Container ${container} not defined`);
+        }
+        this.onChange = onChangeCallback;
+        //HTML update and interaction
         this.container.innerHTML = `
             <div style="background: #222; padding: 10px; border-radius: 6px; font-family: sans-serif; font-size: 12px; color: #fff;">
                 <canvas id="palettePreview" width="256" height="5" style="width: 100%; border: 1px solid #555; border-radius: 3px;"></canvas>
@@ -29,16 +39,19 @@ export class PaletteEditor {
                 </div>
             </div>
         `;
-        this.previewCanvas = document.getElementById("palettePreview");
-        this.previewCtx = this.previewCanvas.getContext("2d");
+        this.previewCanvas =
+            document.getElementById("palettePreview") || null;
+        this.previewCtx = this.previewCanvas?.getContext("2d");
         //Listen to UI palCycleH
-        document.getElementById("palCyclesH").addEventListener("input", e => {
-            this.params.cyclesH = parseFloat(e.target.value);
+        document.getElementById("palCyclesH")?.addEventListener("input", e => {
+            const targetCy = e.target;
+            this.params.cyclesH = parseFloat(targetCy.value); //js original: e.target.value - @bug: property value does not exist on EventTarget
             this.updatePalette();
         });
         //Listen to UI palPhaseH
-        document.getElementById("palPhaseH").addEventListener("input", e => {
-            this.params.phaseH = parseFloat(e.target.value);
+        document.getElementById("palPhaseH")?.addEventListener("input", e => {
+            const targetPh = e.target;
+            this.params.phaseH = parseFloat(targetPh.value);
             this.updatePalette();
         });
     }
@@ -68,7 +81,11 @@ export class PaletteEditor {
     }
     //Charge une image dans le canvas (contexte previewCtx)
     drawPreview() {
+        if (!this.previewCtx)
+            return;
         const imgData = this.previewCtx.createImageData(256, 1);
+        if (!imgData)
+            return;
         for (let x = 0; x < 256; x++) {
             const lutIdx = Math.floor((x / 256) * this.params.size) * 4;
             imgData.data[x * 4] = this.lut[lutIdx];

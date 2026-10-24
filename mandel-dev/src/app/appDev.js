@@ -1,10 +1,10 @@
-// App.js - 4.6 dev - copyright LeFractiste 2026
+// App.js - 4.7 dev - copyright LeFractiste 2026
 
 /** @todo: passer aussi en ts ! */
 
 console.log("AddDev 1");
 
-import { PaletteEditor } from "../../testdev/palette.js";
+import { PaletteEditor } from "../../pres/palette.js";
 import { t_test } from "../analysis/analysis.js";
 import { InputRouter } from "../app/inputRouter.js";
 import { cFract } from "../app/cFract.js"; // main Object
@@ -31,9 +31,9 @@ async function startApp() {
   // Initialiser l'éditeur de Palette V2/V3 et son callback
   palette = new PaletteEditor("paletteContainer", lut => {
     mandel.cImage.updatePalette(lut);
-    mandel.del_render();
+    mandel.render();
     julia.cImage.updatePalette(lut);
-    julia.del_render();
+    julia.render();
   });
   palette.generateLut();
   // Amorce de chaque cFract autonome
@@ -53,18 +53,18 @@ function setupAppRouter() {
     onHover: (mouseC, px) => {
       updateStatusBar("Mandel:", mouseC, px.x, px.y);
       const orbit = mandel.directIter(mouseC);
-      mandel.del_render();
+      mandel.render();
       mandel.drawOrbitOverlay(orbit);
-      julia.del_render();
+      julia.render();
       julia.drawOrbitOverlay(orbit);
     },
     onClick: (targetC, px) => {
       lockedC = targetC;
       updateStatusBar("Locked:", lockedC, px.x, px.y);
-      julia.del_setType("JULIA", lockedC);
+      julia.params.del_setType("JULIA", lockedC);
     },
     onZoom: (centerPx, factor) => mandel.del_zoom(centerPx.x, centerPx.y, factor),
-    onPan: deltaC => mandel.del_setCenter(deltaC)
+    onPan: deltaC => mandel.params.center(deltaC)
   });
   const routerJulia = new InputRouter(julia, julia.canvas);
   routerJulia.bindDOMEvents({
@@ -72,8 +72,8 @@ function setupAppRouter() {
       updateStatusBar("Julia:", mouseC, px.x, px.y);
     },
     onClick: undefined,
-    onZoom: (centerPx, factor) => julia.del_zoom(centerPx.x, centerPx.y, factor),
-    onPan: deltaC => julia.del_setCenter(deltaC)
+    onZoom: (centerPx, factor) => julia.params.zoom(centerPx.x, centerPx.y, factor),
+    onPan: deltaC => julia.params.center(deltaC)
   });
 }
 
@@ -102,7 +102,7 @@ function oldEventListeners() {
   if (btnCopy && false) {
     // inactivé: mandel.sélection du point à faire !
     btnCopy.addEventListener("click", () => {
-      const csv = mandel.get_orbit_csv();
+      const csv = mandel.calc.get_orbit_csv();
       navigator.clipboard.writeText(csv);
       const status = document.getElementById("appStatus");
       if (status) {
@@ -119,10 +119,10 @@ function oldEventListeners() {
   const btnResetM = document.getElementById("btnResetMandel");
   if (btnResetM) {
     btnResetM.addEventListener("click", () => {
-      mandel.del_resetZoom();
+      mandel.params.resetZoom();
       //lockedC = null; //mieux de garder le point visible
       if (lockedC) {
-        const reticlePx = mandel.del_c2pix(lockedC);
+        const reticlePx = mandel.params.c2pix(lockedC);
         drawReticle(canvasM, reticlePx.x, reticlePx.y);
       }
     });
@@ -131,7 +131,7 @@ function oldEventListeners() {
   const btnResetJ = document.getElementById("btnResetJulia");
   if (btnResetJ) {
     btnResetJ.addEventListener("click", () => {
-      julia.del_resetZoom();
+      julia.params.resetZoom();
     });
   }
   // LISTBOX INTERFACE CALC MODE  //@todo 2: implement on html !
@@ -139,8 +139,8 @@ function oldEventListeners() {
   if (selectMode) {
     selectMode.addEventListener("change", e => {
       const mode = e.target.value; // 'DIRECT' ou 'DEM'
-      mandel.del_setCalcMode(mode);
-      julia.del_setCalcMode(mode);
+      mandel.calc.setCalcMode(mode);
+      julia.calc.etCalcMode(mode);
       //mandel.render(); //auto
       //julia.render(); //auto
     });
@@ -155,7 +155,7 @@ function oldEventListeners() {
 // DESSIN DU RÉTICULE (Aide visuelle sur Mandelbrot)
 function drawReticle(canvas, px, py) {
   // Rendre l'image de base pour effacer l'ancien réticule
-  mandel.del_render();
+  mandel.render();
   const ctx = canvas.getContext("2d");
   ctx.save();
   // Croix orthogonale

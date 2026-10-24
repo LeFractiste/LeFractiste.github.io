@@ -1,6 +1,6 @@
 import init, { MandelEngine } from "../../pkg/rust_m.js"; //todo 0: initWasm ou InitSync ou __wbg_Init ? Pq sans {}
-/** Copy of all data required for Wasm-Rust and computing */
-export class CalcOptions {
+/** Helper class - Copy of all cFract.params required for Wasm-Rust and computing */
+class CalcOptions {
     typeName;
     resX; // different for Rust in case of fast zoom and QuadTree
     resY;
@@ -18,6 +18,7 @@ export class CalcOptions {
     get payloadLen() {
         return this.resX * this.resY * this.PAYLOAD_SIZE;
     }
+    // helper temporaire de refactorisation
     get calcMode() {
         return this.mode === "DIRECT" ? 0 : this.mode === "DEM" ? 1 : 99;
     }
@@ -46,26 +47,30 @@ export class cFractCalc {
     parent;
     options;
     isBusy = true;
+    autoCalc;
     calcCount = 0;
     wasmEngine;
     wasmMemory;
-    calcBuffer;
-    isWasmReady = false;
+    _calcBuffer;
     iterBuffer; //Exposed : iterSmooth to derive a color (<0 for small DEM ?)
     Z0buffer = [];
     ZNdataBuffer = [];
     get wasmActive() {
         return this.wasmMemory !== null && this.wasmEngine !== null;
     }
+    get calcBuffer() {
+        return this._calcBuffer;
+    }
     /* Constructeur V5 */
     constructor(parent) {
         this.parent = parent;
         // Get all options - do not use anything else, update excepted
         this.options = new CalcOptions(parent.params, parent.canvas); //exposed
+        this.autoCalc = false;
         this.iterBuffer = new Uint32Array(this.options.resX * this.options.resY);
         this.wasmEngine = null;
         this.wasmMemory = null;
-        this.calcBuffer = new Float32Array(this.options.payloadLen);
+        this._calcBuffer = new Float32Array(this.options.payloadLen);
     }
     // Launch the module - last step of parent.init !
     async initCalc() {
@@ -78,7 +83,7 @@ export class cFractCalc {
                 this.parent.classConsole("cFract: Wasm not initialised");
             // Création d'une vue Float32Array directe sur la mémoire Wasm
             const ptr = this.wasmEngine.buffer_ptr(); // Float32 Wasm
-            this.calcBuffer = new Float32Array(this.wasmMemory.buffer, ptr, op.payloadLen);
+            this._calcBuffer = new Float32Array(this.wasmMemory.buffer, ptr, op.payloadLen);
         }
         catch (e) {
             this.parent.classConsole("Error Calc init");
@@ -107,10 +112,10 @@ export class cFractCalc {
             }
             //computes data and image
             if (this.wasmActive) {
-                this.calcBuffer = this.computeWasmPayload();
+                this._calcBuffer = this.computeWasmPayload();
             } // else local computes here
             this.calcCount++;
-            this.parent.cImage.updateFromWasmPayload(this.calcBuffer, op.iterMax);
+            this.parent.cImage.updateFromWasmPayload(this._calcBuffer, op.iterMax);
             this.parent.render();
         }
         catch (err) {

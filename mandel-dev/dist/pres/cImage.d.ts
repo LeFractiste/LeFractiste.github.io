@@ -1,8 +1,9 @@
-export declare class cImage {
+import { Iimage } from "../fractTypes.js";
+export declare class cImage implements Iimage {
     width: number;
     height: number;
     imageData: ImageData;
-    lut: Uint8Array;
+    private lut;
     constructor(width: number, height: number);
     /**
      * Génère une palette arc-en-ciel / bleu-or fluide par défaut

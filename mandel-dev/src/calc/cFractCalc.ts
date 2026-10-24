@@ -2,12 +2,12 @@
 import {
   ComplexPoint,
   IParent,
+  IParams,
   CalcMode,
   ICalcOptions,
   ICalc,
   FractType
 } from "../fractTypes.js";
-import { cFractParams } from "../calc/cFractParams.js";
 import init, { MandelEngine } from "../../pkg/rust_m.js"; //todo 0: initWasm ou InitSync ou __wbg_Init ? Pq sans {}
 
 // #region interfaces
@@ -20,7 +20,7 @@ type IterData = {
   dist?: number;
 };
 
-/** Helper class - Copy of all data required for Wasm-Rust and computing */
+/** Helper class - Copy of all cFract.params required for Wasm-Rust and computing */
 class CalcOptions implements ICalcOptions {
   typeName: string;
   resX: number; // different for Rust in case of fast zoom and QuadTree
@@ -39,12 +39,13 @@ class CalcOptions implements ICalcOptions {
   get payloadLen(): number {
     return this.resX * this.resY * this.PAYLOAD_SIZE;
   }
+  // helper temporaire de refactorisation
   get calcMode(): number {
     return this.mode === "DIRECT" ? 0 : this.mode === "DEM" ? 1 : 99;
   }
 
   /** Constructor: attendue par les fonctions de Wasm-Rust */
-  constructor(params: cFractParams, canvas: HTMLCanvasElement) {
+  constructor(params: IParams, canvas: HTMLCanvasElement) {
     //todo 2: check the best object to pass !
     this.typeName = params.typeName;
     this.resX = canvas.width;
@@ -68,8 +69,9 @@ class CalcOptions implements ICalcOptions {
 /** cFractCalc: Expose compute algorithms and Wasm bridge */
 export class cFractCalc implements ICalc {
   private parent: IParent;
-  public options: ICalcOptions;
+  private options: CalcOptions;
   public isBusy: boolean = true;
+  public autoCalc: boolean;
   public calcCount: number = 0;
   private wasmEngine: MandelEngine | null;
   private wasmMemory: WebAssembly.Memory | null;
@@ -89,6 +91,7 @@ export class cFractCalc implements ICalc {
     this.parent = parent;
     // Get all options - do not use anything else, update excepted
     this.options = new CalcOptions(parent.params, parent.canvas); //exposed
+    this.autoCalc = false;
     this.iterBuffer = new Uint32Array(this.options.resX * this.options.resY);
     this.wasmEngine = null;
     this.wasmMemory = null;
@@ -141,7 +144,7 @@ export class cFractCalc implements ICalc {
       } // else local computes here
       this.calcCount++;
       this.parent.cImage.updateFromWasmPayload(this._calcBuffer, op.iterMax);
-      this.parent.del_render();
+      this.parent.render();
     } catch (err) {
       console.error("[cFract] Erreur lors du calcul :", err);
     } finally {

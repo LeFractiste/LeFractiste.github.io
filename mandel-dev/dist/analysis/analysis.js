@@ -3,7 +3,7 @@
 // Utilise AnalysisMath et mandel (cFract)
 // TODO 2: recherche des bons zooms pour un cDeep - comment est défini un mniJulia ?
 // #region Imports & Index
-import { cUtils } from "../../testArea/utils.js";
+import { cUtils } from "../calc/utils.js";
 import { t_externalRay } from "./externalRay.js";
 import { analyzePointMath, findMinibrotCenterMath, QuadNode } from "../calc/analysisMath.js";
 /**
@@ -36,10 +36,10 @@ export function t_analysis(cDeep = {
 // #region cFractAnalysis Class
 // Analyse d'orbite
 export class cFractAnalysis {
-    parent;
+    /*private parent: IParent;*/
     detectedMinibrots = [];
-    constructor(parent) {
-        this.parent = parent;
+    constructor( /*parent: IParent*/) {
+        /*this.parent = parent;*/
     }
     analyzePoint(c_re, c_im, maxIter = 1000) {
         return analyzePointMath(c_re, c_im, maxIter);

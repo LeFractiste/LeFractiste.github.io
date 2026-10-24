@@ -1,10 +1,11 @@
 /** calc/cFractParam.ts - V0.4 - Copyright LeFractiste 2026
  *  Classe de metadonnées pour le calcul : seule source de donnée pour le calcul !  (il manque des paramètres encore)
  */
-import { IParams, ComplexPoint, PixelPoint } from "../fractTypes.js";
+import { IParams, ComplexPoint, PixelPoint, IParent } from "../fractTypes.js";
 export declare class cFractParams implements IParams {
+    private parent;
     typeName: string;
-    copySize: PixelPoint;
+    size: PixelPoint;
     private _center;
     aspectRatio: number;
     dia: number;
@@ -13,9 +14,7 @@ export declare class cFractParams implements IParams {
     juliaC: ComplexPoint;
     dirty: boolean;
     angleDeg: number;
-    constructor(typeName?: string);
-    static newMandelbrot(): cFractParams;
-    static newJulia(c: ComplexPoint): cFractParams;
+    constructor(typeName: string | undefined, parent: IParent);
     toMetadata(): string;
     /** Clonage de l'objet //not used
     clone(): cFractParams {
@@ -34,5 +33,6 @@ export declare class cFractParams implements IParams {
     c2pix(c: ComplexPoint): PixelPoint;
     zoom(pix: PixelPoint, zoomFactor: number): void;
     resetZoom(): void;
+    displayState(action: string, c?: ComplexPoint, pix?: PixelPoint): void;
 } /** */
 //# sourceMappingURL=cFractParams.d.ts.map

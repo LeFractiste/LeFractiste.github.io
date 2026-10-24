@@ -11,39 +11,39 @@ export interface PixelPoint {
 }
 export type FractType = "MAIN" | "MANDELBROT" | "JULIA";
 export type CalcMode = "DIRECT" | "DEM";
-export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
 /** Defines the shared parameters
  * @todo 2: add width/height and r2max/iterMax
  * */
 export interface IAlgoParams {
+    typeName: string;
     cDeep?: ComplexPoint;
     iterTry?: number; /** @todo: to compute new iterMax when zooming */
-    max_iter?: number;
-    r2_max?: number;
-    juliaC?: ComplexPoint;
+    max_iter: number;
+    r2_max: number;
+    juliaC: ComplexPoint;
     dirty: boolean;
 }
 export interface IViewportParams {
     center: ComplexPoint;
     dia: number;
-    size?: PixelPoint;
+    size: PixelPoint;
     angleDeg?: number;
     aspectRatio: number;
     span: ComplexPoint;
-    pixelVector?: ComplexPoint;
     pix2c(pix: PixelPoint): ComplexPoint;
     c2pix(c: ComplexPoint): PixelPoint;
 }
 export interface IParams extends IViewportParams, IAlgoParams {
-    aspectRatio: number;
 }
 /** Interface d'accès minimal au moteur cFract (parent)
  * @todo 1: move functions to params !
  */
 export interface IParent {
     params: IParams;
+    calc: ICalc;
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
+    cImage: Iimage;
     palette?: {
         orbitColor?: string;
         trajectoryColor?: string;
@@ -51,6 +51,8 @@ export interface IParent {
     };
     initParent(paletteLut?: Uint8Array): void;
     render(): void;
+    updateStatusBar(c: ComplexPoint, px: number, py: number): void;
+    classConsole(msg: string): void;
 }
 export interface ICalcOptions {
     mode: CalcMode;
@@ -64,6 +66,14 @@ export interface CalcAppState {
     selectedPoint?: ComplexPoint;
     lockedPoint?: ComplexPoint;
     deepAnchor?: ComplexPoint;
+}
+export interface ICalc {
+    isBusy: boolean;
+    autoCalc: boolean;
+    calcCount: number;
+    calcBuffer: Float32Array;
+    wasmActive: boolean;
+    initCalc(): void;
 }
 /** Types de trajectoires/collections pour adapter le mode de dessin */
 export type TrajectoryType = "extRay" | "orbit" | "minibrots";
@@ -101,6 +111,16 @@ export interface PointAnalysisResult {
     angleAntenna?: number;
 }
 export type AppMode = "PAN_ZOOM" | "ZOONORAMA_EXPLORE" | "EXTERNAL_RAY" | "PALETTE_EDIT";
+export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
+export type LogLevel = "ALL" | "NOTRACE" | "NOLOG" | "NOWARN";
+export interface AppState {
+    currentMode: AppMode;
+    isDirty: boolean;
+    overlayDirty: boolean;
+    selectedPoint?: ComplexPoint;
+    lockedPoint?: ComplexPoint;
+    deepAnchor?: ComplexPoint;
+}
 export type HandleType = "cDeep" | "zoonoramaA" | "zoonoramaB" | "paletteNode";
 /** Object for mouse interaction */
 export interface InteractiveHandle {
@@ -123,6 +143,7 @@ export interface UserCommand {
  * todo 2: ajouter la rotation: roller+right click / two fingers rotation / angles entiers à ajouter à URL
  */
 export interface EventRouterCallbacks {
+    defaultCallback?: () => void;
     onHover?: (pC: ComplexPoint, pPx: PixelPoint) => void;
     onClick?: (pC: ComplexPoint, pPx: PixelPoint) => void;
     onZoom?: (centerPx: PixelPoint, factor: number) => void;
@@ -137,11 +158,26 @@ export interface IInputRouter {
     registerHandle: (handle: InteractiveHandle) => void;
     dispatch: (command: UserCommand) => void;
 }
+export interface Iimage {
+    width: number;
+    height: number;
+    imageData: ImageData;
+    updatePalette(lookUpTable: Uint8Array): void;
+    updateFromWasmPayload(wasmFloatBuffer: Float32Array, maxIter?: number): void;
+}
 export interface ColorRGBA {
     r: number;
     g: number;
     b: number;
     a: number;
+}
+export interface IPalOptions {
+    cyclesH: number;
+    cyclesS: number;
+    cyclesV: number;
+    phaseH: number;
+    offsetV: number;
+    size: number;
 }
 export interface PaletteControlPoint {
     index: number;
@@ -149,12 +185,20 @@ export interface PaletteControlPoint {
     handleId?: string;
 }
 export interface IPalette {
-    demColor0: ColorRGBA;
-    demColorClose: ColorRGBA;
-    iterColorN: ColorRGBA;
-    drawColor: ColorRGBA;
+    indexColor0: number;
+    indexColorClose: number;
+    indexColorLines: number;
+    indexColorPoints: number;
+    pixelsClose: number;
+    readonly SIZE: number;
     nodes: PaletteControlPoint[];
-    getColorAt(t: number): ColorRGBA;
+    drawColor: PaletteControlPoint;
+    getColorAt(IterSmooth: number): ColorRGBA;
+}
+export interface IPaletteEditor {
+    container: HTMLElement;
+    params: IPalOptions;
+    lut: Uint8Array;
 }
 /** Contrat de perception pour l'Agent d' Exploration
  * @todo 2: définir des types pour les sorties ? */

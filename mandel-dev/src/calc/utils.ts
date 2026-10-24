@@ -7,9 +7,6 @@ import { ComplexPoint } from "../fractTypes.js";
 
 export class cUtils {
   // To display a ComplexPoint with digits=7 precision
-  complexToString(c: ComplexPoint, digits = 7): string {
-    return `${c.re.toFixed(digits)} ${c.im >= 0 ? "+" : ""}${c.im.toFixed(digits)}i`;
-  }
 
   // Calcul de la racine carrée d'un nombre complexe
   static complexSqrt(c: ComplexPoint) {

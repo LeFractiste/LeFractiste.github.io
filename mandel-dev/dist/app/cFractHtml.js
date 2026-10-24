@@ -1,6 +1,5 @@
 // app/cFractHtml.ts - Copyright LeFractiste 2026
 // Exports: htmlFractContainer, htmlSetupOptions, setupFractalCanvas, parseHashParams, todo_paramstoURL
-import { cFractParams } from "../calc/cFractParams"; //utile ?
 /** Initialise le div html avec canvas, boutons, statusBar,...
  * @todo: bouton ZoomReset serait ajouté par le constructeur de cFract ?  (ici canvas minimum) */
 export function setupFractalCanvas(options) {
@@ -32,23 +31,24 @@ export function setupFractalCanvas(options) {
         statusEl
     };
 }
-// Lit les paramètres dans l'url, si définis - devrait renvoyer un objet Params je pense
-export function parseHashParams() {
+// Lit les paramètres dans l'url, et modifie params (en direct)
+export function updateParamsFromURL(params) {
     const hash = window.location.hash.substring(1);
     const paramsData = new URLSearchParams(hash);
-    const type = paramsData.get("type") || "MANDELBROT"; //type
-    const params = new cFractParams(type);
-    params.center = {
-        re: parseFloat(paramsData.get("re") || "-0.75"), //centreRe
-        im: parseFloat(paramsData.get("im") || "0.0") //centreIm
-    };
-    params.dia = parseFloat(paramsData.get("dia") || "3.0"); //spanRe
+    if (params.typeName !== "MANDELBROT")
+        return;
+    // params.typeName: paramsData.get("type") || "MANDELBROT"; //type
+    const re = parseFloat(paramsData.get("re") || "-0.75"); //centreRe
+    const im = parseFloat(paramsData.get("im") || "0.0"); //centreIm
+    const dia = parseFloat(paramsData.get("dia") || "3.0"); //spanRe
     //error: params.setCalcMode(paramsData.get("calc") || "DIRECT");      //mode
-    return params;
+    params.center = { re: re, im: im };
+    params.dia = dia;
+    params.dirty = true;
 }
 // todo 2: Updates URL with (some) params
-export function todo_paramsToURL(params) {
-    const data = `re:${params.center.re}, im:${params.center.im}, dia:${params.dia}`;
+export function updateURLfromParams(params) {
+    const data = `re=${params.center.re},im=${params.center.im},dia=${params.dia}`;
     // update url
 }
 //# sourceMappingURL=cFractHtml.js.map
