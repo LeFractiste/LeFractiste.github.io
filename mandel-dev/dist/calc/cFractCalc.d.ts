@@ -3,7 +3,7 @@ import { ComplexPoint, IParent, ICalc } from "../fractTypes.js";
 export declare class cFractCalc implements ICalc {
     private parent;
     private options;
-    isBusy: boolean;
+    private isBusy;
     autoCalc: boolean;
     calcCount: number;
     private wasmEngine;
@@ -16,13 +16,15 @@ export declare class cFractCalc implements ICalc {
     get calcBuffer(): Float32Array;
     constructor(parent: IParent);
     initCalc(): Promise<void>;
+    /** Computation mode: // 'DEM', 'DIRECT', etc. */
     setCalcMode(mode: string): void;
-    recalcAll(): void;
     /** Calcul d'orbite z(n+1):= z^2 + c
      * @todo 2: déléguer iter au Wasm */
-    directIter(z0: ComplexPoint, maxIter?: number): number;
+    calcIter(z0: ComplexPoint, maxIter?: number): number;
+    calcFull(): void;
     /** Calcul principal, avec fallback */
-    calcFull(): Uint32Array;
-    computeWasmPayload(): Float32Array;
+    private calcFull_fallBack;
+    computeWasmPayload(): void;
+    calcOrbit(z0: ComplexPoint, maxIter?: number): ComplexPoint[];
 }
 //# sourceMappingURL=cFractCalc.d.ts.map

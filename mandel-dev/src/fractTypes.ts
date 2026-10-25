@@ -1,17 +1,43 @@
-// src/fractTypes.ts - V0.3 - copyright LeFractiste 2026
-
+// src/fractTypes.ts - V0.4 - copyright LeFractiste 2026
 // Helper pour cFract: définit les interfaces publiques principales de l'application / package.
 // Sert à cadrer le refactoring (et la génération de code compatible du legacy).
 // Utile pour donner à App les billes pour utiliser les données générées.
 
-// Pour la V0.3:
-// @todo 2: cFract pourrait partager une copie des objets, comme cela App ne doit pas les instancier ? (cDeep, cPath ?)
-// @todo 2: définir les interfaces associées aux aspects html (div.content, image, events)
-// @todo 2: définir les interfaces associées au code Rust et aux calculs distribués partout, y compris les outputs (distance/potential -> palette)
+/** charger:
+ import { } from "..fractTypes.js";
+ */
 
-// #region Params
+/** V0.4 : fractTYpes utile au codage
+ * IParent partage une copie des objets cFract.x, via leur interface
+ * @todo 2: supprimer les accès perturbants (pour la console, pour le recalcul...)
+ * @todo 2: définir les interfaces associées aux aspects html (div.content, image, events)
+ * @todo 2: définir les interfaces associées au code Rust et aux calculs distribués partout, y compris les outputs (distance/potential -> palette)
+ */
 
-console.log("fractTypes 1");
+// #region Coding
+
+// Gestion de version
+export interface AppVersionInfo {
+  version: string;
+  buildDate: string;
+  gitTag: string;
+  environment: string;
+}
+
+// Pour suivi local (Todo / Done) spécifique à la branche courante
+export interface TaskTrack {
+  id: string;
+  type: "TODO" | "DONE" | "WIP";
+  description: string;
+  file?: string;
+}
+
+// Error levels for cTest
+export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
+// Log levels for cTest
+export type LogLevel = "ALL" | "NOTRACE" | "NOLOG" | "NOWARN";
+
+// #region Bases
 
 /** Point dans le plans complexe
  * //@todo 2: préparer le passage à la précision multiple!
@@ -31,6 +57,8 @@ export type FractType = "MAIN" | "MANDELBROT" | "JULIA";
 // Computation mode, handled by cFractCalc
 export type CalcMode = "DIRECT" | "DEM"; // todo 2+3: | "Hybrid" | "QuadHybrid" | "BigNumQH";
 
+// #region IParams
+
 /** Defines the shared parameters
  * @todo 2: add width/height and r2max/iterMax
  * */
@@ -47,22 +75,27 @@ export interface IAlgoParams {
 }
 
 export interface IViewportParams {
-  center: ComplexPoint; // centre of image
+  get center(): ComplexPoint; // centre of image
+  set center(c: ComplexPoint);
   dia: number; //diameter represented around centre.re //@todo 2: depending on min(W,H)
   size: PixelPoint; //computed window x=width (to right), y=height (to bottom)
   angleDeg?: number; //rotation around re axis //@todo: not implemented
-  aspectRatio: number; //canvas width/heigth
-  span: ComplexPoint; // Propriété calculée
+  get aspectRatio(): number; //canvas width/heigth
+  get span(): ComplexPoint; // Propriété calculée
   //pixelVector2c?: ComplexPoint; // pix2c(deltax, deltay);
 
   pix2c(pix: PixelPoint): ComplexPoint;
   c2pix(c: ComplexPoint): PixelPoint;
+  zoom(pix: PixelPoint, zoomFactor: number): void;
+  reset(): void;
 
   //c2pix and pix2c ? (no: different projection = other params & arguments)
 }
 
 // Composition d'interfaces :
 export interface IParams extends IViewportParams, IAlgoParams {}
+
+// #region IParent
 
 /** Interface d'accès minimal au moteur cFract (parent)
  * @todo 1: move functions to params !
@@ -104,13 +137,16 @@ export interface CalcAppState {
   deepAnchor?: ComplexPoint; // Point 'S' d'intérêt pour la descente
 }
 
+// ICalc: interface de calcul - cFract à un accès plus grand
 export interface ICalc {
-  isBusy: boolean;
-  autoCalc: boolean;
+  autoCalc: boolean; // non implementé !
   calcCount: number;
   calcBuffer: Float32Array;
   wasmActive: boolean;
   initCalc(): void;
+  calcIter(c: ComplexPoint, IterMax: number): number;
+  calcOrbit(c: ComplexPoint, IterMax: number): ComplexPoint[];
+  calcFull(): void;
 }
 
 // #end region
@@ -162,11 +198,6 @@ export interface PointAnalysisResult {
 // #region StateMachine
 // App: mode à revoir ?
 export type AppMode = "PAN_ZOOM" | "ZOONORAMA_EXPLORE" | "EXTERNAL_RAY" | "PALETTE_EDIT";
-
-// Error levels for cTest
-export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
-// Log levels for cTest
-export type LogLevel = "ALL" | "NOTRACE" | "NOLOG" | "NOWARN";
 
 export interface AppState {
   currentMode: AppMode;
@@ -234,7 +265,7 @@ export interface IInputRouter {
 }
 // #endregion
 
-// #region Pres
+// #region Presentation
 
 export interface Iimage {
   width: number;

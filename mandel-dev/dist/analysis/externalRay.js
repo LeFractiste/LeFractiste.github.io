@@ -1,6 +1,4 @@
 // ExternalRay.ts  -  Copyright LeFractiste 2026
-// @todo 2:  (à découper en interface-->utils? et fonctions (classe extRay?)
-console.log("$(fileName) = ExternalRay");
 //Test external Ray (implementé en ts)
 export function t_externalRay() {
     // Intialise un external ray sur un point de départ éloigné (ex: r = 2.0, angle theta = 1/3 -> 120 degrés)

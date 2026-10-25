@@ -1,24 +1,23 @@
 // App.js - 4.7 dev - copyright LeFractiste 2026
 
 /** @todo: passer aussi en ts ! */
+// @ts-check
 
-console.log("AddDev 1");
+import { PaletteEditor } from "../pres/palette.js";
+import { analysis_test } from "../analysis/analysis.js";
+import { InputRouter } from "./inputRouter.js";
+import { cFract } from "./cFract.js"; // main Object
+import { logAppHeader } from "./version.js";
+import { ComplexPoint } from "../fractTypes.js";
 
-import { PaletteEditor } from "../../pres/palette.js";
-import { t_test } from "../analysis/analysis.js";
-import { InputRouter } from "../app/inputRouter.js";
-import { cFract } from "../app/cFract.js"; // main Object
-
-console.log("AppDev 2");
+// Ecriture de la version directement
+logAppHeader();
 
 // --- ÉTATS GLOBAUX ---
-/** @type {cFract} */
-let mandel;
-/** @type {cFract} */
-let julia;
-/** @type {PaletteEditor} */
-let palette;
-let lockedC; // Point c verrouillé par clic pour l'analyse d'orbite
+let Mandel: cFract;
+let julia: cFract;
+let palette: PaletteEditor;
+let lockedC: ComplexPoint; // Point c verrouillé par clic pour l'analyse d'orbite
 
 // --- INITIALISATION DU MOTEUR & DE L'APPLICATION ---
 
@@ -26,45 +25,45 @@ let lockedC; // Point c verrouillé par clic pour l'analyse d'orbite
  *  @todo 2: refactorer app+mandel pour que mandel s'injecte ses boutons status et zoomReset, ainsi que Julia ad-hoc */
 async function startApp() {
   appConsole("Loading...");
-  mandel = new cFract("mandelCanvas", "MANDELBROT", "mandelStatus");
+  Mandel = new cFract("mandelCanvas", "MANDELBROT", "mandelStatus");
   julia = new cFract("juliaCanvas", "JULIA", "juliaStatus");
   // Initialiser l'éditeur de Palette V2/V3 et son callback
   palette = new PaletteEditor("paletteContainer", lut => {
-    mandel.cImage.updatePalette(lut);
-    mandel.render();
+    Mandel.cImage.updatePalette(lut);
+    Mandel.render();
     julia.cImage.updatePalette(lut);
     julia.render();
   });
   palette.generateLut();
   // Amorce de chaque cFract autonome
-  await mandel.init(palette.lut);
-  await julia.init(palette.lut);
+  await Mandel.initParent(palette.lut);
+  await julia.initParent(palette.lut);
   // Installer les écouteurs d'événements
   setupAppRouter();
-  initEventListeners(); // @todo 2: vider!
+  oldEventListeners(); // @todo 2: vider!
   // The same for Julia Set
   appConsole("Ready");
 }
 
 // Définit les evénements, à la place de initEventListeners(), déconnecté
 function setupAppRouter() {
-  const routerMandel = new InputRouter(mandel, mandel.canvas);
+  const routerMandel = new InputRouter(Mandel, Mandel.canvas);
   routerMandel.bindDOMEvents({
     onHover: (mouseC, px) => {
       updateStatusBar("Mandel:", mouseC, px.x, px.y);
-      const orbit = mandel.directIter(mouseC);
-      mandel.render();
-      mandel.drawOrbitOverlay(orbit);
+      const orbit: ComplexPoint[] = Mandel.calc.calcOrbit(mouseC);
+      Mandel.render();
+      Mandel.drawOrbitOverlay(orbit);
       julia.render();
       julia.drawOrbitOverlay(orbit);
     },
     onClick: (targetC, px) => {
       lockedC = targetC;
       updateStatusBar("Locked:", lockedC, px.x, px.y);
-      julia.params.del_setType("JULIA", lockedC);
+      julia.params.juliaC = lockedC;
     },
-    onZoom: (centerPx, factor) => mandel.del_zoom(centerPx.x, centerPx.y, factor),
-    onPan: deltaC => mandel.params.center(deltaC)
+    onZoom: (centerPx, factor) => Mandel.params.zoom(centerPx, factor),
+    onPan: deltaC => (Mandel.params.center = deltaC)
   });
   const routerJulia = new InputRouter(julia, julia.canvas);
   routerJulia.bindDOMEvents({
@@ -72,15 +71,15 @@ function setupAppRouter() {
       updateStatusBar("Julia:", mouseC, px.x, px.y);
     },
     onClick: undefined,
-    onZoom: (centerPx, factor) => julia.params.zoom(centerPx.x, centerPx.y, factor),
-    onPan: deltaC => julia.params.center(deltaC)
+    onZoom: (centerPx, factor) => julia.params.zoom(centerPx, factor),
+    onPan: deltaC => (julia.params.center = deltaC)
   });
 }
 
 // --- ÉCOUTEURS D'ÉVÉNEMENTS (INTERACTION UX) ---
 function oldEventListeners() {
   //Areas to activate -@todo 1: move to cFract.html
-  const canvasM = mandel.canvas;
+  const canvasM = Mandel.canvas;
   const canvasJ = julia.canvas;
   const btnCopy = document.getElementById("btnCopyCsv");
   const btnTest = document.getElementById("btnTest");
@@ -89,7 +88,7 @@ function oldEventListeners() {
   if (btnTest) {
     // inactivé: mandel.sélection du point à faire !
     btnTest.addEventListener("click", () => {
-      const result = t_test();
+      const result = analysis_test();
       const status = document.getElementById("appStatus");
       if (status) {
         status.innerText = result;
@@ -98,7 +97,7 @@ function oldEventListeners() {
     });
   }
 
-  // @todo : Button copie csv: lance l'analyse d'orbite complète
+  /** @todo : Button copie csv: lance l'analyse d'orbite complète
   if (btnCopy && false) {
     // inactivé: mandel.sélection du point à faire !
     btnCopy.addEventListener("click", () => {
@@ -110,7 +109,7 @@ function oldEventListeners() {
         setTimeout(() => (status.innerText = ""), 3000);
       }
     });
-  }
+  } /**/
 
   // mandel: cFract.OnPosition event
   // @todo: trouver comment émettre et consommer ses événements de classe
@@ -119,10 +118,10 @@ function oldEventListeners() {
   const btnResetM = document.getElementById("btnResetMandel");
   if (btnResetM) {
     btnResetM.addEventListener("click", () => {
-      mandel.params.resetZoom();
+      Mandel.params.reset();
       //lockedC = null; //mieux de garder le point visible
       if (lockedC) {
-        const reticlePx = mandel.params.c2pix(lockedC);
+        const reticlePx = Mandel.params.c2pix(lockedC);
         drawReticle(canvasM, reticlePx.x, reticlePx.y);
       }
     });
@@ -131,10 +130,11 @@ function oldEventListeners() {
   const btnResetJ = document.getElementById("btnResetJulia");
   if (btnResetJ) {
     btnResetJ.addEventListener("click", () => {
-      julia.params.resetZoom();
+      julia.params.reset();
     });
   }
-  // LISTBOX INTERFACE CALC MODE  //@todo 2: implement on html !
+  /** LISTBOX INTERFACE CALC MODE
+   * @todo 2: implement on html !
   const selectMode = document.getElementById("selectCalcMode");
   if (selectMode) {
     selectMode.addEventListener("change", e => {
@@ -144,7 +144,7 @@ function oldEventListeners() {
       //mandel.render(); //auto
       //julia.render(); //auto
     });
-  }
+  } /**/
 } /*initEventListeners*/
 
 // ---Helpers---
@@ -155,7 +155,7 @@ function oldEventListeners() {
 // DESSIN DU RÉTICULE (Aide visuelle sur Mandelbrot)
 function drawReticle(canvas, px, py) {
   // Rendre l'image de base pour effacer l'ancien réticule
-  mandel.render();
+  Mandel.render();
   const ctx = canvas.getContext("2d");
   ctx.save();
   // Croix orthogonale
@@ -191,8 +191,8 @@ function appConsole(msg) {
 
 //@todo 1: prendre la version de mandel
 //CALCUL ET EXPORTATION D'ORBITE POUR GOOGLE SHEETS
-function exportOrbitToSheets(c) {
-  const maxIter = mandel.param.max_iter;
+function old_exportOrbitToSheets(c: ComplexPoint): void {
+  const maxIter = Mandel.params.max_iter;
   let zRe = 0.0;
   let zIm = 0.0;
   // Formatage tabulaire (TSV) prêt à copier-coller dans Excel/Google Sheets
@@ -205,7 +205,7 @@ function exportOrbitToSheets(c) {
     zIm = nextIm;
     const mod2 = zRe * zRe + zIm * zIm;
     tsvContent += `${n}\t${zRe.toFixed(6)}\t${zIm.toFixed(6)}\t${mod2.toFixed(6)}\n`;
-    if (mod2 > mandel.param.r2_max) break; // Évasion
+    if (mod2 > Mandel.params.r2_max) break; // Évasion
   }
   // Copie dans le presse-papier
   navigator.clipboard

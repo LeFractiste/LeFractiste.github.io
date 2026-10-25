@@ -4,7 +4,6 @@
 // TODO 2: recherche des bons zooms pour un cDeep - comment est défini un mniJulia ?
 // #region Imports & Index
 import { cUtils } from "../calc/utils.js";
-import { t_externalRay } from "./externalRay.js";
 import { analyzePointMath, findMinibrotCenterMath, QuadNode } from "../calc/analysisMath.js";
 /**
  * Combined Exports:
@@ -14,8 +13,9 @@ import { analyzePointMath, findMinibrotCenterMath, QuadNode } from "../calc/anal
  */
 // #endregion
 // #region Tests & Experiments
-export function t_test() {
-    t_externalRay();
+export function analysis_test() {
+    // to do: t_externalRay();
+    return t_analysis();
 }
 export function t_analysis(cDeep = {
     re: -0.743643887037158704752191506114774,
@@ -41,6 +41,7 @@ export class cFractAnalysis {
     constructor( /*parent: IParent*/) {
         /*this.parent = parent;*/
     }
+    // Wrapper : return a point analysis of c
     analyzePoint(c_re, c_im, maxIter = 1000) {
         return analyzePointMath(c_re, c_im, maxIter);
     }

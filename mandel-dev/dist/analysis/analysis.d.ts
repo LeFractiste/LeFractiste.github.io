@@ -5,7 +5,7 @@ import type { ComplexPoint, PointAnalysisResult } from "../fractTypes.js";
  * - t_test, t_analysis: Fonctions de test et d'expérimentation.
  * - findMinibrotsInWindow: Recherche guidée par Quadtree.
  */
-export declare function t_test(): void;
+export declare function analysis_test(): string;
 export declare function t_analysis(cDeep?: ComplexPoint): string;
 export declare class cFractAnalysis {
     detectedMinibrots: ComplexPoint[];

@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 // Code Rust: moteur de calcul profond, et moteur de rendu graphique
+// Version compilée dans mandel-dev/pkg/rust_m_bg_wasm 2026/09/10 - commentaires mis à jour
 
 // TODO 1: directIter(zList, maxIter, rsParam) et DEM(zList, rsParam)
 // TODO 1: move the cargo/rust directory one level down
@@ -47,7 +48,7 @@ impl MandelEngine {
         self.buffer.as_ptr()
     }
 
-    // Calcul du moteur lourd DEM (R2max = 100 000)
+    // Calcul du moteur lourd DEM (R2max = 100 000) - retourne (Iter, IterSmooth, zRe, zIm, angle) par point
     // Moteur de calcul lourd - mode de calcul dans fract_core.js::cFractparams
     // TODO 1: Jef: ce n'est pas DEM. Nous avons besoin de plusieurs modes de calcul (Mandel, Julia, Direct/DEM) selon le contenu de cFractparams
     // TODO 2 : ne doit-on pas précalculer atan dans lazy et aller le rechercher (plus tard).
@@ -113,7 +114,7 @@ impl MandelEngine {
     }
 
     // Calcul du moteur lourd DEM générique Julia-Mandelbrot
-    // Retourne la distance dans le buffer[5]
+    // Retourne buffer[5] pour chaque point (iter, iterSmooth, zRe, zIm, distance)
     pub fn compute_generic(
         &mut self,
         is_julia: bool,
@@ -123,7 +124,7 @@ impl MandelEngine {
         max_iter: u32, r2_max: f64,
         calc_mode: u32, // 0 = Direct, 1 = DEM
     ) {
-        let delta_der = if is_julia { 0.0 } else { 1.0 }; // Seule différence du DEM !
+        let delta_der = if is_julia { 0.0 } else { 1.0 }; // pour la dérivée !
 
         for py in 0..self.height {
             for px in 0..self.width {

@@ -2,8 +2,6 @@
 
 // @todo 2:  (à découper en interface-->utils? et fonctions (classe extRay?)
 
-console.log("$(fileName) = ExternalRay");
-
 import type {
   ComplexPoint,
   TrajectoryType,

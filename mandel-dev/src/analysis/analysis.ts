@@ -23,8 +23,9 @@ import {
 // #endregion
 
 // #region Tests & Experiments
-export function t_test(): void {
-  t_externalRay();
+export function analysis_test(): string {
+  // to do: t_externalRay();
+  return t_analysis();
 }
 
 export function t_analysis(
@@ -56,6 +57,7 @@ export class cFractAnalysis {
     /*this.parent = parent;*/
   }
 
+  // Wrapper : return a point analysis of c
   analyzePoint(c_re: number, c_im: number, maxIter = 1000): PointAnalysisResult {
     return analyzePointMath(c_re, c_im, maxIter);
   }

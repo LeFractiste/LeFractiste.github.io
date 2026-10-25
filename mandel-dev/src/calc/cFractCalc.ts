@@ -20,12 +20,14 @@ type IterData = {
   dist?: number;
 };
 
+// #region CalcOptions
+
 /** Helper class - Copy of all cFract.params required for Wasm-Rust and computing */
 class CalcOptions implements ICalcOptions {
   typeName: string;
   resX: number; // different for Rust in case of fast zoom and QuadTree
   resY: number;
-  mode: CalcMode;
+  mode: CalcMode = "DIRECT";
   center_re: number;
   center_im: number;
   span_re: number;
@@ -60,17 +62,16 @@ class CalcOptions implements ICalcOptions {
     this.isJulia = !(params.typeName === ("MANDELBROT" as FractType));
     this.juliaC_re = params.juliaC.re;
     this.juliaC_im = params.juliaC.im;
-    this.mode = "Direct" as CalcMode; //so far! todo!!!
   }
 }
 
-// #region class
+// #region cFractCalc
 
 /** cFractCalc: Expose compute algorithms and Wasm bridge */
 export class cFractCalc implements ICalc {
   private parent: IParent;
   private options: CalcOptions;
-  public isBusy: boolean = true;
+  private isBusy: boolean = false;
   public autoCalc: boolean;
   public calcCount: number = 0;
   private wasmEngine: MandelEngine | null;
@@ -82,81 +83,59 @@ export class cFractCalc implements ICalc {
   get wasmActive(): boolean {
     return this.wasmMemory !== null && this.wasmEngine !== null;
   }
+  // Provides a link to _calcBuffer (readonly)
   get calcBuffer(): Float32Array {
-    return this._calcBuffer;
-  }
+    return this._calcBuffer; //nettoyer le truc
+  } /**/
 
-  /* Constructeur V5 */
+  /* cFractCalc : fast constructor - call async initCalc() to complete.
+     Rendering: calcFull --> calcBuffer --> cImage --> display */
   constructor(parent: IParent) {
     this.parent = parent;
     // Get all options - do not use anything else, update excepted
     this.options = new CalcOptions(parent.params, parent.canvas); //exposed
-    this.autoCalc = false;
-    this.iterBuffer = new Uint32Array(this.options.resX * this.options.resY);
+    this.autoCalc = true;
+    this.calcCount = 0;
     this.wasmEngine = null;
     this.wasmMemory = null;
-    this._calcBuffer = new Float32Array(this.options.payloadLen);
+    this._calcBuffer = new Float32Array(this.options.payloadLen); //shared by Wasm
+    this.iterBuffer = new Uint32Array(this.options.resX * this.options.resY); // juste des Iter(Smooth)
   }
 
-  // Launch the module - last step of parent.init !
+  // #region initCalc()
+
+  // Launch the wasm module or prepare to compute by script
   public async initCalc(): Promise<void> {
+    console.trace("cFractCalc.initCalc");
+    const op = this.options;
     try {
-      const op = this.options;
       const wasmExports = await init(); //Wasm
       this.wasmMemory = wasmExports.memory;
       this.wasmEngine = new MandelEngine(op.resX, op.resY);
-      if (!this.wasmActive) this.parent.classConsole("cFract: Wasm not initialised");
-      // Création d'une vue Float32Array directe sur la mémoire Wasm
-      const ptr = this.wasmEngine.buffer_ptr(); // Float32 Wasm
-      this._calcBuffer = new Float32Array(this.wasmMemory.buffer, ptr, op.payloadLen);
+      if (this.wasmActive) {
+        // Création d'une vue Float32Array directe sur la mémoire Wasm
+        const ptr = this.wasmEngine.buffer_ptr(); // Float32 Wasm
+        this._calcBuffer = new Float32Array(this.wasmMemory.buffer, ptr, op.payloadLen);
+      } else {
+        this._calcBuffer = new Float32Array(op.payloadLen);
+        this.parent.classConsole("cFract: Wasm not initialised");
+      }
     } catch (e) {
       this.parent.classConsole("Error Calc init");
     }
-    this.recalcAll(); //termine parent.init
   }
 
-  // #region StateM
-
-  /* Computation mode: // 'DEM', 'DIRECT', etc. */
+  /** Computation mode: // 'DEM', 'DIRECT', etc. */
   public setCalcMode(mode: string): void {
     //this.calcMode = mode; //@todo 2: sécuriser l'interface!
     //this.makeDirty();
   }
 
-  // Launch full recomputing based on (dirty) parameters;
-  public recalcAll(): void {
-    if (this.isBusy) return;
-    this.isBusy = true;
-    // copy parameters : not dirty!
-    this.options = new CalcOptions(this.parent.params, this.parent.canvas); //exposed
-    this.parent.params.dirty = false;
-    const op = this.options;
-
-    try {
-      if (op.calcMode >= 99) {
-        throw new Error("Bug 99 calc_mode");
-        return;
-      }
-      //computes data and image
-
-      if (this.wasmActive) {
-        this._calcBuffer = this.computeWasmPayload();
-      } // else local computes here
-      this.calcCount++;
-      this.parent.cImage.updateFromWasmPayload(this._calcBuffer, op.iterMax);
-      this.parent.render();
-    } catch (err) {
-      console.error("[cFract] Erreur lors du calcul :", err);
-    } finally {
-      this.isBusy = false;
-    }
-  }
-
-  // #region orbits
+  // #region calcIter
 
   /** Calcul d'orbite z(n+1):= z^2 + c
    * @todo 2: déléguer iter au Wasm */
-  public directIter(z0: ComplexPoint, maxIter: number = this.options.iterMax): number {
+  public calcIter(z0: ComplexPoint, maxIter: number = this.options.iterMax): number {
     const Op = this.options;
     const r2max = Op.r2max;
     const { re: c_re, im: c_im }: ComplexPoint = Op.isJulia
@@ -182,10 +161,42 @@ export class cFractCalc implements ICalc {
     return iter; // todo: return smoothIter ?
   }
 
-  // #region Calc
+  // #region calcFull()
+
+  // Launch full recomputing based on (dirty) parameters;
+  public calcFull(): void {
+    if (this.isBusy) return;
+    this.isBusy = true;
+    // copy parameters : not dirty!
+    this.options = new CalcOptions(this.parent.params, this.parent.canvas); //exposed
+    this.parent.params.dirty = false;
+    const op = this.options;
+
+    try {
+      if (op.calcMode >= 99) {
+        throw new Error("Bug 99 calc_mode");
+        return;
+      }
+      //computes data and image
+
+      if (this.wasmActive) {
+        this.computeWasmPayload();
+        this.parent.cImage.updateFromWasmPayload(this._calcBuffer, op.iterMax);
+      } else {
+        this.calcFull_fallBack();
+      }
+      this.calcCount++;
+    } catch (err) {
+      console.error("[cFract] Erreur lors du calcul :", err);
+    } finally {
+      this.isBusy = false;
+    }
+  }
+
+  // #region calcFull_fallBack
 
   /** Calcul principal, avec fallback */
-  public calcFull(): Uint32Array {
+  private calcFull_fallBack(): void {
     const op = this.options;
     const w = op.resX;
     const h = op.resY;
@@ -197,7 +208,7 @@ export class cFractCalc implements ICalc {
     const spanRe = op.span_re;
     const spanIm = op.span_im;
 
-    /*if (this.wasmEngine && typeof this.wasmEngine.compute_orbit_iter === "function") {
+    /** if (this.wasmEngine && typeof this.wasmEngine.compute_orbit_iter === "function") {
       return this.wasmEngine.compute_full();
     }/**/
 
@@ -219,15 +230,16 @@ export class cFractCalc implements ICalc {
         this.iterBuffer[idx++] = iter;
       }
     }
-    return this.iterBuffer;
   }
 
+  // #region computeWasmPayload
+
   // Exécution Wasm complète sur toute la grille de pixels
-  public computeWasmPayload(): Float32Array {
+  public computeWasmPayload(): void {
     if (!this.wasmEngine || !this.wasmMemory) {
       throw new Error("[cFractCalc] WasmEngine non initialisé");
     }
-    // Appel direct au buffer partagé WebAssembly
+    // Appel direct WebAssembly, qui calcule dans le buffer partagé
     const Op = this.options;
     this.wasmEngine.compute_generic(
       Op.isJulia,
@@ -241,19 +253,21 @@ export class cFractCalc implements ICalc {
       Op.r2max,
       Op.calcMode
     );
+    /* buffer déjà récupéré dans this._buffer
     const rawPtr: number = this.wasmEngine.buffer_ptr(); // Float32 Wasm
-    return new Float32Array(this.wasmMemory.buffer, rawPtr, this.options.payloadLen);
+    this Float32Array(this.wasmMemory.buffer, rawPtr, this.options.payloadLen); */
   }
-}
 
-// #region to refactor
+  // #region to refactor
 
-//Calcul d'orbite z(n+1):= z^2 + c (@todo: déléguer au Wasm)
-/* return this.wasmEngine.compute_orbit_array(
+  //Calcul d'orbite z(n+1):= z^2 + c (@todo: déléguer au Wasm)
+  /* return this.wasmEngine.compute_orbit_array(
         z0.re, z0.im, c.re, c.im, maxIter); */
-/*jsdirectIter(z0, maxIter = this.param.max_iter) {
-    const r2max = this.param.r2_max;
-    const c = this.param.type === "JULIA" ? this.param.juliaC : z0;
+  calcOrbit(z0: ComplexPoint, maxIter = this.options.iterMax): ComplexPoint[] {
+    const op: CalcOptions = this.options;
+    const r2max = op.r2max;
+    const c: ComplexPoint =
+      op.typeName === "JULIA" ? { re: op.juliaC_re, im: op.juliaC_im } : z0;
     const cRe = c.re;
     const cIm = c.im;
     let zRe = z0.re;
@@ -271,10 +285,10 @@ export class cFractCalc implements ICalc {
       if (mod2 > r2max) break; // escaped
     }
     return orbit;
-  } /*directIter*/
+  }
 
-// Applique l'algorithme Distance Estimator Method (DEM) sur la matrice des z0.
-/*jsCalcMatrixDEM(z0Matrix, maxIter = 500) {
+  // Applique l'algorithme Distance Estimator Method (DEM) sur la matrice des z0.
+  /*jsCalcMatrixDEM(z0Matrix, maxIter = 500) {
     const H = z0Matrix.length;
     const W = z0Matrix[0].length;
     const demMatrix = new Array(H);
@@ -320,8 +334,8 @@ export class cFractCalc implements ICalc {
     return demMatrix;
   } /**/
 
-// Calcul de la fractale via Wasm - interface
-/*jscalcFull() {
+  // Calcul de la fractale via Wasm - interface
+  /*jscalcFull() {
     if (!this.wasmEngine || !this.wasmMemory) return;
     this.isBusy = true;
     this.calcCount += 1;
@@ -348,3 +362,4 @@ export class cFractCalc implements ICalc {
     this.cImage.updateFromWasmPayload(wasmBuffer, this.param.max_iter);
     this.makeClean();
   } /***/
+}

@@ -12,8 +12,13 @@ export declare class cFractParams implements IParams {
     max_iter: number;
     r2_max: number;
     juliaC: ComplexPoint;
-    dirty: boolean;
     angleDeg: number;
+    private _dirty;
+    /** Reads dirty
+     * @todo: useful ?)
+     */
+    get dirty(): boolean;
+    set dirty(value: boolean);
     constructor(typeName: string | undefined, parent: IParent);
     toMetadata(): string;
     /** Clonage de l'objet //not used
@@ -32,7 +37,7 @@ export declare class cFractParams implements IParams {
     pix2c(point: PixelPoint): ComplexPoint;
     c2pix(c: ComplexPoint): PixelPoint;
     zoom(pix: PixelPoint, zoomFactor: number): void;
-    resetZoom(): void;
+    reset(): void;
     displayState(action: string, c?: ComplexPoint, pix?: PixelPoint): void;
 } /** */
 //# sourceMappingURL=cFractParams.d.ts.map

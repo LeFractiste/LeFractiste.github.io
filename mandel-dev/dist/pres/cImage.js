@@ -1,6 +1,7 @@
 // cImage.ts - Copyright LeFractiste 2026
 // Gestionnaire de buffer d'image et de LUT (LookUp Table) autonome
 const PAYLOAD_SIZE = 5; // [iter, smooth_iter, z_re, z_im, distance/escape angle]
+const LUTSIZE = 1024;
 export class cImage {
     width;
     height;
@@ -20,9 +21,8 @@ export class cImage {
      * Évite l'écran noir si aucun PaletteEditor n'est fourni.
      */
     initDefaultPalette() {
-        const lutSize = 1024;
-        for (let i = 0; i < lutSize; i++) {
-            const t = i / lutSize;
+        for (let i = 0; i < LUTSIZE; i++) {
+            const t = i / LUTSIZE;
             const idx = i * 4;
             // Dégradésinusoidal classique (Bleu -> Cyan -> Or -> Rouge)
             this.lut[idx] = Math.floor(127.5 * (1 + Math.sin(2 * Math.PI * t))); // R
@@ -35,7 +35,7 @@ export class cImage {
      * Reçoit une nouvelle LUT de l'extérieur (ex: PaletteEditor)
      */
     updatePalette(lookUpTable) {
-        if (lookUpTable && lookUpTable.length === 1024 * 4) {
+        if (lookUpTable && lookUpTable.length === LUTSIZE * 4) {
             this.lut = lookUpTable;
         }
         else if (lookUpTable) {

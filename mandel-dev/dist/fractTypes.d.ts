@@ -1,3 +1,26 @@
+/** charger:
+ import { } from "..fractTypes.js";
+ */
+/** V0.4 : fractTYpes utile au codage
+ * IParent partage une copie des objets cFract.x, via leur interface
+ * @todo 2: supprimer les accès perturbants (pour la console, pour le recalcul...)
+ * @todo 2: définir les interfaces associées aux aspects html (div.content, image, events)
+ * @todo 2: définir les interfaces associées au code Rust et aux calculs distribués partout, y compris les outputs (distance/potential -> palette)
+ */
+export interface AppVersionInfo {
+    version: string;
+    buildDate: string;
+    gitTag: string;
+    environment: string;
+}
+export interface TaskTrack {
+    id: string;
+    type: "TODO" | "DONE" | "WIP";
+    description: string;
+    file?: string;
+}
+export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
+export type LogLevel = "ALL" | "NOTRACE" | "NOLOG" | "NOWARN";
 /** Point dans le plans complexe
  * //@todo 2: préparer le passage à la précision multiple!
  */
@@ -24,14 +47,17 @@ export interface IAlgoParams {
     dirty: boolean;
 }
 export interface IViewportParams {
-    center: ComplexPoint;
+    get center(): ComplexPoint;
+    set center(c: ComplexPoint);
     dia: number;
     size: PixelPoint;
     angleDeg?: number;
-    aspectRatio: number;
-    span: ComplexPoint;
+    get aspectRatio(): number;
+    get span(): ComplexPoint;
     pix2c(pix: PixelPoint): ComplexPoint;
     c2pix(c: ComplexPoint): PixelPoint;
+    zoom(pix: PixelPoint, zoomFactor: number): void;
+    reset(): void;
 }
 export interface IParams extends IViewportParams, IAlgoParams {
 }
@@ -68,12 +94,14 @@ export interface CalcAppState {
     deepAnchor?: ComplexPoint;
 }
 export interface ICalc {
-    isBusy: boolean;
     autoCalc: boolean;
     calcCount: number;
     calcBuffer: Float32Array;
     wasmActive: boolean;
     initCalc(): void;
+    calcIter(c: ComplexPoint, IterMax: number): number;
+    calcOrbit(c: ComplexPoint, IterMax: number): ComplexPoint[];
+    calcFull(): void;
 }
 /** Types de trajectoires/collections pour adapter le mode de dessin */
 export type TrajectoryType = "extRay" | "orbit" | "minibrots";
@@ -111,8 +139,6 @@ export interface PointAnalysisResult {
     angleAntenna?: number;
 }
 export type AppMode = "PAN_ZOOM" | "ZOONORAMA_EXPLORE" | "EXTERNAL_RAY" | "PALETTE_EDIT";
-export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
-export type LogLevel = "ALL" | "NOTRACE" | "NOLOG" | "NOWARN";
 export interface AppState {
     currentMode: AppMode;
     isDirty: boolean;

@@ -2,14 +2,11 @@
  *  Classe de metadonnées pour le calcul : seule source de donnée pour le calcul !  (il manque des paramètres encore)
  */
 
-console.log("cFractParams 1");
-
-import { IParams, ComplexPoint, PixelPoint, IParent } from "../fractTypes.js";
+import { IParams, ComplexPoint, PixelPoint, IParent, FractType } from "../fractTypes.js";
 import { cUtils } from "../calc/utils.js";
 import { cTest } from "../analysis/cTest.js";
 
 const T = new cTest("cFractCalc");
-console.log("cFractParams 2");
 
 // cFractparams : paramètres du calcul asynchrone
 export class cFractParams implements IParams {
@@ -22,21 +19,33 @@ export class cFractParams implements IParams {
   public max_iter: number;
   public r2_max: number;
   public juliaC: ComplexPoint; //exigé par rust-m, à rendre optionel?
-  public dirty: boolean;
   public angleDeg: number = 0.0;
-  //public FractConsole: event;
+  private _dirty: boolean;
 
-  constructor(typeName: string = "MANDELBROT", parent: IParent) {
+  /** Reads dirty
+   * @todo: useful ?)
+   */
+  public get dirty(): boolean {
+    return this._dirty;
+  }
+  // Sets dirty and launches new rendering
+  public set dirty(value: boolean) {
+    this._dirty = value;
+    if (value) this.parent.render();
+  }
+
+  constructor(typeName: string = "", parent: IParent) {
+    const defaultType = "MANDELBROT";
     this.parent = parent;
-    this.typeName = typeName;
+    this.typeName = (typeName as FractType) ? typeName : defaultType;
     this._center =
-      typeName === "MANDELBROT" ? { re: -0.7, im: 0.0 } : { re: 0.0, im: 0.0 };
+      typeName === defaultType ? { re: -0.7, im: 0.0 } : { re: 0.0, im: 0.0 };
     this.dia = 2.25; // 2.25
-    this.max_iter = typeName === "MANDELBROT" ? 300 : 100;
+    this.max_iter = typeName === defaultType ? 300 : 100;
     this.r2_max = 100000.0;
     // Toujours initialisé pour satisfaire Rust-M même en Mandelbrot
     this.juliaC = { re: -0.7, im: 0.27015 };
-    this.dirty = true;
+    this._dirty = true;
   }
 
   // Métadonnées d'export (Format propre pour Exif/PNG/HEIC JSON)
@@ -130,15 +139,14 @@ export class cFractParams implements IParams {
     cFP.center.re += alpha * cFP.span.re * (1 - zoomFactor);
     cFP.center.im += beta * cFP.span.im * (1 - zoomFactor);
     // Ajustement final des échelles (spans)
-    cFP.span.re *= zoomFactor;
-    cFP.span.im *= zoomFactor;
+    cFP.dia *= zoomFactor;
     // Relance
     this.dirty = true;
     this.displayState("[Zoom]", cFP.center, pix);
   }
-  resetZoom(): void {
+  reset(): void {
     const cFP = this;
-    cFP.center.re = cFP.typeName === "JULIA" ? 0.0 : -0.7;
+    cFP.center.re = cFP.typeName === "MANDELBROT" ? -0.7 : 0;
     cFP.center.im = 0.0;
     cFP.dia = 2.25; // 9/4
     this.dirty = true;
@@ -146,18 +154,21 @@ export class cFractParams implements IParams {
   }
 
   displayState(action: string, c?: ComplexPoint, pix?: PixelPoint): void {
+    console.trace("cFractParams.displayState");
     if (!this.parent) return;
     // Prepare display msg
+    const cFP = this;
     const cF = this.parent;
     let msg = action;
     if (c) msg = `${cUtils.complexToString(c)}` + msg;
     if (cF.params.typeName === "JULIA") {
-      msg += ` | JULIA: ${cUtils.complexToString(cF.params.juliaC)}`;
+      msg += ` | JULIA: ${cUtils.complexToString(cFP.juliaC)}`;
     }
     if (pix) {
       msg += ` | px=${Math.floor(pix.x)} py=${Math.floor(pix.y)}`;
     }
+    msg += ` | dia=${cFP.dia.toExponential(2)}`;
     msg += ` | counter: ${cF.calc.calcCount}`;
-    this.parent.classConsole(msg);
+    cF.classConsole(msg);
   }
 } /** */
