@@ -21,6 +21,7 @@ export class cFract {
     //Calc variables: //todo 2: envoyer des variables dans calc ? StateMachine ici
     statusId;
     //public autoCalc: boolean = true; //event app...
+    orbit = [{ re: 0.0, im: 0.0 }];
     fixedPoints = [];
     get params() {
         return this._params;
@@ -34,7 +35,7 @@ export class cFract {
         this.ctx = this.canvas.getContext("2d");
         // Crée cImage / pres
         this.cImage = new cImage(this.canvas.width, this.canvas.height); //passer canvas et déléguer DrawOverlay ?
-        // Crée params, autoCalc=false
+        // Crée params - pourquoi private?
         this._params = new cFractParams(type, this);
         // Crée calc - sasn calcul
         this.calc = new cFractCalc(this);
@@ -67,15 +68,22 @@ export class cFract {
             // à faire
             // Envoi de l'image
             this.ctx.putImageData(this.cImage.imageData, 0, 0);
+            // Envoi de l'orbite
+            cFractDraw.drawComplexPath(this, this.orbit);
             // Envoi des overlay
             this.drawFixedPointsOverlay(); //via image ou Pres ?
         }
     }
-    // Draw overlay with default options
-    drawOrbitOverlay(orbit) {
-        console.trace("cFract.Overlay");
-        this.render(); // lent mais...
-        cFractDraw.drawComplexPath(this, orbit, {});
+    /** Draw overlay with default options
+    drawOrbitOverlay(orbit: ComplexPoint[]): void {
+      console.trace("cFract.Overlay");
+      this.render(); // lent mais...
+      cFractDraw.drawComplexPath(this, orbit, {});
+    } /**/
+    // Computes a new orbit
+    set cDeep(c) {
+        this.orbit = this.calc.calcOrbit(c);
+        this.render();
     }
     drawFixedPointsOverlay() {
         cFractDraw.drawFixedPointsOverlay(this.ctx, this._params, this.canvas.width, this.canvas.height, this.fixedPoints);

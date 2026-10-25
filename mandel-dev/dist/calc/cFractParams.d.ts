@@ -37,6 +37,7 @@ export declare class cFractParams implements IParams {
     pix2c(point: PixelPoint): ComplexPoint;
     c2pix(c: ComplexPoint): PixelPoint;
     zoom(pix: PixelPoint, zoomFactor: number): void;
+    old_zoom(pix: PixelPoint, zoomFactor: number): void;
     reset(): void;
     displayState(action: string, c?: ComplexPoint, pix?: PixelPoint): void;
 } /** */

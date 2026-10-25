@@ -4,9 +4,8 @@
 
 import { IParams, ComplexPoint, PixelPoint, IParent, FractType } from "../fractTypes.js";
 import { cUtils } from "../calc/utils.js";
-import { cTest } from "../analysis/cTest.js";
 
-const T = new cTest("cFractCalc");
+// #region cFractParams
 
 // cFractparams : paramètres du calcul asynchrone
 export class cFractParams implements IParams {
@@ -33,6 +32,8 @@ export class cFractParams implements IParams {
     this._dirty = value;
     if (value) this.parent.render();
   }
+
+  // #region constructor
 
   constructor(typeName: string = "", parent: IParent) {
     const defaultType = "MANDELBROT";
@@ -66,6 +67,8 @@ export class cFractParams implements IParams {
     p.center = this.center; //etc
     return p;
   } */
+
+  // #region Getters - Setters
 
   /** @todo : gérer le recalcul automatique avec calc.callback ou param.onchange ? */
 
@@ -108,6 +111,8 @@ export class cFractParams implements IParams {
     this.displayState(`[Size] size=${this.size.x} x ${this.size.y}`);
   }
 
+  // #region Proj
+
   // Transformation (linéaire) du plan - canvas vers complexe
   pix2c(point: PixelPoint): ComplexPoint {
     const cFP = this;
@@ -123,9 +128,16 @@ export class cFractParams implements IParams {
     return { x: px, y: py };
   }
 
+  // Simple zoom from center
+  zoom(pix: PixelPoint, zoomFactor: number): void {
+    this.dia /= zoomFactor;
+    this.dirty = true;
+    this.displayState("[Zoom]", this.center, pix);
+  }
+
   // Zoom around a fixed point (used for Mouse scroll)
   // Algorithme: l'écart sous la souris est réduit par (1 - zoomFactor)
-  zoom(pix: PixelPoint, zoomFactor: number): void {
+  old_zoom(pix: PixelPoint, zoomFactor: number): void {
     const cFP: cFractParams = this;
     // Fixed pointc, et affichage
     const mouseC = this.pix2c(pix);
@@ -153,12 +165,18 @@ export class cFractParams implements IParams {
     this.displayState("[Reset]", cFP.center);
   }
 
+  // #region display
+
+  // Display the cfract state
   displayState(action: string, c?: ComplexPoint, pix?: PixelPoint): void {
     console.trace("cFractParams.displayState");
     if (!this.parent) return;
     // Prepare display msg
     const cFP = this;
     const cF = this.parent;
+    const spyImage = cF.cImage.imageData.data.subarray(0, 5).join(",");
+    const spyWasmPayload = cF.calc.calcBuffer;
+
     let msg = action;
     if (c) msg = `${cUtils.complexToString(c)}` + msg;
     if (cF.params.typeName === "JULIA") {

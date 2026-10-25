@@ -2,8 +2,7 @@
  *  Classe de metadonnées pour le calcul : seule source de donnée pour le calcul !  (il manque des paramètres encore)
  */
 import { cUtils } from "../calc/utils.js";
-import { cTest } from "../analysis/cTest.js";
-const T = new cTest("cFractCalc");
+// #region cFractParams
 // cFractparams : paramètres du calcul asynchrone
 export class cFractParams {
     parent; // utilisé pour l'affichage sans event
@@ -29,6 +28,7 @@ export class cFractParams {
         if (value)
             this.parent.render();
     }
+    // #region constructor
     constructor(typeName = "", parent) {
         const defaultType = "MANDELBROT";
         this.parent = parent;
@@ -59,6 +59,7 @@ export class cFractParams {
       p.center = this.center; //etc
       return p;
     } */
+    // #region Getters - Setters
     /** @todo : gérer le recalcul automatique avec calc.callback ou param.onchange ? */
     // Gestion du type (encore non utilisé)
     setJuliaC(juliaC) {
@@ -99,6 +100,7 @@ export class cFractParams {
         this.dirty = true;
         this.displayState(`[Size] size=${this.size.x} x ${this.size.y}`);
     }
+    // #region Proj
     // Transformation (linéaire) du plan - canvas vers complexe
     pix2c(point) {
         const cFP = this;
@@ -113,9 +115,15 @@ export class cFractParams {
         const py = (0.5 - (c.im - cF.center.im) / cF.span.im) * cF.size.y;
         return { x: px, y: py };
     }
+    // Simple zoom from center
+    zoom(pix, zoomFactor) {
+        this.dia /= zoomFactor;
+        this.dirty = true;
+        this.displayState("[Zoom]", this.center, pix);
+    }
     // Zoom around a fixed point (used for Mouse scroll)
     // Algorithme: l'écart sous la souris est réduit par (1 - zoomFactor)
-    zoom(pix, zoomFactor) {
+    old_zoom(pix, zoomFactor) {
         const cFP = this;
         // Fixed pointc, et affichage
         const mouseC = this.pix2c(pix);
@@ -142,6 +150,8 @@ export class cFractParams {
         this.dirty = true;
         this.displayState("[Reset]", cFP.center);
     }
+    // #region display
+    // Display the cfract state
     displayState(action, c, pix) {
         console.trace("cFractParams.displayState");
         if (!this.parent)
@@ -149,6 +159,8 @@ export class cFractParams {
         // Prepare display msg
         const cFP = this;
         const cF = this.parent;
+        const spyImage = cF.cImage.imageData.data.subarray(0, 5).join(",");
+        const spyWasmPayload = cF.calc.calcBuffer;
         let msg = action;
         if (c)
             msg = `${cUtils.complexToString(c)}` + msg;

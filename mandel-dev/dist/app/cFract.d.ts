@@ -15,6 +15,7 @@ export declare class cFract implements IParent {
     private _params;
     calc: cFractCalc;
     statusId: string;
+    orbit: ComplexPoint[];
     private fixedPoints;
     get params(): IParams;
     constructor(canvasId: string, type: string | undefined, statusId: string);
@@ -22,7 +23,13 @@ export declare class cFract implements IParent {
     /** Handles the display, as necessary
      */
     render(): void;
-    drawOrbitOverlay(orbit: ComplexPoint[]): void;
+    /** Draw overlay with default options
+    drawOrbitOverlay(orbit: ComplexPoint[]): void {
+      console.trace("cFract.Overlay");
+      this.render(); // lent mais...
+      cFractDraw.drawComplexPath(this, orbit, {});
+    } /**/
+    set cDeep(c: ComplexPoint);
     drawFixedPointsOverlay(): void;
     updateStatusBar(c: ComplexPoint, px: number, py: number): void;
     classConsole(msg: string): void;
