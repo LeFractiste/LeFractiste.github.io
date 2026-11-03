@@ -1,10 +1,11 @@
-// utils - Copyright LeFractiste 2026
+// utils - V1.1 - Copyright LeFractiste 2026
 
-// Utilitaires associés au calcul de fractales, ou Sheets, ou...
-// Fonctions déclarées static car sans instance de classe !
+// Utils: helpers for fractals & compplex computing.
+// rev 1.1: added zMath, not tested
+// rev 1.0: ts refactoring
 
 import { ComplexPoint } from "../fractTypes.js";
-
+// Helper functions
 export class cUtils {
   // To display a ComplexPoint with digits=7 precision
 
@@ -31,6 +32,8 @@ export class cUtils {
       { root: z2, stable: isStable2 }
     ];
   }
+
+  // #region toString
 
   // Affichage complexe - //@todo 2: à passer dans utils
   static complexToString(c: ComplexPoint, digits = 7) {
@@ -65,3 +68,88 @@ export class cUtils {
       });
   }
 } /** cUtils */
+
+// #region zMath
+
+type real = number;
+interface Complex<T> {
+  re: T;
+  im: T;
+}
+// Complex calculator - In preparation of bigNumber implementation - use only in Params & event calc (not calc, iter,... yet: too slow)
+class zMath implements Complex<real> {
+  re: real = 0.0;
+  im: real = 0.0;
+  tag?: string;
+  constructor(re: real = 0.0, im?: real) {
+    this.re = re;
+    if (im) this.im = im;
+  }
+  toString(digits = 7): string {
+    return `${this.tag ? this.tag + "=" : ""}${this.re.toFixed(digits)} ${this.im >= 0 ? "+" : ""}${this.im.toFixed(digits)}i`;
+  }
+  t(tag?: string): zMath {
+    this.tag = tag;
+    console.log(this.toString());
+    return this;
+  }
+  add(z1: zMath): zMath {
+    this.re += z1.re;
+    this.im += z1.im;
+    return this;
+  }
+  min(z1: zMath): zMath {
+    this.re -= z1.re;
+    this.im -= z1.im;
+    return this;
+  }
+  mul(z1: zMath): zMath {
+    const tmp = this.re * z1.re - this.im * z1.im;
+    this.im = this.re * z1.im - this.im * z1.re;
+    this.re = tmp;
+    return this;
+  }
+  div(z1: zMath): zMath {
+    return this.mul(z1.inv());
+  }
+  plus(n: number): zMath {
+    this.re += n;
+    return this;
+  }
+  scale(n: number): zMath {
+    this.re *= n;
+    this.im *= n;
+    return this;
+  }
+  sq(): zMath {
+    const tmp = this.re * this.re - this.im * this.im;
+    this.im = 2.0 * this.re * this.im;
+    this.re = tmp;
+    return this;
+  }
+  sqrt(): zMath {
+    const r = Math.hypot(this.re, this.im);
+    return this.conj().scale(1 / r);
+  }
+  conj(): zMath {
+    this.im = -this.im;
+    return this;
+  }
+  inv(): zMath {
+    const r2 = this.norm2;
+    this.re /= r2;
+    this.im /= r2;
+    return this;
+  }
+  get norm(): number {
+    return Math.hypot(this.re, this.im);
+  }
+  get norm2(): number {
+    return this.re * this.re + this.im * this.im;
+  }
+}
+
+function T_zMath(): void {
+  const Z = new zMath();
+  Z.plus(1);
+}

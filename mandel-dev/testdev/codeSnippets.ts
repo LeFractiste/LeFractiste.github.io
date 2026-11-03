@@ -256,4 +256,42 @@ export class InputHandler {
         }
     }
 }
+
+//#region decorators
+// Exemple de décorateur personnalisé pour marquer "non editable" ou sérialiser une propriété
+// Activer experimentalDecorators dans tsconfig
+function ReadOnly(target: any, propertyKey: string) {
+  let value = target[propertyKey];
+
+  const getter = () => value;
+  const setter = (newVal: any) => {
+    console.warn(`Attention : tentative de modification de la propriété verrouillée '${propertyKey}'`);
+    // On pourrait bloquer, logger, ou transformer la valeur ici à la compilation/exécution
+  };
+
+  Object.defineProperty(target, propertyKey, {
+    get: getter,
+    set: setter,
+    enumerable: true,
+    configurable: true
+  });
+}
+
+// Utilisation dans une classe :
+class FractalConfig {
+  @ReadOnly
+  public maxIterations: number = 1000;
+}
+
+// #region write version file -----------------------
+const { execSync } = require('child_process');
+const fs = require('fs');
+const gitTag = execSync('git describe --tags --always --dirty').toString().trim();
+const buildDate = new Date().toISOString();
+const content = `// Généré automatiquement - Ne pas modifier à la main\n` +
+                `export const APP_VERSION = {\n` +
+                `  gitTag: "${gitTag}",\n` +
+                `  buildDate: "${buildDate}"\n` +
+                `};\n`;
+fs.writeFileSync('./src/version.ts', content);
 // #endRegion

@@ -13,7 +13,7 @@ import init, { MandelEngine } from "../../pkg/rust_m.js";
 import { cImage } from "../pres/cImage.js";
 import { cFractCalc } from "../calc/cFractCalc.js";
 import {
-  IHTMLFractContainer,
+  IFractCard,
   IHTMLSetupOptions,
   setupFractalCanvas,
   updateParamsFromURL,
@@ -22,7 +22,15 @@ import {
 import { cFractDraw } from "../pres/fractDraw.js";
 import { cFractParams } from "../calc/cFractParams.js";
 import { cUtils } from "../calc/utils.js";
-import { ComplexPoint, PixelPoint, IParent, IParams } from "../fractTypes.js";
+import { InputRouter } from "../app/inputRouter.js";
+import {
+  ComplexPoint,
+  PixelPoint,
+  IParent,
+  IParams,
+  IInputRouter,
+  PointerEventCallbacks
+} from "../fractTypes.js";
 
 // #region CFRACT
 export class cFract implements IParent {
@@ -31,9 +39,12 @@ export class cFract implements IParent {
   public cImage: cImage;
   private _params: cFractParams;
   public calc: cFractCalc;
+  public draw: cFractDraw;
+  public inputRouter: IInputRouter;
 
   //Calc variables: //todo 2: envoyer des variables dans calc ? StateMachine ici
   public statusId: string;
+  private lockedC: ComplexPoint | null = null;
   //public autoCalc: boolean = true; //event app...
   public orbit: ComplexPoint[] = [{ re: 0.0, im: 0.0 }];
   private fixedPoints: ComplexPoint[] = [];
@@ -53,21 +64,56 @@ export class cFract implements IParent {
     this._params = new cFractParams(type, this);
     // Crée calc - sasn calcul
     this.calc = new cFractCalc(this);
+    this.draw = new cFractDraw(this);
+    this.inputRouter = new InputRouter(this.canvas);
   }
 
-  // Launch the objet, up to calc.initCalc(handling wasm)
-  async initParent(paletteLut?: Uint8Array): Promise<void> {
+  // #region Init
+
+  // Launch the objet: calc, render, palette and events
+  async initParent(paletteLut?: Uint8Array, resetId?: string): Promise<void> {
     // initialiser tout sauf calc
     if (paletteLut) this.cImage.updatePalette(paletteLut);
     // Last step: calc & rust & calcul up to render (point dur !)
-    try {
-      await this.calc.initCalc();
-      this.classConsole("Initialized");
-      this.render();
-    } catch (e) {
-      this.classConsole("Error cFract init");
-    }
-    // InitCalc appelle render à la fin
+    await this.calc.initCalc();
+    this.classConsole("Initialized");
+    this.render();
+    // Initialisation des événements
+    const cb = this.genCbEvents(resetId);
+    this.inputRouter.bindDOMEvents(cb);
+  }
+
+  // #region Events-UX
+  // Câblage des PointerEventCallbacks
+  genCbEvents(resetId?: string): PointerEventCallbacks {
+    const callbacks: PointerEventCallbacks = {
+      // SURVOL (HOVER) : Met à jour le statut avec les coordonnées complexes sous la souris
+      onHover: (px: PixelPoint) => {
+        const pC = this._params.pix2c(px);
+        this.updateStatusBar(pC, px.x, px.y); /// XXXX ramener cette version ici !
+      },
+      // CLIC : Sélectionne ou fixe un point
+      onClick: (px: PixelPoint) => {
+        const pC = this._params.pix2c(px);
+        this._params.displayState("[Click]", pC, px);
+        // Logique spécifique Mandelbrot/Julia ici si besoin
+      },
+      // ZOOM (Molette) : Utilise la méthode zoom de cFractParams
+      onZoom: (px: PixelPoint, factor: number) => {
+        const cFP = this._params;
+        cFP.onZoom(px, factor); // zoom autour du point
+        cFP.displayState("[Zoom]", cFP.center, px);
+      },
+      // PAN (Glisser) : Déplace le centre
+      onDrag: (deltaPx: PixelPoint) => {
+        this._params.onDrag(deltaPx);
+      },
+      // RESET
+      onReset: () => {
+        this._params.onReset();
+      }
+    };
+    return callbacks;
   }
 
   // #region Render
@@ -77,16 +123,22 @@ export class cFract implements IParent {
   render(): void {
     console.trace("cFract.render");
     // recomputes if necessary (dirty) and possible (busy)
-    if (this._params.dirty) {
-      this.calc.calcFull();
+    const cFP = this._params;
+    if (cFP.dirty) {
+      this.calc.calcFull(); //reset of dirty
       // recalcul des overlay ?
       // à faire
       // Envoi de l'image
       this.ctx.putImageData(this.cImage.imageData, 0, 0);
-      // Envoi de l'orbite
-      cFractDraw.drawComplexPath(this, this.orbit);
-      // Envoi des overlay
-      this.drawFixedPointsOverlay(); //via image ou Pres ?
+    }
+    // Envoi de l'orbite
+    this.draw.drawComplexPath(this.orbit);
+    // Envoi des overlay
+    if ((cFP.typeName = "JULIA")) {
+      //this.draw.drawFixedPointsOverlay(this); /** @todo mal initialisé */
+      this.draw.drawReticle(cFP.c2pix(cFP.juliaC));
+    } else {
+      if (this.lockedC) this.draw.drawReticle(cFP.c2pix(this.lockedC));
     }
   }
 
@@ -101,16 +153,6 @@ export class cFract implements IParent {
   set cDeep(c: ComplexPoint) {
     this.orbit = this.calc.calcOrbit(c);
     this.render();
-  }
-
-  drawFixedPointsOverlay(): void {
-    cFractDraw.drawFixedPointsOverlay(
-      this.ctx,
-      this._params,
-      this.canvas.width,
-      this.canvas.height,
-      this.fixedPoints
-    );
   }
 
   // #region Status UI & Helpers

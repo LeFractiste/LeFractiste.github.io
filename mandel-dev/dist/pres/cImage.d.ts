@@ -1,5 +1,5 @@
-import { Iimage } from "../fractTypes.js";
-export declare class cImage implements Iimage {
+import { IImage } from "../fractTypes.js";
+export declare class cImage implements IImage {
     width: number;
     height: number;
     imageData: ImageData;

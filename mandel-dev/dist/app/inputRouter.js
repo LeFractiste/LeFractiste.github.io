@@ -1,35 +1,26 @@
-/**
- * Routeur d'événements unifié (InputRouter) - Mouse, touch et gestures.
- * - Gère le Pan (Glisser), Zoom (Molette & Pinch), Survol (Hoover) et Clics et Touches.
- * - Gère les callbacks (cb)
- * - Anticipe @todo:  la sélection de points complexes et la manipulation de poignées (Handles).
+/** InputRouter.ts - V1.2 - Copyright LeFractiste 2026
+ * Update: 1.2: changed EventCallbacks to be agnostic (only pixels plane)
+ * @todo : intégrer à cFract via cFractEvents
+ *  @todo:  la sélection de points complexes et la manipulation de poignées (InteractiveHandles).
  */
 // #region InputRouter Class
+/** Routeur d'événements
+ *  Pointeur: récupère les événements natifs (DOM) Mouse, Touch and gestures, et les attache (bind) aux callBacks (cb: eventRouterCallBack)
+ *  Click (single touch), Pan (Glisser), Zoom (Molette & Pinch), Survol (Hoover). */
 export class InputRouter {
-    activeMode = "PAN_ZOOM";
-    handles = [];
     canvasEl; //node.js
-    parent;
-    params;
     isDragging = false;
     lastMouse = { x: 0, y: 0 };
     touchStartDist = 0; // Pour le Pinch-to-zoom Smartphone
-    /** @todo: modifier la déclaration pour injecter les événements via mandel.onHoover */
-    constructor(parent, canvasEl) {
-        this.parent = parent;
+    constructor(canvasEl) {
         this.canvasEl = canvasEl;
-        this.params = this.parent.params;
     }
-    //interface - not defined yet
-    registerHandle(handle) { }
     /** Attache les écouteurs natifs DOM au canvas (Mouse & Touch) */
     bindDOMEvents(cb) {
         this.canvasEl.style.touchAction = "none"; // Bloque le scroll natif mobile
         this.bindMouseEvents(cb);
         this.bindTouchEvents(cb);
     }
-    //interface - not defined yet
-    dispatch(command) { }
     // #region Mouse Listeners
     // Ajout des events MOUSE - les callbacks peuvent être indéfinis !
     bindMouseEvents(cb) {
@@ -53,6 +44,7 @@ export class InputRouter {
         // MOUSE MOVE: onHoover(pix2c) OU isDragging: onPan(deltaC)
         window.addEventListener("mousemove", e => {
             const pt = this.getCanvasPx(e.clientX, e.clientY);
+            // teste la sortie de canvas
             const inBounds = pt.x >= 0 &&
                 pt.x <= this.canvasEl.width &&
                 pt.y >= 0 &&
@@ -60,24 +52,23 @@ export class InputRouter {
             if (!inBounds) {
                 this.isDragging = false;
                 return;
-            } //sortie écran
+            }
             if (cb.onHover && !this.isDragging)
-                cb.onHover(this.params.pix2c(pt), pt);
+                cb.onHover(pt);
             if (this.isDragging) {
                 const dx = e.clientX - this.lastMouse.x;
                 const dy = e.clientY - this.lastMouse.y;
                 if (Math.hypot(dx, dy) > 3)
                     hasMoved = true;
                 this.lastMouse = { x: e.clientX, y: e.clientY };
-                if (cb.onPan)
-                    cb.onPan(this.pix2cVector(dx, dy));
+                if (cb.onDrag)
+                    cb.onDrag({ x: dx, y: dy });
             }
         });
         // MOUSE UP: envoie onClick(c) et clôture isDragging
         window.addEventListener("mouseup", e => {
             if (this.isDragging && cb.onClick && !hasMoved) {
-                const pC = this.params.pix2c(this.lastMouse);
-                cb.onClick(pC, this.lastMouse);
+                cb.onClick(this.lastMouse);
             }
             this.isDragging = false;
         });
@@ -102,15 +93,17 @@ export class InputRouter {
         // TOUCHMOVE: onPan du déplacement (un doigt) ou onZoom autour du centre (2 doigts)
         this.canvasEl.addEventListener("touchmove", e => {
             e.preventDefault();
-            if (e.touches.length === 1 && this.isDragging && cb.onPan) {
+            if (e.touches.length === 1 && this.isDragging && cb.onDrag) {
+                // single touch
                 hasMoved = true;
                 const touch = e.touches[0];
                 const dx = touch.clientX - this.lastMouse.x;
                 const dy = touch.clientY - this.lastMouse.y;
                 this.lastMouse = { x: touch.clientX, y: touch.clientY };
-                cb.onPan(this.pix2cVector(dx, dy));
+                cb.onDrag({ x: dx, y: dy });
             }
             else if (e.touches.length === 2 && cb.onZoom) {
+                // dual touch  - zoom  (or todo: implement rotation)
                 const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
                 if (this.touchStartDist > 0) {
                     const factor = this.touchStartDist / dist;
@@ -123,7 +116,7 @@ export class InputRouter {
         // TOUCHEND: fin move ou onClick
         this.canvasEl.addEventListener("touchend", () => {
             if (this.isDragging && !hasMoved && cb.onClick) {
-                cb.onClick(this.params.pix2c(this.lastMouse), this.lastMouse);
+                cb.onClick(this.lastMouse);
             }
             this.isDragging = false;
             this.touchStartDist = 0;
@@ -135,12 +128,6 @@ export class InputRouter {
     getCanvasPx(clientX, clientY) {
         const rect = this.canvasEl.getBoundingClientRect();
         return { x: clientX - rect.left, y: clientY - rect.top };
-    }
-    // Computes a complex vector from delta pixels
-    pix2cVector(dxPx, dyPx) {
-        const p0 = this.params.pix2c({ x: 0, y: 0 });
-        const p1 = this.params.pix2c({ x: dxPx, y: dyPx });
-        return { re: p0.re - p1.re, im: p0.im - p1.im };
     }
 }
 // #endregion

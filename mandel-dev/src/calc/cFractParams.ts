@@ -10,20 +10,18 @@ import { cUtils } from "../calc/utils.js";
 // cFractparams : paramètres du calcul asynchrone
 export class cFractParams implements IParams {
   private parent: IParent; // utilisé pour l'affichage sans event
+  private _center: ComplexPoint; //controled property
+  private _dirty: boolean;
   public typeName: string; //à remplacer par get quand Rust changera (exige JuliaC alors que Mandelbrot=(JuliaC= Undefined)
   public size: PixelPoint = { x: 400, y: 300 };
-  private _center: ComplexPoint; //controled property
   public aspectRatio: number = 4 / 3; //800-600 par défaut!
   public dia: number;
   public max_iter: number;
   public r2_max: number;
   public juliaC: ComplexPoint; //exigé par rust-m, à rendre optionel?
   public angleDeg: number = 0.0;
-  private _dirty: boolean;
 
-  /** Reads dirty
-   * @todo: useful ?)
-   */
+  /** Reads dirty */
   public get dirty(): boolean {
     return this._dirty;
   }
@@ -47,6 +45,13 @@ export class cFractParams implements IParams {
     // Toujours initialisé pour satisfaire Rust-M même en Mandelbrot
     this.juliaC = { re: -0.7, im: 0.27015 };
     this._dirty = true;
+  }
+  /**  */
+  initSize(size: PixelPoint) {
+    this.size = size;
+    this.aspectRatio = size.y / size.x;
+    this.dirty = true;
+    this.displayState(`[Size] size=${this.size.x} x ${this.size.y}`);
   }
 
   // Métadonnées d'export (Format propre pour Exif/PNG/HEIC JSON)
@@ -104,12 +109,6 @@ export class cFractParams implements IParams {
     this.dirty = true;
     this.displayState("[Vector] dia=${dia} angle=${angleDeg}");
   }
-  initSize(size: PixelPoint) {
-    this.size = size;
-    this.aspectRatio = size.y / size.x;
-    this.dirty = true;
-    this.displayState(`[Size] size=${this.size.x} x ${this.size.y}`);
-  }
 
   // #region Proj
 
@@ -128,8 +127,20 @@ export class cFractParams implements IParams {
     return { x: px, y: py };
   }
 
+  // PAN (Glisser) : Déplace le centre
+  onDrag(deltaPx: PixelPoint): void {
+    const cFP = this;
+    // Conversion du delta pixel en delta complexe et mise à jour du centre
+    // (Exemple d'implémentation de pan basée sur ton span et taille)
+    const span = cFP.span;
+    const w = cFP.size.x;
+    const h = cFP.size.y;
+    cFP.center.re -= (deltaPx.x / w) * span.re;
+    cFP.center.im += (deltaPx.y / h) * span.im; // Inversé car y positif vers le bas
+  }
+
   // Simple zoom from center
-  zoom(pix: PixelPoint, zoomFactor: number): void {
+  zoom_centered(pix: PixelPoint, zoomFactor: number): void {
     this.dia /= zoomFactor;
     this.dirty = true;
     this.displayState("[Zoom]", this.center, pix);
@@ -137,26 +148,28 @@ export class cFractParams implements IParams {
 
   // Zoom around a fixed point (used for Mouse scroll)
   // Algorithme: l'écart sous la souris est réduit par (1 - zoomFactor)
-  old_zoom(pix: PixelPoint, zoomFactor: number): void {
+  onZoom(pix: PixelPoint, zoomFactor: number): void {
     const cFP: cFractParams = this;
     // Fixed pointc, et affichage
     const mouseC = this.pix2c(pix);
+    // Ajustement du facteur d'échelle
+    cFP.dia /= zoomFactor;
     //todo: event ! this.parent.updateStatusBar(mouseC, pix);
     // Ratio normalisé du pointeur par rapport au centre du canvas (-0.5 à +0.5)
-    const w = this.size.x;
-    const h = this.size.y;
+    const w = cFP.size.x;
+    const h = cFP.size.y;
     const alpha = pix.x / w - 0.5;
-    const beta = 0.5 - pix.y / h;
+    const beta = 0.5 - pix.y / h; // pix.y positif vers le bas
     // Déplacement du centre : l'écart sous la souris est réduit par (1 - zoomFactor)
-    cFP.center.re += alpha * cFP.span.re * (1 - zoomFactor);
-    cFP.center.im += beta * cFP.span.im * (1 - zoomFactor);
-    // Ajustement final des échelles (spans)
-    cFP.dia *= zoomFactor;
+    cFP.center = {
+      re: mouseC.re - alpha * this.span.re,
+      im: mouseC.im - beta * this.span.im
+    };
     // Relance
     this.dirty = true;
     this.displayState("[Zoom]", cFP.center, pix);
   }
-  reset(): void {
+  onReset(): void {
     const cFP = this;
     cFP.center.re = cFP.typeName === "MANDELBROT" ? -0.7 : 0;
     cFP.center.im = 0.0;
@@ -166,6 +179,15 @@ export class cFractParams implements IParams {
   }
 
   // #region display
+
+  spyPixelMemory(): void {
+    if (!this.parent) return;
+    // Prepare display msg
+    const cFP = this;
+    const cF = cFP.parent;
+    const spyImage = cF.cImage.imageData.data.subarray(0, 5).join(",");
+    const spyWasmPayload = cF.calc.calcBuffer;
+  }
 
   // Display the cfract state
   displayState(action: string, c?: ComplexPoint, pix?: PixelPoint): void {

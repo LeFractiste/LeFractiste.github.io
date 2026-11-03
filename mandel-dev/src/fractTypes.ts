@@ -1,5 +1,5 @@
-// src/fractTypes.ts - V0.4 - copyright LeFractiste 2026
-// Helper pour cFract: définit les interfaces publiques principales de l'application / package.
+// src/fractTypes.ts - V1.0 - copyright LeFractiste 2026
+// Helper pour cFract: définit les interfaces utiles à l'application.
 // Sert à cadrer le refactoring (et la génération de code compatible du legacy).
 // Utile pour donner à App les billes pour utiliser les données générées.
 
@@ -7,7 +7,7 @@
  import { } from "..fractTypes.js";
  */
 
-/** V0.4 : fractTYpes utile au codage
+/** V1.0: homogène et utilisé
  * IParent partage une copie des objets cFract.x, via leur interface
  * @todo 2: supprimer les accès perturbants (pour la console, pour le recalcul...)
  * @todo 2: définir les interfaces associées aux aspects html (div.content, image, events)
@@ -24,6 +24,15 @@ export interface AppVersionInfo {
   environment: string;
 }
 
+// Error levels for code and tests
+export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
+// Log levels : ALL, NOTRACE, NOLOG, NOWARN
+export type LogLevel = "ALL" | "NOTRACE" | "NOLOG" | "NOWARN";
+// ILogger
+export interface ILogger {
+  logLevel: LogLevel;
+}
+
 // Pour suivi local (Todo / Done) spécifique à la branche courante
 export interface TaskTrack {
   id: string;
@@ -31,11 +40,6 @@ export interface TaskTrack {
   description: string;
   file?: string;
 }
-
-// Error levels for cTest
-export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
-// Log levels for cTest
-export type LogLevel = "ALL" | "NOTRACE" | "NOLOG" | "NOWARN";
 
 // #region Bases
 
@@ -86,8 +90,8 @@ export interface IViewportParams {
 
   pix2c(pix: PixelPoint): ComplexPoint;
   c2pix(c: ComplexPoint): PixelPoint;
-  zoom(pix: PixelPoint, zoomFactor: number): void;
-  reset(): void;
+  onZoom(pix: PixelPoint, zoomFactor: number): void;
+  onReset(): void;
 
   //c2pix and pix2c ? (no: different projection = other params & arguments)
 }
@@ -106,7 +110,7 @@ export interface IParent {
   calc: ICalc;
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  cImage: Iimage;
+  cImage: IImage;
   palette?: {
     orbitColor?: string;
     trajectoryColor?: string;
@@ -153,14 +157,6 @@ export interface ICalc {
 // #region Analysis
 /** Types de trajectoires/collections pour adapter le mode de dessin */
 export type TrajectoryType = "extRay" | "orbit" | "minibrots";
-export type DrawType = "continuous" | "points" | "groupedPoints";
-
-/** Options de dessin optionnelles qui surchargent celles du parent */
-export interface DrawOptions {
-  color?: string;
-  lineWidth?: number;
-  showPoints?: boolean;
-}
 
 /** Interface générique pour le déplacement et le rendu d'une trajectoire */
 export interface Trajectory {
@@ -245,34 +241,58 @@ export interface UserCommand {
  * todo 2: rendre cohérent - tout en pix, avec pC optionnel ou non fourni, à calculer par le callback ?)
  * todo 2: ajouter la rotation: roller+right click / two fingers rotation / angles entiers à ajouter à URL
  */
-export interface EventRouterCallbacks {
-  defaultCallback?: () => void;
+export interface old_EventRouterCallbacks {
   onHover?: (pC: ComplexPoint, pPx: PixelPoint) => void;
   onClick?: (pC: ComplexPoint, pPx: PixelPoint) => void;
   onZoom?: (centerPx: PixelPoint, factor: number) => void;
-  onPan?: (deltaC: ComplexPoint) => void;
+  onDrag?: (deltaC: ComplexPoint) => void;
+}
+export interface PointerEventCallbacks {
+  onHover?: (pPx: PixelPoint) => void;
+  onClick?: (pPx: PixelPoint) => void;
+  onZoom?: (centerPx: PixelPoint, factor: number) => void;
+  onDrag?: (deltaPx: PixelPoint) => void;
+  onRotate?: (centerPx: PixelPoint, angle: number) => void;
+  onReset?: () => void;
 }
 
 /** Contrat du Gestionnaire d'Événements / InputRouter */
 export interface IInputRouter {
-  activeMode: AppMode;
-  handles: InteractiveHandle[];
   canvasEl: HTMLCanvasElement;
-  bindDOMEvents: (cb: EventRouterCallbacks) => void;
+  bindDOMEvents: (cb: PointerEventCallbacks) => void;
+}
+/** reserved */
+export interface IIHandlesRouter extends IInputRouter {
+  handles: InteractiveHandle[];
+  activeMode: AppMode;
   registerHandle: (handle: InteractiveHandle) => void;
-
   dispatch: (command: UserCommand) => void;
 }
-// #endregion
-
 // #region Presentation
 
-export interface Iimage {
+export interface IImage {
   width: number;
   height: number;
   imageData: ImageData;
   updatePalette(lookUpTable: Uint8Array): void;
   updateFromWasmPayload(wasmFloatBuffer: Float32Array, maxIter?: number): void;
+}
+
+export type DrawType = "continuous" | "points" | "groupedPoints";
+// DrawOverlay: called by parent.render
+export interface IDrawOverlay {
+  //ctx: CanvasRenderingContext2D;
+  drawReticle(pix: PixelPoint): void;
+  drawFixedPointsOverlay(fixedPoints: ComplexPoint[]): void;
+  drawComplexPath(points: ComplexPoint[], options: DrawOptions): void;
+  /** @todo intégrer à pres et mémoriser canvas et ctx et width */
+}
+
+/** Options de dessin optionnelles qui surchargent celles du parent */
+export interface DrawOptions {
+  color?: string;
+  lineWidth?: number;
+  showPoints?: boolean;
 }
 
 // Gestion Simplifiée de la Palette

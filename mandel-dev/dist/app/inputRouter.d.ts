@@ -1,29 +1,23 @@
-import { IParent, InteractiveHandle, EventRouterCallbacks, //cb events: onPan, onHoover, onZoom, onClick
-IInputRouter, UserCommand, AppMode } from "../fractTypes.js";
-/**
- * Routeur d'événements unifié (InputRouter) - Mouse, touch et gestures.
- * - Gère le Pan (Glisser), Zoom (Molette & Pinch), Survol (Hoover) et Clics et Touches.
- * - Gère les callbacks (cb)
- * - Anticipe @todo:  la sélection de points complexes et la manipulation de poignées (Handles).
+/** InputRouter.ts - V1.2 - Copyright LeFractiste 2026
+ * Update: 1.2: changed EventCallbacks to be agnostic (only pixels plane)
+ * @todo : intégrer à cFract via cFractEvents
+ *  @todo:  la sélection de points complexes et la manipulation de poignées (InteractiveHandles).
  */
+import { PointerEventCallbacks, // cb events: onPan, onHoover, onZoom, onClick
+IInputRouter } from "../fractTypes.js";
+/** Routeur d'événements
+ *  Pointeur: récupère les événements natifs (DOM) Mouse, Touch and gestures, et les attache (bind) aux callBacks (cb: eventRouterCallBack)
+ *  Click (single touch), Pan (Glisser), Zoom (Molette & Pinch), Survol (Hoover). */
 export declare class InputRouter implements IInputRouter {
-    activeMode: AppMode;
-    handles: InteractiveHandle[];
     canvasEl: HTMLCanvasElement;
-    private parent;
-    private params;
     private isDragging;
     private lastMouse;
     private touchStartDist;
-    /** @todo: modifier la déclaration pour injecter les événements via mandel.onHoover */
-    constructor(parent: IParent, canvasEl: HTMLCanvasElement);
-    registerHandle(handle: InteractiveHandle): void;
+    constructor(canvasEl: HTMLCanvasElement);
     /** Attache les écouteurs natifs DOM au canvas (Mouse & Touch) */
-    bindDOMEvents(cb: EventRouterCallbacks): void;
-    dispatch(command: UserCommand): void;
+    bindDOMEvents(cb: PointerEventCallbacks): void;
     private bindMouseEvents;
     private bindTouchEvents;
     private getCanvasPx;
-    private pix2cVector;
 }
 //# sourceMappingURL=inputRouter.d.ts.map

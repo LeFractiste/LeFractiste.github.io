@@ -1,4 +1,5 @@
-// utils - Copyright LeFractiste 2026
+// utils - V1.1 - Copyright LeFractiste 2026
+// Helper functions
 export class cUtils {
     // To display a ComplexPoint with digits=7 precision
     // Calcul de la racine carrée d'un nombre complexe
@@ -55,4 +56,81 @@ export class cUtils {
         });
     }
 } /** cUtils */
+// Complex calculator - In preparation of bigNumber implementation - use only in Params & event calc (not calc, iter,... yet: too slow)
+class zMath {
+    re = 0.0;
+    im = 0.0;
+    tag;
+    constructor(re = 0.0, im) {
+        this.re = re;
+        if (im)
+            this.im = im;
+    }
+    toString(digits = 7) {
+        return `${this.tag ? this.tag + "=" : ""}${this.re.toFixed(digits)} ${this.im >= 0 ? "+" : ""}${this.im.toFixed(digits)}i`;
+    }
+    t(tag) {
+        this.tag = tag;
+        console.log(this.toString());
+        return this;
+    }
+    add(z1) {
+        this.re += z1.re;
+        this.im += z1.im;
+        return this;
+    }
+    min(z1) {
+        this.re -= z1.re;
+        this.im -= z1.im;
+        return this;
+    }
+    mul(z1) {
+        const tmp = this.re * z1.re - this.im * z1.im;
+        this.im = this.re * z1.im - this.im * z1.re;
+        this.re = tmp;
+        return this;
+    }
+    div(z1) {
+        return this.mul(z1.inv());
+    }
+    plus(n) {
+        this.re += n;
+        return this;
+    }
+    scale(n) {
+        this.re *= n;
+        this.im *= n;
+        return this;
+    }
+    sq() {
+        const tmp = this.re * this.re - this.im * this.im;
+        this.im = 2.0 * this.re * this.im;
+        this.re = tmp;
+        return this;
+    }
+    sqrt() {
+        const r = Math.hypot(this.re, this.im);
+        return this.conj().scale(1 / r);
+    }
+    conj() {
+        this.im = -this.im;
+        return this;
+    }
+    inv() {
+        const r2 = this.norm2;
+        this.re /= r2;
+        this.im /= r2;
+        return this;
+    }
+    get norm() {
+        return Math.hypot(this.re, this.im);
+    }
+    get norm2() {
+        return this.re * this.re + this.im * this.im;
+    }
+}
+function T_zMath() {
+    const Z = new zMath();
+    Z.plus(1);
+}
 //# sourceMappingURL=utils.js.map

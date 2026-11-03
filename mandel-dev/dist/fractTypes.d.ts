@@ -1,7 +1,7 @@
 /** charger:
  import { } from "..fractTypes.js";
  */
-/** V0.4 : fractTYpes utile au codage
+/** V1.0: homogène et utilisé
  * IParent partage une copie des objets cFract.x, via leur interface
  * @todo 2: supprimer les accès perturbants (pour la console, pour le recalcul...)
  * @todo 2: définir les interfaces associées aux aspects html (div.content, image, events)
@@ -13,14 +13,17 @@ export interface AppVersionInfo {
     gitTag: string;
     environment: string;
 }
+export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
+export type LogLevel = "ALL" | "NOTRACE" | "NOLOG" | "NOWARN";
+export interface ILogger {
+    logLevel: LogLevel;
+}
 export interface TaskTrack {
     id: string;
     type: "TODO" | "DONE" | "WIP";
     description: string;
     file?: string;
 }
-export type ErrorLevel = "OK" | "WARN" | "ERROR" | "STOP";
-export type LogLevel = "ALL" | "NOTRACE" | "NOLOG" | "NOWARN";
 /** Point dans le plans complexe
  * //@todo 2: préparer le passage à la précision multiple!
  */
@@ -69,7 +72,7 @@ export interface IParent {
     calc: ICalc;
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
-    cImage: Iimage;
+    cImage: IImage;
     palette?: {
         orbitColor?: string;
         trajectoryColor?: string;
@@ -105,13 +108,6 @@ export interface ICalc {
 }
 /** Types de trajectoires/collections pour adapter le mode de dessin */
 export type TrajectoryType = "extRay" | "orbit" | "minibrots";
-export type DrawType = "continuous" | "points" | "groupedPoints";
-/** Options de dessin optionnelles qui surchargent celles du parent */
-export interface DrawOptions {
-    color?: string;
-    lineWidth?: number;
-    showPoints?: boolean;
-}
 /** Interface générique pour le déplacement et le rendu d'une trajectoire */
 export interface Trajectory {
     current: ComplexPoint;
@@ -168,28 +164,48 @@ export interface UserCommand {
  * todo 2: rendre cohérent - tout en pix, avec pC optionnel ou non fourni, à calculer par le callback ?)
  * todo 2: ajouter la rotation: roller+right click / two fingers rotation / angles entiers à ajouter à URL
  */
-export interface EventRouterCallbacks {
+export interface old_EventRouterCallbacks {
     defaultCallback?: () => void;
     onHover?: (pC: ComplexPoint, pPx: PixelPoint) => void;
     onClick?: (pC: ComplexPoint, pPx: PixelPoint) => void;
     onZoom?: (centerPx: PixelPoint, factor: number) => void;
     onPan?: (deltaC: ComplexPoint) => void;
 }
+export interface PointerEventCallbacks {
+    defaultCallback?: () => void;
+    onHover?: (pPx: PixelPoint) => void;
+    onClick?: (pPx: PixelPoint) => void;
+    onZoom?: (centerPx: PixelPoint, factor: number) => void;
+    onDrag?: (deltaPx: PixelPoint) => void;
+    onRotate?: (centerPx: PixelPoint, angle: number) => void;
+}
 /** Contrat du Gestionnaire d'Événements / InputRouter */
 export interface IInputRouter {
-    activeMode: AppMode;
-    handles: InteractiveHandle[];
     canvasEl: HTMLCanvasElement;
-    bindDOMEvents: (cb: EventRouterCallbacks) => void;
+    bindDOMEvents: (cb: PointerEventCallbacks) => void;
+}
+/** reserved */
+export interface IIHandlesRouter extends IInputRouter {
+    handles: InteractiveHandle[];
+    activeMode: AppMode;
     registerHandle: (handle: InteractiveHandle) => void;
     dispatch: (command: UserCommand) => void;
 }
-export interface Iimage {
+export interface IImage {
     width: number;
     height: number;
     imageData: ImageData;
     updatePalette(lookUpTable: Uint8Array): void;
     updateFromWasmPayload(wasmFloatBuffer: Float32Array, maxIter?: number): void;
+}
+export type DrawType = "continuous" | "points" | "groupedPoints";
+export interface IDrawOverlay {
+}
+/** Options de dessin optionnelles qui surchargent celles du parent */
+export interface DrawOptions {
+    color?: string;
+    lineWidth?: number;
+    showPoints?: boolean;
 }
 export interface ColorRGBA {
     r: number;

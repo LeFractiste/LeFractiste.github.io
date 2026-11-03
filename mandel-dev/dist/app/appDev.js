@@ -3,7 +3,6 @@
 // @ts-check
 import { PaletteEditor } from "../pres/palette.js";
 import { analysis_test } from "../analysis/analysis.js";
-import { InputRouter } from "./inputRouter.js";
 import { cFract } from "./cFract.js"; // main Object
 import { logAppHeader } from "./version.js";
 import { cTest } from "../analysis/cTest.js";
@@ -11,65 +10,90 @@ var T = new cTest("AppDev");
 // Ecriture de la version directement
 logAppHeader();
 // --- ÉTATS GLOBAUX ---
-let mandel;
-let julia;
-let palette;
-let lockedC; // Point c verrouillé par clic pour l'analyse d'orbite
+class AppDev {
+    mandel;
+    julia;
+    palette;
+    lockedC; // Point c verrouillé par clic pour l'analyse d'orbite
+    constructor() {
+        appConsole("Loading...");
+        this.mandel = new cFract("mandelCanvas", "MANDELBROT", "mandelStatus");
+        this.julia = new cFract("juliaCanvas", "JULIA", "juliaStatus");
+        // Initialiser l'éditeur de Palette V2/V3 et son callback
+        this.palette = new PaletteEditor("paletteContainer", lut => {
+            this.mandel.cImage.updatePalette(lut);
+            this.mandel.render();
+            this.julia.cImage.updatePalette(lut);
+            this.julia.render();
+        });
+        this.palette.generateLut();
+        // Installer les écouteurs d'événements
+        old_setupAppRouter();
+        oldEventListeners(); // @todo 2: vider!
+        // The same for Julia Set
+        appConsole("Ready");
+    }
+}
+// Nouvelle procédure d'initialisation
+/**
+  // Au chargement complet de la page (ou dans ton point d'entrée appDev.ts)
+  document.addEventListener("DOMContentLoaded", () => {
+    // 1. On récupère TOUTES les div possédant la classe .cFract
+    const cardElements = document.querySelectorAll<HTMLElement>(".cFract");
+
+    // 2. On les parcourt et on instancie une classe par élément
+    const activeCards: cFractCard[] = [];
+    cardElements.forEach((el) => {
+      const card = new cFractCard(el);
+      if (card.isOk) {
+        activeCards.push(card);
+      }
+    });
+
+    console.log(`[App] ${activeCards.length} cartes fractales initialisées et prêtes.`);
+  });
+ */
 // --- INITIALISATION DU MOTEUR & DE L'APPLICATION ---
 /** Démarrage de mandel
  *  @todo 2: refactorer app+mandel pour que mandel s'injecte ses boutons status et zoomReset, ainsi que Julia ad-hoc */
-async function startApp() {
-    appConsole("Loading...");
-    mandel = new cFract("mandelCanvas", "MANDELBROT", "mandelStatus");
-    julia = new cFract("juliaCanvas", "JULIA", "juliaStatus");
-    // Initialiser l'éditeur de Palette V2/V3 et son callback
-    palette = new PaletteEditor("paletteContainer", lut => {
-        mandel.cImage.updatePalette(lut);
-        mandel.render();
-        julia.cImage.updatePalette(lut);
-        julia.render();
-    });
-    palette.generateLut();
+let app;
+async function initApp() {
     // Amorce de chaque cFract autonome
-    await mandel.initParent(palette.lut);
-    await julia.initParent(palette.lut);
-    // Installer les écouteurs d'événements
-    setupAppRouter();
-    oldEventListeners(); // @todo 2: vider!
-    // The same for Julia Set
-    appConsole("Ready");
+    app = new AppDev();
+    await app.mandel.initParent(app.palette.lut);
+    await app.julia.initParent(app.palette.lut);
 }
 // Définit les evénements, à la place de initEventListeners(), déconnecté
-function setupAppRouter() {
-    const routerMandel = new InputRouter(mandel, mandel.canvas);
+function old_setupAppRouter() {
+    /** const routerMandel = new InputRouter(canvas : HTMLCanvasElement);
     routerMandel.bindDOMEvents({
-        onHover: (mouseC, px) => {
-            updateStatusBar("Mandel:", mouseC, px.x, px.y);
-            mandel.cDeep = mouseC;
-        },
-        onClick: (targetC, px) => {
-            lockedC = targetC;
-            updateStatusBar("Locked:", lockedC, px.x, px.y);
-            julia.params.juliaC = lockedC;
-        },
-        onZoom: (centerPx, factor) => mandel.params.zoom(centerPx, factor),
-        onPan: deltaC => (mandel.params.center = deltaC)
+      onHover: (px) => {
+        updateAppStatusBar("Mandel:", mouseC, px.x, px.y);
+        mandel.cDeep = mouseC;
+      },
+      onClick: (targetC, px) => {
+        lockedC = targetC;
+        updateAppStatusBar("Locked:", lockedC, px.x, px.y);
+        julia.params.juliaC = lockedC;
+      },
+      onZoom: (centerPx, factor) => mandel.params.zoom(centerPx, factor),
+      onPan: deltaC => (mandel.params.center = deltaC)
     });
     const routerJulia = new InputRouter(julia, julia.canvas);
     routerJulia.bindDOMEvents({
-        onHover: (mouseC, px) => {
-            updateStatusBar("Julia:", mouseC, px.x, px.y);
-        },
-        onClick: undefined,
-        onZoom: (centerPx, factor) => julia.params.zoom(centerPx, factor),
-        onPan: deltaC => (julia.params.center = deltaC)
-    });
-}
+      onHover: (mouseC, px) => {
+        updateAppStatusBar("Julia:", mouseC, px.x, px.y);
+      },
+      onClick: undefined,
+      onZoom: (centerPx, factor) => julia.params.zoom(centerPx, factor),
+      onPan: deltaC => (julia.params.center = deltaC)
+    }); /**/
+} /**/
 // --- ÉCOUTEURS D'ÉVÉNEMENTS (INTERACTION UX) ---
 function oldEventListeners() {
     //Areas to activate -@todo 1: move to cFract.html
-    const canvasM = mandel.canvas;
-    const canvasJ = julia.canvas;
+    // const canvasM = mandel.canvas;
+    // const canvasJ = julia.canvas;
     const btnCopy = document.getElementById("btnCopyCsv");
     const btnTest = document.getElementById("btnTest");
     // Button test: lance l'analyse d'orbite complète
@@ -103,7 +127,7 @@ function oldEventListeners() {
     const btnResetM = document.getElementById("btnResetMandel");
     if (btnResetM) {
         btnResetM.addEventListener("click", () => {
-            mandel.params.reset();
+            this.mandel.params.reset();
             //lockedC = null; //mieux de garder le point visible
             if (lockedC) {
                 const reticlePx = mandel.params.c2pix(lockedC);
@@ -139,7 +163,7 @@ function oldEventListeners() {
 // DESSIN DU RÉTICULE (Aide visuelle sur Mandelbrot)
 function drawReticle(canvas, px, py) {
     // Rendre l'image de base pour effacer l'ancien réticule
-    mandel.render();
+    this.mandel.render();
     const ctx = canvas.getContext("2d");
     ctx.save();
     // Croix orthogonale
@@ -159,7 +183,7 @@ function drawReticle(canvas, px, py) {
     ctx.restore();
 }
 // BANDEAU D'INFORMATION ET STATUT
-function updateStatusBar(msg, c, px, py) {
+function updateAppStatusBar(msg, c, px, py) {
     const appStatus = document.getElementById("appStatus");
     if (appStatus) {
         appStatus.textContent = `${msg} c = ${c.re.toFixed(12)} ${c.im >= 0 ? "+" : ""}${c.im.toFixed(12)}i  |  Px: (${Math.round(px)}, ${Math.round(py)})`;
@@ -175,7 +199,7 @@ function appConsole(msg) {
 //@todo 1: prendre la version de mandel
 //CALCUL ET EXPORTATION D'ORBITE POUR GOOGLE SHEETS
 function old_exportOrbitToSheets(c) {
-    const maxIter = mandel.params.max_iter;
+    const maxIter = this.mandel.params.max_iter;
     let zRe = 0.0;
     let zIm = 0.0;
     // Formatage tabulaire (TSV) prêt à copier-coller dans Excel/Google Sheets
@@ -206,5 +230,5 @@ function old_exportOrbitToSheets(c) {
     });
 }
 // Démarrage de l'application dès le chargement du DOM
-window.addEventListener("DOMContentLoaded", startApp);
+window.addEventListener("DOMContentLoaded", initApp);
 //# sourceMappingURL=appDev.js.map

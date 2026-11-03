@@ -1,0 +1,34 @@
+/** diconnected
+
+import { T } from "../app/appLogger.js";
+import { cFractCalc } from "../calc/cFractCalc.js";
+import { ComplexPoint, PixelPoint } from "../fractTypes.js"; 
+
+function testAll() {
+  T.reset();
+
+  // autoTest
+  T.testCase = "1: simple math function";
+  T.fun = (zReal: number) => {
+    // simplest iterator
+    return zReal * zReal + 0.0;
+  };
+
+  // On enchaîne les cas de test
+  T.test(0, 0, "Test origine Z=0");
+  T.test(1, 2, "Test incrémentation simple");
+  T.test(99, 198, "Test limite max");
+
+  const res = T.report;
+  if (!res.success) {
+    console.warn("⚠️ Échec des tests :", res.details);
+  } else {
+    console.log(
+      `✅ Tous les tests sont passés avec succès (${res.passed}/${res.passed}).`
+    );
+  }
+
+  return res;
+}
+
+/**/

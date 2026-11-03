@@ -14,8 +14,9 @@
 - @todo 1: UX/AppAménager l'interface de création de Julia ou Mandelbrot. Eliminer type. Constructor(string) ?
 - @todo 2: Calc/MaxIter ? Le calculer pour la bonne résolution DEM. Critère: un point "noir" est à une distance/pixel > 2
 - @todo 2: UX/extRay: avancer jusqu'au dernier pixel, puis zoomer (x10) et avancer jusqu'au derier pixel.
-- @todo 3: UX/data: istorique de zoom : push, pop position (&vecteur: dia/rotation)
+- @todo 3: UX/data: historique de zoom : push, pop position (&vecteur: dia/rotation)
 - @todo 1: UX/html - ajout automatisé de boutons d'interface maxIter & setCalc (interface UX(btnX): html.addBtn(X, onclick): id=btnX, onClickX?)
+- @todo 2: code/string : grouper les utils.toString et les cFract.Console dans cFractConsole
 - @todo 2: calc/perfo: vitesse de chargement : init bmp pour mandel
 - @todo 0: UX/CSS: regrouper les CSS dans un CSS de site ? (harmonie) 50%: couleurs des palettes et boutons
 - @todo 1: UX/srv: serveur d'image et url variable. 50%: manque update url (revoir svg)

@@ -6,19 +6,17 @@ import { cUtils } from "../calc/utils.js";
 // cFractparams : paramètres du calcul asynchrone
 export class cFractParams {
     parent; // utilisé pour l'affichage sans event
+    _center; //controled property
+    _dirty;
     typeName; //à remplacer par get quand Rust changera (exige JuliaC alors que Mandelbrot=(JuliaC= Undefined)
     size = { x: 400, y: 300 };
-    _center; //controled property
     aspectRatio = 4 / 3; //800-600 par défaut!
     dia;
     max_iter;
     r2_max;
     juliaC; //exigé par rust-m, à rendre optionel?
     angleDeg = 0.0;
-    _dirty;
-    /** Reads dirty
-     * @todo: useful ?)
-     */
+    /** Reads dirty */
     get dirty() {
         return this._dirty;
     }
@@ -41,6 +39,13 @@ export class cFractParams {
         // Toujours initialisé pour satisfaire Rust-M même en Mandelbrot
         this.juliaC = { re: -0.7, im: 0.27015 };
         this._dirty = true;
+    }
+    /**  */
+    initSize(size) {
+        this.size = size;
+        this.aspectRatio = size.y / size.x;
+        this.dirty = true;
+        this.displayState(`[Size] size=${this.size.x} x ${this.size.y}`);
     }
     // Métadonnées d'export (Format propre pour Exif/PNG/HEIC JSON)
     toMetadata() {
@@ -94,12 +99,6 @@ export class cFractParams {
         this.dirty = true;
         this.displayState("[Vector] dia=${dia} angle=${angleDeg}");
     }
-    initSize(size) {
-        this.size = size;
-        this.aspectRatio = size.y / size.x;
-        this.dirty = true;
-        this.displayState(`[Size] size=${this.size.x} x ${this.size.y}`);
-    }
     // #region Proj
     // Transformation (linéaire) du plan - canvas vers complexe
     pix2c(point) {
@@ -137,7 +136,7 @@ export class cFractParams {
         cFP.center.re += alpha * cFP.span.re * (1 - zoomFactor);
         cFP.center.im += beta * cFP.span.im * (1 - zoomFactor);
         // Ajustement final des échelles (spans)
-        cFP.dia *= zoomFactor;
+        cFP.dia /= zoomFactor;
         // Relance
         this.dirty = true;
         this.displayState("[Zoom]", cFP.center, pix);

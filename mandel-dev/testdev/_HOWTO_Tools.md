@@ -7,22 +7,31 @@
 - package.json # **???**
 - Compare # Selectionner deux fichiers et click-droit compare selected.
 
+# Coding practice
+
+- Vertical slice: modifier le code là où il faut pour amener la fonctionalité, sans faire joli.
+- Deux chapeaux: ne jamais faire en même temps de l'ajout de fonctions et du refactoring de code. Sinon, refactoring divergent.
+- Mettre au frigo: noter les bonnes idées quelque part, mais ne pas les exécuter de suite !
+
 # JavaScript.js
 
 - MD: **formater** un peu mieux
-- Utiliser JDoc: // @type cFract déclare ma variable. Autres: @return, @param, @customerFunction
+- Utiliser JDoc: // @type cFract déclare ma variable. Autres: @return, @param, @customerFunction. Toujours entre /\*_ REM _/
 - Utiliser ou non // @ts-check en début de fichier .js (génère erreurs?)
 - Linter (ESLint) - Analyse statique de code, signale les erreurs en rouge dans le code
   - Possibilité d'utiliser eslint-plugin-jsdoc pour détecter la présence de tes tags @myTag
 - Formatter (Prettier) : gère le rendu visuel, indentations... Config: .prettierrc
 - Version target de TS: ES2022. Version de GoogleAppScript: ES2005?
+- Debuggage: utiliser debugger; (stop) ou console.table, console.trace (stack), console.group(structure des messages)
+- Code HTML de la pge via F12 et l'onglet elements. Normalement l'arbre actuel des objets.
+- querySelector("truc"). Mettre # devant les ID "#truc" et . devant les classes ".cFract-card" , rien devant les balises "div"
 
 # TypeScript tsconfig.json
 
 - Transpiler à la volée: npx tsc -w
 - Lister les erreurs de compilation dans la console: npx tsc --noEmit
 - Améliorer la **complétion dynamique**
-- Décorateurs @tag - avant la fonction, hors commentaire!
+- Décorateurs @tag - avant la fonction, hors commentaire! Activer experimentalDecorators dans tsconfig.
 
 # TypeDoc
 

@@ -1,30 +1,45 @@
-// infrastructure & test module - copyright LeFractiste 2026
+/** disconnected
 
-import { ErrorLevel } from "../fractTypes.js";
+import { ILogger, ErrorLevel, LogLevel } from "../fractTypes.js";
 
+
+class MyLogger implements ILogger {
+  static msg()
+  warn(msg: string, source = "") {
+    this.log(`* [WARN] [${this.module}] ${msg} from ${source}`);
+  }
+  error(msg: string, source = "") {
+    this.log(`**[ERROR] ${msg} from ${source} `);
+  }
+  alert(msg: string, source = "") {
+    this.log(`[ALERT] ${source} ${msg}`);
+    throw new Error(msg);
+  }
+} /**/
 /** Lightweight VBA-inspired Trace/Debug helper V0.2 - shared instance is "T"
  * @todo 1: trace sert à passer la stack d'appel, ainsi par défaut, erreur sait quelle est la source (en VBA). En js, on peut faire mieux peut-être?
  * @todo 1: Il faut tout passer par T.log pour avoir la possibilité de balancer l'info sur console ou un fichier
- */
-export class cTest {
+ 
+class myConsole implements ILogger {
   //public fileCopy : boolean = false;  //@todo: implement
-  public traceIsOn: boolean = true;
+  public old_traceIsOn: boolean = true;
+  public logLevel: LogLevel = "NOTRACE";
   private module: string = "";
   private lastSource: string = "";
   private errorLevel: ErrorLevel;
+  private logDevice: { log(): void)}
   // Build a module specific cTest - usage: private T = new cTest(moduleName);
-  constructor(moduleName: string, traceState: boolean = false) {
+  constructor(moduleName: string) {
     this.module = moduleName;
-    this.trace("new");
-    this.traceIsOn = traceState;
     this.errorLevel = "OK";
+    this.logDevice = console;
   }
   public log(msg: string) {
-    console.log(msg);
+    outDevice.log(msg);
   }
   public trace(source: string, args: string = ""): void {
     this.lastSource = source;
-    if (this.traceIsOn) this.log(`  [TRACE] ${this.module}.${source}(${args})`);
+    if (this.old_traceIsOn) this.log(`  [TRACE] ${this.module}.${source}(${args})`);
   }
   assert(condition: boolean, msg = "(false)", source = "") {
     if (!condition) throw this.error(`[ASSERT] ${msg}`, source);
@@ -46,4 +61,8 @@ export class cTest {
   }
 }
 
-// testClass: classe de test
+// Instance globale ou locale de test
+export const T = new myConsole();
+
+/**/
+//# sourceMappingURL=appLogger.d.ts.map

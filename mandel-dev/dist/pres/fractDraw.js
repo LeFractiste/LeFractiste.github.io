@@ -1,11 +1,47 @@
-// pres/cfractDraw.ts - copyright LeFractiste 2026
-/* Calque de surimpressions (Overlay)
-@todo : constructor pour avoir les infos du canvas !
-*/
-/* Fonctions de rendu graphique pour orbites, lignes et rayons externes.
- * @todo: renommer Overlay et constructeur pour passer les infos */
+// pres/cfractDraw.ts - V1 - copyright LeFractiste 2026
+/** Calque de surimpressions (Overlay)
+ *  V1: list of static functions (called par parent.render with parameters and PixelPoint coordinates).
+ * @todo 1: constructeur pour avoir les infos du canvas ! (V1.1: commented)
+ * @todo 2: VectorOverlay pour controle de zoom et rotation
+ * @todo 2: logic - is this a cFract or agnostic Overlay module ?
+ */
+/** Fonctions de rendu graphique pour orbites, lignes et rayons externes
+
+ */
 export class cFractDraw {
-    // Tracé des repères et points d'intérêt
+    //private parent: IParent;
+    //private ctx:CanvasRenderingContext2D;
+    //public drawOptions: DrawOptions;
+    //constructor(parent:IParent)
+    // #region Reticle
+    // Draw reticle: a circle with a cross
+    static drawReticle(canvas, pix) {
+        // Rendre l'image de base pour effacer l'ancien réticule
+        const ctx = canvas.getContext("2d");
+        if (!ctx)
+            return;
+        const px = pix.x;
+        const py = pix.y;
+        ctx.save();
+        // Croix orthogonale
+        ctx.strokeStyle = "#00ffcc";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(px - 10, py);
+        ctx.lineTo(px + 10, py);
+        ctx.moveTo(px, py - 10);
+        ctx.lineTo(px, py + 10);
+        ctx.stroke();
+        // Cercle de ciblage
+        ctx.beginPath();
+        ctx.arc(px, py, 5, 0, 2 * Math.PI);
+        ctx.stroke();
+        //affiche ?
+        ctx.restore();
+    }
+    // #region FixedPoints
+    /** Draw fixed points for Julia set
+     * @todo 2: simplify the interface */
     static drawFixedPointsOverlay(ctx, param, width, height, fixedPoints = []) {
         if (!fixedPoints || fixedPoints.length === 0)
             return;
@@ -25,6 +61,7 @@ export class cFractDraw {
         }
         ctx.restore();
     }
+    // #region Path
     /* Gère le tracé vectoriel au-dessus du canvas de pixels
      *(points fixes, axes, orbites, repères). */
     static drawComplexPath(parent, points, options = {}) {

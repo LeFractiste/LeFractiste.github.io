@@ -57,6 +57,17 @@ body {
   text-align: center;
 }
 
+.cfract-reset {
+  background-color: var(--btn-bg);
+  color: var(--text-color);
+  border: 1px solid #444;
+  padding: 8px 16px; /* 6 - 12 */
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
 .controls-panel {
   margin-top: 15px;
   display: flex;
