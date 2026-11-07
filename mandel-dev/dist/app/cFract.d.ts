@@ -7,19 +7,26 @@
  */
 import { cImage } from "../pres/cImage.js";
 import { cFractCalc } from "../calc/cFractCalc.js";
-import { ComplexPoint, IParent, IParams } from "../fractTypes.js";
+import { cFractDraw } from "../pres/fractDraw.js";
+import { ComplexPoint, PixelPoint, IParent, IParams, IInputRouter, PointerEventCallbacks } from "../fractTypes.js";
 export declare class cFract implements IParent {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     cImage: cImage;
     private _params;
     calc: cFractCalc;
+    draw: cFractDraw;
+    inputRouter: IInputRouter;
     statusId: string;
+    private resetEl;
+    lockedJulia: IParent | null;
+    cDeep: ComplexPoint;
     orbit: ComplexPoint[];
-    private fixedPoints;
+    fixedPoints: ComplexPoint[];
     get params(): IParams;
-    constructor(canvasId: string, type: string | undefined, statusId: string);
+    constructor(canvasId: string, type: string | undefined, statusId: string, resetId: string);
     initParent(paletteLut?: Uint8Array): Promise<void>;
+    genCbEvents(): PointerEventCallbacks;
     /** Handles the display, as necessary
      */
     render(): void;
@@ -29,8 +36,7 @@ export declare class cFract implements IParent {
       this.render(); // lent mais...
       cFractDraw.drawComplexPath(this, orbit, {});
     } /**/
-    set cDeep(c: ComplexPoint);
-    drawFixedPointsOverlay(): void;
+    displayState(action: string, c?: ComplexPoint, pix?: PixelPoint): void;
     updateStatusBar(c: ComplexPoint, px: number, py: number): void;
     classConsole(msg: string): void;
 }

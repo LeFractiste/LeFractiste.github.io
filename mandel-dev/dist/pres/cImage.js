@@ -5,12 +5,12 @@ const LUTSIZE = 1024;
 export class cImage {
     width;
     height;
-    imageData;
+    buffer;
     lut;
     constructor(width, height) {
         this.width = width;
         this.height = height;
-        this.imageData = new ImageData(width, height);
+        this.buffer = new ImageData(width, height);
         // LUT de 1024 couleurs x 4 canaux (RGBA) = 4096 octets
         this.lut = new Uint8Array(1024 * 4);
         // Génération automatique d'une palette par défaut
@@ -43,29 +43,44 @@ export class cImage {
             this.lut.set(lookUpTable);
         }
     }
+    // Reads a point of image.buffer as ColorRGBA
+    getAt(pt) {
+        const inBounds = pt.x >= 0 && pt.x <= this.width && pt.y >= 0 && pt.y <= this.height;
+        if (!inBounds)
+            return { r: 0, g: 0, b: 0, a: 128 }; //error
+        const pixels = this.buffer.data;
+        const index = 4 * (pt.x + this.width * pt.y);
+        const rgba = {
+            r: pixels[index],
+            g: pixels[index + 1],
+            b: pixels[index + 2],
+            a: pixels[index + 3]
+        };
+        return rgba;
+    }
     /** Projection du buffer Wasm Float32 vers le buffer d'image Canvas (Uint8ClampedArray)
      */
-    updateFromWasmPayload(wasmFloatBuffer, maxIter = 500) {
-        const pixels = this.imageData.data;
+    reCalcGrid(wasmFloatBuffer, maxIter = 500) {
+        const pixels = this.buffer.data;
         const lutSize = this.lut.length / 4;
         for (let i = 0; i < this.width * this.height; i++) {
             const payloadIdx = i * PAYLOAD_SIZE;
             const iter = wasmFloatBuffer[payloadIdx];
-            const imgIdx = i * 4;
+            const index = i * 4;
             if (iter >= maxIter) {
                 // Intérieur de l'ensemble : NOIR OPAQUE
-                pixels[imgIdx] = 0;
-                pixels[imgIdx + 1] = 0;
-                pixels[imgIdx + 2] = 0;
-                pixels[imgIdx + 3] = 255;
+                pixels[index] = 0;
+                pixels[index + 1] = 0;
+                pixels[index + 2] = 0;
+                pixels[index + 3] = 255;
             }
             else {
                 // Extérieur : Mappage sur la LUT via le modulo
                 const lutIdx = Math.floor(iter % lutSize) * 4;
-                pixels[imgIdx] = this.lut[lutIdx];
-                pixels[imgIdx + 1] = this.lut[lutIdx + 1];
-                pixels[imgIdx + 2] = this.lut[lutIdx + 2];
-                pixels[imgIdx + 3] = 255;
+                pixels[index] = this.lut[lutIdx];
+                pixels[index + 1] = this.lut[lutIdx + 1];
+                pixels[index + 2] = this.lut[lutIdx + 2];
+                pixels[index + 3] = 255;
             }
         }
     }

@@ -12,47 +12,38 @@ export class cFractParams implements IParams {
   private parent: IParent; // utilisé pour l'affichage sans event
   private _center: ComplexPoint; //controled property
   private _dirty: boolean;
-  public typeName: string; //à remplacer par get quand Rust changera (exige JuliaC alors que Mandelbrot=(JuliaC= Undefined)
-  public size: PixelPoint = { x: 400, y: 300 };
-  public aspectRatio: number = 4 / 3; //800-600 par défaut!
+  public type: FractType;
+  public size: PixelPoint;
+  public aspectRatio: number; //800-600 par défaut!
   public dia: number;
-  public max_iter: number;
-  public r2_max: number;
+  public iterMax: number;
+  public r2Max: number;
   public juliaC: ComplexPoint; //exigé par rust-m, à rendre optionel?
   public angleDeg: number = 0.0;
-
-  /** Reads dirty */
-  public get dirty(): boolean {
-    return this._dirty;
+  get typeName(): string {
+    return this.type as string;
   }
-  // Sets dirty and launches new rendering
-  public set dirty(value: boolean) {
-    this._dirty = value;
-    if (value) this.parent.render();
+  get isJulia(): boolean {
+    return this.type === "JULIA";
   }
-
   // #region constructor
 
-  constructor(typeName: string = "", parent: IParent) {
-    const defaultType = "MANDELBROT";
+  constructor(typeName: string, parent: IParent) {
     this.parent = parent;
-    this.typeName = (typeName as FractType) ? typeName : defaultType;
-    this._center =
-      typeName === defaultType ? { re: -0.7, im: 0.0 } : { re: 0.0, im: 0.0 };
+    const defaultType: FractType = "MANDELBROT";
+    const testType: string = typeName.toUpperCase();
+    this.type = (testType as FractType) || defaultType;
+    this._center = this.isJulia ? { re: -0.7, im: 0.0 } : { re: 0.0, im: 0.0 };
     this.dia = 2.25; // 2.25
-    this.max_iter = typeName === defaultType ? 300 : 100;
-    this.r2_max = 100000.0;
+    this.iterMax = typeName === defaultType ? 300 : 100;
+    this.r2Max = 100000.0;
     // Toujours initialisé pour satisfaire Rust-M même en Mandelbrot
     this.juliaC = { re: -0.7, im: 0.27015 };
+    this.size = { x: this.parent.canvas.width, y: this.parent.canvas.height };
+    this.aspectRatio = this.size.y / this.size.x;
     this._dirty = true;
   }
   /**  */
-  initSize(size: PixelPoint) {
-    this.size = size;
-    this.aspectRatio = size.y / size.x;
-    this.dirty = true;
-    this.displayState(`[Size] size=${this.size.x} x ${this.size.y}`);
-  }
 
   // Métadonnées d'export (Format propre pour Exif/PNG/HEIC JSON)
   public toMetadata(): string {
@@ -60,8 +51,8 @@ export class cFractParams implements IParams {
       type: this.typeName,
       center: [this.center.re, this.center.im],
       vector: [this.dia, this.angleDeg],
-      max_iter: this.max_iter,
-      r2_max: this.r2_max,
+      max_iter: this.iterMax,
+      r2_max: this.r2Max,
       juliaC: [this.juliaC.re, this.juliaC.im]
     });
   }
@@ -75,20 +66,34 @@ export class cFractParams implements IParams {
 
   // #region Getters - Setters
 
-  /** @todo : gérer le recalcul automatique avec calc.callback ou param.onchange ? */
+  /** Reads dirty */
+  public get dirty(): boolean {
+    return this._dirty;
+  }
+  // Sets dirty and launches new rendering
+  public set dirty(value: boolean) {
+    this._dirty = value;
+    if (value) this.parent.render();
+  }
 
   // Gestion du type (encore non utilisé)
   public setJuliaC(juliaC: ComplexPoint) {
     this.juliaC = juliaC;
     this.dirty = true;
-    this.displayState("[JuliaC]", this.juliaC);
+  }
+  // Changes the size (not be used now !!!)
+  initSize(size: PixelPoint) {
+    this.size = size;
+    this.aspectRatio = size.y / size.x;
+    this.dirty = true;
   }
   // Computed span, so that dia is represented
   public get span(): ComplexPoint {
     if (this.size.y > this.size.x) {
-      return { re: this.dia, im: this.dia / this.aspectRatio };
+      // aspectRatio= y/x
+      return { re: this.dia, im: this.dia * this.aspectRatio };
     } else {
-      return { re: this.dia * this.aspectRatio, im: this.dia };
+      return { re: this.dia / this.aspectRatio, im: this.dia };
     }
   }
   // Centrage (pan)
@@ -100,14 +105,12 @@ export class cFractParams implements IParams {
   public set center(c: ComplexPoint) {
     this._center = c;
     this.dirty = true;
-    this.displayState("[Drag]", this.center);
   }
   // Vector: diameter and rotation angle in deg
   setVector(dia: number, angleDeg: number = 0.0) {
     this.dia = dia;
     this.angleDeg = angleDeg;
     this.dirty = true;
-    this.displayState("[Vector] dia=${dia} angle=${angleDeg}");
   }
 
   // #region Proj
@@ -117,7 +120,7 @@ export class cFractParams implements IParams {
     const cFP = this;
     const re = cFP.center.re + (point.x / cFP.size.x - 0.5) * cFP.span.re;
     const im = cFP.center.im - (point.y / cFP.size.y - 0.5) * cFP.span.im;
-    return { re, im };
+    return { re: re, im: im };
   }
   // Transformation linéaire du plan - complexe vers canvas
   c2pix(c: ComplexPoint): PixelPoint {
@@ -137,13 +140,13 @@ export class cFractParams implements IParams {
     const h = cFP.size.y;
     cFP.center.re -= (deltaPx.x / w) * span.re;
     cFP.center.im += (deltaPx.y / h) * span.im; // Inversé car y positif vers le bas
+    this.dirty = true;
   }
 
   // Simple zoom from center
   zoom_centered(pix: PixelPoint, zoomFactor: number): void {
     this.dia /= zoomFactor;
     this.dirty = true;
-    this.displayState("[Zoom]", this.center, pix);
   }
 
   // Zoom around a fixed point (used for Mouse scroll)
@@ -167,15 +170,13 @@ export class cFractParams implements IParams {
     };
     // Relance
     this.dirty = true;
-    this.displayState("[Zoom]", cFP.center, pix);
   }
   onReset(): void {
     const cFP = this;
-    cFP.center.re = cFP.typeName === "MANDELBROT" ? -0.7 : 0;
-    cFP.center.im = 0.0;
+    cFP._center.re = cFP.isJulia ? 0 : -0.7;
+    cFP._center.im = 0.0;
     cFP.dia = 2.25; // 9/4
     this.dirty = true;
-    this.displayState("[Reset]", cFP.center);
   }
 
   // #region display
@@ -185,30 +186,7 @@ export class cFractParams implements IParams {
     // Prepare display msg
     const cFP = this;
     const cF = cFP.parent;
-    const spyImage = cF.cImage.imageData.data.subarray(0, 5).join(",");
+    const spyImage = cF.cImage.buffer.data.subarray(0, 5).join(",");
     const spyWasmPayload = cF.calc.calcBuffer;
-  }
-
-  // Display the cfract state
-  displayState(action: string, c?: ComplexPoint, pix?: PixelPoint): void {
-    console.trace("cFractParams.displayState");
-    if (!this.parent) return;
-    // Prepare display msg
-    const cFP = this;
-    const cF = this.parent;
-    const spyImage = cF.cImage.imageData.data.subarray(0, 5).join(",");
-    const spyWasmPayload = cF.calc.calcBuffer;
-
-    let msg = action;
-    if (c) msg = `${cUtils.complexToString(c)}` + msg;
-    if (cF.params.typeName === "JULIA") {
-      msg += ` | JULIA: ${cUtils.complexToString(cFP.juliaC)}`;
-    }
-    if (pix) {
-      msg += ` | px=${Math.floor(pix.x)} py=${Math.floor(pix.y)}`;
-    }
-    msg += ` | dia=${cFP.dia.toExponential(2)}`;
-    msg += ` | counter: ${cF.calc.calcCount}`;
-    cF.classConsole(msg);
   }
 } /** */

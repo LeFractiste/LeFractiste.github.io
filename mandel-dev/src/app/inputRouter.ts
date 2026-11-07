@@ -29,10 +29,17 @@ export class InputRouter implements IInputRouter {
   }
 
   /** Attache les écouteurs natifs DOM au canvas (Mouse & Touch) */
-  public bindDOMEvents(cb: PointerEventCallbacks): void {
+  public bindDOMEvents(cb: PointerEventCallbacks, reset?: HTMLElement): void {
     this.canvasEl.style.touchAction = "none"; // Bloque le scroll natif mobile
+    // pointeur events
     this.bindMouseEvents(cb);
     this.bindTouchEvents(cb);
+    // reset button
+    if (cb.onReset && reset) {
+      reset.addEventListener("click", e => {
+        if (cb.onReset) cb.onReset();
+      });
+    }
   }
 
   // #region Mouse Listeners

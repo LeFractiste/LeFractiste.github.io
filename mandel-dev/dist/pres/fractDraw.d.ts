@@ -4,15 +4,16 @@
  * @todo 2: VectorOverlay pour controle de zoom et rotation
  * @todo 2: logic - is this a cFract or agnostic Overlay module ?
  */
-import type { ComplexPoint, PixelPoint, IParent, IParams, IDrawOverlay, DrawOptions } from "../fractTypes.js";
+import type { ComplexPoint, PixelPoint, IParent, IDrawOverlay, DrawOptions } from "../fractTypes.js";
 /** Fonctions de rendu graphique pour orbites, lignes et rayons externes
 
  */
 export declare class cFractDraw implements IDrawOverlay {
-    static drawReticle(canvas: HTMLCanvasElement, pix: PixelPoint): void;
-    /** Draw fixed points for Julia set
-     * @todo 2: simplify the interface */
-    static drawFixedPointsOverlay(ctx: CanvasRenderingContext2D, param: IParams, width: number, height: number, fixedPoints?: ComplexPoint[]): void;
-    static drawComplexPath(parent: IParent, points: ComplexPoint[], options?: DrawOptions): void;
+    private parent;
+    constructor(parent: IParent);
+    drawReticle(pix: PixelPoint): void;
+    /** Draw fixed points for Julia set */
+    drawFixedPointsOverlay(fixedPoints?: ComplexPoint[]): void;
+    drawComplexPath(points: ComplexPoint[], options?: DrawOptions): void;
 }
 //# sourceMappingURL=fractDraw.d.ts.map

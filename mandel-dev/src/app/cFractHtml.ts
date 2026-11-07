@@ -1,8 +1,14 @@
 // app/cFractHtml.ts - Copyright LeFractiste 2026
 // Exports: htmlFractContainer, htmlSetupOptions, setupFractalCanvas, parseHashParams, todo_paramstoURL
 
-/** // Helper d'injection HTML/CSS pour cFract
- * @todo: placer les appels dans l'autre sens - mandel appelle helper-html ! */
+/** // Helpers d'injection HTML/CSS pour cFract
+ * The main HTML class is .fract-card holding other elements.
+ * fract-card id="type" -  type as FractType, unique !  (limitation if I want to "activate" more than one image)
+ * @todo 1: implement data to url
+ * @todo 1: link cFractCard to code (change HTML /!\ so far, no access to modified DOM ?)
+ * @todo 2: implement read url and create card (objective: image server)
+ * @todo 3: implement read image meta data and create card (objective: make an image active) - todo: cImage.saveAsImage
+ * @todo 3: allow JuliaSet for url ? */
 
 import { FractType, IParams } from "../fractTypes.js";
 //import { cFractParams } from "../calc/cFractParams"; //utile ?
@@ -140,7 +146,7 @@ export function setupFractalCanvas(options: IHTMLSetupOptions): IFractCard {
 export function updateParamsFromURL(params: IParams) {
   const hash = window.location.hash.substring(1);
   const paramsData = new URLSearchParams(hash);
-  if (params.typeName !== "MANDELBROT") return;
+  if (params.isJulia) return; //excluded so far
   // params.typeName: paramsData.get("type") || "MANDELBROT"; //type
   const re: number = parseFloat(paramsData.get("re") || "-0.75") as number; //centreRe
   const im: number = parseFloat(paramsData.get("im") || "0.0") as number; //centreIm

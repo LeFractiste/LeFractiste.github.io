@@ -7,8 +7,13 @@
  import { } from "..fractTypes.js";
  */
 
-/** V1.0: homogène et utilisé
- * IParent partage une copie des objets cFract.x, via leur interface
+/** V1.1: homogène et global / complet  / appliqué - et bouge !
+ * intégré params.isJulia à la place de typeName
+ * intégré ITestable
+ * V1.0: homogène et global
+ * IParent permet l'accès aux sous-classes. Eviter les accès profonds !
+ * IParams permet l'accès (facile) à tous
+ * @todo 1: trop gros déjà ! (analyser si on peut rétrocéder les sous-interfaces aux fichiers des sous-classes)
  * @todo 2: supprimer les accès perturbants (pour la console, pour le recalcul...)
  * @todo 2: définir les interfaces associées aux aspects html (div.content, image, events)
  * @todo 2: définir les interfaces associées au code Rust et aux calculs distribués partout, y compris les outputs (distance/potential -> palette)
@@ -68,11 +73,12 @@ export type CalcMode = "DIRECT" | "DEM"; // todo 2+3: | "Hybrid" | "QuadHybrid" 
  * */
 export interface IAlgoParams {
   //type?: string; //inutile: if (Param.JuliaC) {type="JULIA";}
-  typeName: string;
+  //typeName: string;
+  isJulia: boolean;
   cDeep?: ComplexPoint; // point of interest - mouse hover/zoom
   iterTry?: number; /** @todo: to compute new iterMax when zooming */
-  max_iter: number; //à renommer iterMax et R2Max dès que compilable //@todo 2: remove: for calc only
-  r2_max: number; //à renommer R2max
+  iterMax: number; //à renommer iterMax et R2Max dès que compilable //@todo 2: remove: for calc only
+  r2Max: number; //à renommer R2max
   juliaC: ComplexPoint; //defined for Julia and MandelMain. Undefined for Mandelbrot set
   // Used for auto recalc
   dirty: boolean; //for asynchroneous recalc
@@ -116,11 +122,18 @@ export interface IParent {
     trajectoryColor?: string;
     pointColor?: string;
   };
-  initParent(paletteLut?: Uint8Array): void;
+  initParent(paletteLut?: Uint8Array, reset?: HTMLElement): void;
   render(): void;
   updateStatusBar(c: ComplexPoint, px: number, py: number): void;
   classConsole(msg: string): void;
   // orbit
+}
+
+// #region test
+// Interface globale pour composant testable (image, calc, wasmBuffer, palette)
+export interface ITestableGrid<Index, Out> {
+  autoTest?(): boolean;
+  getAt(index: Index): Out;
 }
 
 // #region Calc
@@ -150,7 +163,7 @@ export interface ICalc {
   initCalc(): void;
   calcIter(c: ComplexPoint, IterMax: number): number;
   calcOrbit(c: ComplexPoint, IterMax: number): ComplexPoint[];
-  calcFull(): void;
+  reCalcGrid(): void;
 }
 
 // #end region
@@ -259,7 +272,7 @@ export interface PointerEventCallbacks {
 /** Contrat du Gestionnaire d'Événements / InputRouter */
 export interface IInputRouter {
   canvasEl: HTMLCanvasElement;
-  bindDOMEvents: (cb: PointerEventCallbacks) => void;
+  bindDOMEvents: (cb: PointerEventCallbacks, resetBtn: HTMLElement) => void;
 }
 /** reserved */
 export interface IIHandlesRouter extends IInputRouter {
@@ -273,9 +286,9 @@ export interface IIHandlesRouter extends IInputRouter {
 export interface IImage {
   width: number;
   height: number;
-  imageData: ImageData;
+  buffer: ImageData;
   updatePalette(lookUpTable: Uint8Array): void;
-  updateFromWasmPayload(wasmFloatBuffer: Float32Array, maxIter?: number): void;
+  reCalcGrid(wasmFloatBuffer: Float32Array, maxIter?: number): void;
 }
 
 export type DrawType = "continuous" | "points" | "groupedPoints";

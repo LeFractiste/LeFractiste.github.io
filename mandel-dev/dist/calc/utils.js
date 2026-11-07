@@ -24,6 +24,7 @@ export class cUtils {
             { root: z2, stable: isStable2 }
         ];
     }
+    // #region toString
     // Affichage complexe - //@todo 2: à passer dans utils
     static complexToString(c, digits = 7) {
         return `${c.re.toFixed(digits)} ${c.im >= 0 ? "+" : ""}${c.im.toFixed(digits)}i`;

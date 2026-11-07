@@ -1,11 +1,13 @@
 // calc/cFractCalc.ts - Algorithmes de calcul & Pont Wasm
 import {
   ComplexPoint,
+  PixelPoint,
   IParent,
   IParams,
   CalcMode,
   ICalcOptions,
   ICalc,
+  ITestableGrid,
   FractType
 } from "../fractTypes.js";
 import init, { MandelEngine } from "../../pkg/rust_m.js"; //todo 0: initWasm ou InitSync ou __wbg_Init ? Pq sans {}
@@ -22,9 +24,13 @@ type IterData = {
 
 // #region CalcOptions
 
-/** Helper class - Copy of all cFract.params required for Wasm-Rust and computing */
+/** Helper class - Copy of all cFract.params
+ *  required for Wasm-Rust and computing,
+ * to allow refactoring by isolation */
 class CalcOptions implements ICalcOptions {
-  typeName: string;
+  isJulia: boolean;
+  juliaC_re: number;
+  juliaC_im: number;
   resX: number; // different for Rust in case of fast zoom and QuadTree
   resY: number;
   mode: CalcMode = "DIRECT";
@@ -34,10 +40,22 @@ class CalcOptions implements ICalcOptions {
   span_im: number;
   iterMax: number;
   r2max: number;
-  isJulia: boolean;
-  juliaC_re: number;
-  juliaC_im: number;
   readonly PAYLOAD_SIZE = 5;
+
+  /** Constructor: attendue par les fonctions de Wasm-Rust */
+  constructor(params: IParams, canvas: HTMLCanvasElement) {
+    this.isJulia = params.isJulia; // not fast but ok
+    this.juliaC_re = params.juliaC.re;
+    this.juliaC_im = params.juliaC.im;
+    this.resX = canvas.width;
+    this.resY = canvas.height;
+    this.center_re = params.center.re;
+    this.center_im = params.center.im;
+    this.span_re = params.span.re;
+    this.span_im = params.span.im;
+    this.iterMax = params.iterMax;
+    this.r2max = params.r2Max;
+  }
   get payloadLen(): number {
     return this.resX * this.resY * this.PAYLOAD_SIZE;
   }
@@ -45,30 +63,12 @@ class CalcOptions implements ICalcOptions {
   get calcMode(): number {
     return this.mode === "DIRECT" ? 0 : this.mode === "DEM" ? 1 : 99;
   }
-
-  /** Constructor: attendue par les fonctions de Wasm-Rust */
-  constructor(params: IParams, canvas: HTMLCanvasElement) {
-    //todo 2: check the best object to pass !
-    this.typeName = params.typeName;
-    this.resX = canvas.width;
-    this.resY = canvas.height;
-    // copy params to allow refactoring here
-    this.center_re = params.center.re;
-    this.center_im = params.center.im;
-    this.span_re = params.span.re;
-    this.span_im = params.span.im;
-    this.iterMax = params.max_iter;
-    this.r2max = params.r2_max;
-    this.isJulia = !(params.typeName === ("MANDELBROT" as FractType));
-    this.juliaC_re = params.juliaC.re;
-    this.juliaC_im = params.juliaC.im;
-  }
 }
 
 // #region cFractCalc
 
 /** cFractCalc: Expose compute algorithms and Wasm bridge */
-export class cFractCalc implements ICalc {
+export class cFractCalc implements ICalc, ITestableGrid<PixelPoint, number> {
   private parent: IParent;
   private options: CalcOptions;
   private isBusy: boolean = false;
@@ -80,14 +80,6 @@ export class cFractCalc implements ICalc {
   private iterBuffer: Uint32Array; //Exposed : iterSmooth to derive a color (<0 for small DEM ?)
   private Z0buffer: ComplexPoint[] = [];
   private ZNdataBuffer: IterData[] = [];
-  get wasmActive(): boolean {
-    return this.wasmMemory !== null && this.wasmEngine !== null;
-  }
-  // Provides a link to _calcBuffer (readonly)
-  get calcBuffer(): Float32Array {
-    return this._calcBuffer; //nettoyer le truc
-  } /**/
-
   /* cFractCalc : fast constructor - call async initCalc() to complete.
      Rendering: calcFull --> calcBuffer --> cImage --> display */
   constructor(parent: IParent) {
@@ -130,6 +122,14 @@ export class cFractCalc implements ICalc {
     //this.calcMode = mode; //@todo 2: sécuriser l'interface!
     //this.makeDirty();
   }
+  // Computation mode: true if wasm ready
+  get wasmActive(): boolean {
+    return this.wasmMemory !== null && this.wasmEngine !== null;
+  }
+  // Provides a link to _calcBuffer (readonly)
+  get calcBuffer(): Float32Array {
+    return this._calcBuffer; //nettoyer le truc
+  } /**/
 
   // #region calcIter
 
@@ -160,19 +160,29 @@ export class cFractCalc implements ICalc {
     }
     return iter; // todo: return smoothIter ?
   }
+  // test point
+  getAt(pt: PixelPoint): number {
+    const width = this.options.resX;
+    const inBounds = pt.x >= 0 && pt.x <= width && pt.y >= 0 && pt.y <= this.options.resY;
+    if (!inBounds) return -1; //error
+    const index = pt.x + width * pt.y;
+    debugger;
+    const iter = this._calcBuffer[index];
+    return iter;
+  }
 
   // #region calcFull()
 
   // Launch full recomputing based on (dirty) parameters;
-  public calcFull(): void {
+  public reCalcGrid(): void {
     if (this.isBusy) return;
-    this.isBusy = true;
-    // copy parameters : not dirty!
-    this.options = new CalcOptions(this.parent.params, this.parent.canvas); //exposed
-    this.parent.params.dirty = false;
-    const op = this.options;
-
     try {
+      this.isBusy = true;
+      // copy parameters : not dirty!
+      this.options = new CalcOptions(this.parent.params, this.parent.canvas); //exposed
+      this.parent.params.dirty = false;
+      const op = this.options;
+
       if (op.calcMode >= 99) {
         throw new Error("Bug 99 calc_mode");
         return;
@@ -181,9 +191,9 @@ export class cFractCalc implements ICalc {
 
       if (this.wasmActive) {
         this.computeWasmPayload();
-        this.parent.cImage.updateFromWasmPayload(this._calcBuffer, op.iterMax);
+        this.parent.cImage.reCalcGrid(this._calcBuffer, op.iterMax);
       } else {
-        this.calcFull_fallBack();
+        this.calcFull_Direct_FallBack();
       }
       this.calcCount++;
     } catch (err) {
@@ -195,31 +205,28 @@ export class cFractCalc implements ICalc {
 
   // #region calcFull_fallBack
 
-  /** Calcul principal, avec fallback */
-  private calcFull_fallBack(): void {
+  /** Fallback du calcul : lent...
+   * pas optimisé pour mandel ou julia, ni zx*zx, ni DEM
+   */
+  private calcFull_Direct_FallBack(): void {
     const op = this.options;
     const w = op.resX;
     const h = op.resY;
     const maxIter = op.iterMax;
     const r2Max = op.r2max;
-
     const centerRe = op.center_re;
     const centerIm = op.center_im;
     const spanRe = op.span_re;
     const spanIm = op.span_im;
-
-    /** if (this.wasmEngine && typeof this.wasmEngine.compute_orbit_iter === "function") {
-      return this.wasmEngine.compute_full();
-    }/**/
-
+    const jCx: number | undefined = op.isJulia ? op.juliaC_re : undefined;
+    const jCy: number | undefined = op.isJulia ? op.juliaC_im : undefined;
     let idx = 0;
     for (let py = 0; py < h; py++) {
-      const cy = centerIm - (py / h - 0.5) * spanIm;
+      let zx = centerIm - (py / h - 0.5) * spanIm;
+      const cx = jCx || zx;
       for (let px = 0; px < w; px++) {
-        const cx = centerRe + (px / w - 0.5) * spanRe;
-        // Algorithme de Mandelbrot de base en JS
-        let zx = 0;
-        let zy = 0;
+        let zy = centerRe + (px / w - 0.5) * spanRe;
+        const cy = jCy || zy;
         let iter = 0;
         while (zx * zx + zy * zy <= r2Max && iter < maxIter) {
           const tmp = zx * zx - zy * zy + cx;
@@ -240,18 +247,19 @@ export class cFractCalc implements ICalc {
       throw new Error("[cFractCalc] WasmEngine non initialisé");
     }
     // Appel direct WebAssembly, qui calcule dans le buffer partagé
-    const Op = this.options;
+    const options = this.options;
+    console.log(JSON.stringify(options));
     this.wasmEngine.compute_generic(
-      Op.isJulia,
-      Op.juliaC_re,
-      Op.juliaC_im,
-      Op.center_re,
-      Op.center_im,
-      Op.span_re,
-      Op.span_im,
-      Op.iterMax,
-      Op.r2max,
-      Op.calcMode
+      options.isJulia,
+      options.juliaC_re,
+      options.juliaC_im,
+      options.center_re,
+      options.center_im,
+      options.span_re,
+      options.span_im,
+      options.iterMax,
+      options.r2max,
+      options.calcMode
     );
     /* buffer déjà récupéré dans this._buffer
     const rawPtr: number = this.wasmEngine.buffer_ptr(); // Float32 Wasm
@@ -266,8 +274,7 @@ export class cFractCalc implements ICalc {
   calcOrbit(z0: ComplexPoint, maxIter = this.options.iterMax): ComplexPoint[] {
     const op: CalcOptions = this.options;
     const r2max = op.r2max;
-    const c: ComplexPoint =
-      op.typeName === "JULIA" ? { re: op.juliaC_re, im: op.juliaC_im } : z0;
+    const c: ComplexPoint = op.isJulia ? { re: op.juliaC_re, im: op.juliaC_im } : z0;
     const cRe = c.re;
     const cIm = c.im;
     let zRe = z0.re;

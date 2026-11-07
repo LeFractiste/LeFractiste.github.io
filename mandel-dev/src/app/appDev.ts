@@ -11,11 +11,6 @@ import { logAppHeader } from "./version.js";
 import { ComplexPoint } from "../fractTypes.js";
 import { cTest } from "../analysis/cTest.js";
 
-var T = new cTest("AppDev");
-
-// Ecriture de la version directement
-logAppHeader();
-
 // #region CLASS & initApp
 
 // --- ÉTATS GLOBAUX ---
@@ -26,8 +21,13 @@ class AppDev {
   palette: PaletteEditor;
   constructor() {
     appConsole("Loading...");
-    this.mandel = new cFract("mandelCanvas", "MANDELBROT", "mandelStatus");
-    this.julia = new cFract("juliaCanvas", "JULIA", "juliaStatus");
+    this.mandel = new cFract(
+      "mandelCanvas",
+      "MANDELBROT",
+      "mandelStatus",
+      "btnResetMandel"
+    );
+    this.julia = new cFract("juliaCanvas", "JULIA", "juliaStatus", "btnResetMandel");
     // Initialiser l'éditeur de Palette V2/V3 et son callback
     this.palette = new PaletteEditor("paletteContainer", lut => {
       this.mandel.cImage.updatePalette(lut);
@@ -49,11 +49,17 @@ class AppDev {
  *  @todo 2: refactorer app+mandel pour que mandel s'injecte ses boutons status et zoomReset, ainsi que Julia ad-hoc */
 let app: AppDev;
 async function initApp() {
+  // Ecriture de la version
+  logAppHeader();
   // Amorce de chaque cFract autonome
   app = new AppDev();
-  await app.mandel.initParent(app.palette.lut, "btnResetMandel");
-  await app.julia.initParent(app.palette.lut, "btnResetJulia");
+  await app.mandel.initParent(app.palette.lut);
+  await app.julia.initParent(app.palette.lut);
+  app.mandel.lockedJulia = app.julia;
   appConsole("Ready for zoom !");
+  // debug Code
+  (window as any).debugApp = AppDev;
+  var T = new cTest("AppDev");
 }
 
 // #region oldStuff

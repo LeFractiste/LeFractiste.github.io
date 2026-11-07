@@ -1,8 +1,8 @@
-import { IImage } from "../fractTypes.js";
-export declare class cImage implements IImage {
+import { ColorRGBA, PixelPoint, IImage, ITestableGrid } from "../fractTypes.js";
+export declare class cImage implements IImage, ITestableGrid<PixelPoint, ColorRGBA> {
     width: number;
     height: number;
-    imageData: ImageData;
+    buffer: ImageData;
     private lut;
     constructor(width: number, height: number);
     /**
@@ -14,9 +14,10 @@ export declare class cImage implements IImage {
      * Reçoit une nouvelle LUT de l'extérieur (ex: PaletteEditor)
      */
     updatePalette(lookUpTable: Uint8Array): void;
+    getAt(pt: PixelPoint): ColorRGBA;
     /** Projection du buffer Wasm Float32 vers le buffer d'image Canvas (Uint8ClampedArray)
      */
-    updateFromWasmPayload(wasmFloatBuffer: Float32Array, maxIter?: number): void;
+    reCalcGrid(wasmFloatBuffer: Float32Array, maxIter?: number): void;
     /** Rendu de la matrice de distances DEM */
     distToImage(demMatrix: number[][], ctx: CanvasRenderingContext2D): ImageData;
 }

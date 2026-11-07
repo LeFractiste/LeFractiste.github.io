@@ -9,14 +9,17 @@
 
  */
 export class cFractDraw {
-    //private parent: IParent;
+    parent;
     //private ctx:CanvasRenderingContext2D;
     //public drawOptions: DrawOptions;
-    //constructor(parent:IParent)
+    constructor(parent) {
+        this.parent = parent;
+    }
     // #region Reticle
     // Draw reticle: a circle with a cross
-    static drawReticle(canvas, pix) {
+    drawReticle(pix) {
         // Rendre l'image de base pour effacer l'ancien réticule
+        const canvas = this.parent.canvas;
         const ctx = canvas.getContext("2d");
         if (!ctx)
             return;
@@ -40,19 +43,22 @@ export class cFractDraw {
         ctx.restore();
     }
     // #region FixedPoints
-    /** Draw fixed points for Julia set
-     * @todo 2: simplify the interface */
-    static drawFixedPointsOverlay(ctx, param, width, height, fixedPoints = []) {
+    /** Draw fixed points for Julia set */
+    drawFixedPointsOverlay(fixedPoints = []) {
         if (!fixedPoints || fixedPoints.length === 0)
+            return;
+        const canvas = this.parent.canvas;
+        const ctx = canvas.getContext("2d");
+        if (!ctx)
             return;
         ctx.save();
         ctx.fillStyle = "#ff0000";
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 1.5;
         for (const cPoint of fixedPoints) {
-            const pix = param.c2pix(cPoint);
+            const pix = this.parent.params.c2pix(cPoint);
             // Ne dessiner que si le point est dans la zone visible
-            if (pix.x >= 0 && pix.x <= width && pix.y >= 0 && pix.y <= height) {
+            if (pix.x >= 0 && pix.x <= canvas.width && pix.y >= 0 && pix.y <= canvas.height) {
                 ctx.beginPath();
                 ctx.arc(pix.x, pix.y, 4, 0, 2 * Math.PI);
                 ctx.fill();
@@ -64,12 +70,16 @@ export class cFractDraw {
     // #region Path
     /* Gère le tracé vectoriel au-dessus du canvas de pixels
      *(points fixes, axes, orbites, repères). */
-    static drawComplexPath(parent, points, options = {}) {
-        if (!parent || !parent.canvas || points.length === 0)
+    drawComplexPath(points, options = {}) {
+        // input check and init
+        const canvas = this.parent.canvas;
+        const ctx = canvas.getContext("2d");
+        if (!ctx)
             return;
-        const cP = parent.params;
-        const ctx = parent.ctx;
-        const color = options.color || parent.palette?.trajectoryColor || "#ff0055";
+        const cP = this.parent.params;
+        if (points.length === 0)
+            return;
+        const color = options.color || "#ff0055"; // || this.parent.palette?.trajectoryColor
         const lineWidth = options.lineWidth || 1.5;
         // Convert to pixels
         const N = points.length;
@@ -88,7 +98,7 @@ export class cFractDraw {
         }
         ctx.stroke();
         if (options.showPoints) {
-            ctx.fillStyle = parent.palette?.pointColor || "#ffffff";
+            ctx.fillStyle = "#ffffff"; // this.parent.palette?.pointColor ||
             for (let i = 0; i < N; i++) {
                 ctx.fillRect(pix[N].x - 1.5, pix[N].y - 1.5, 3, 3);
             }

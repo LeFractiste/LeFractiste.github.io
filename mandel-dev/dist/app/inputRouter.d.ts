@@ -15,7 +15,7 @@ export declare class InputRouter implements IInputRouter {
     private touchStartDist;
     constructor(canvasEl: HTMLCanvasElement);
     /** Attache les écouteurs natifs DOM au canvas (Mouse & Touch) */
-    bindDOMEvents(cb: PointerEventCallbacks): void;
+    bindDOMEvents(cb: PointerEventCallbacks, reset?: HTMLElement): void;
     private bindMouseEvents;
     private bindTouchEvents;
     private getCanvasPx;

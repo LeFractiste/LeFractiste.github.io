@@ -1,25 +1,23 @@
 /** calc/cFractParam.ts - V0.4 - Copyright LeFractiste 2026
  *  Classe de metadonnées pour le calcul : seule source de donnée pour le calcul !  (il manque des paramètres encore)
  */
-import { IParams, ComplexPoint, PixelPoint, IParent } from "../fractTypes.js";
+import { IParams, ComplexPoint, PixelPoint, IParent, FractType } from "../fractTypes.js";
 export declare class cFractParams implements IParams {
     private parent;
     private _center;
     private _dirty;
-    typeName: string;
+    type: FractType;
     size: PixelPoint;
     aspectRatio: number;
     dia: number;
-    max_iter: number;
-    r2_max: number;
+    iterMax: number;
+    r2Max: number;
     juliaC: ComplexPoint;
     angleDeg: number;
-    /** Reads dirty */
-    get dirty(): boolean;
-    set dirty(value: boolean);
-    constructor(typeName: string | undefined, parent: IParent);
+    get typeName(): string;
+    get isJulia(): boolean;
+    constructor(typeName: string, parent: IParent);
     /**  */
-    initSize(size: PixelPoint): void;
     toMetadata(): string;
     /** Clonage de l'objet //not used
     clone(): cFractParams {
@@ -27,17 +25,21 @@ export declare class cFractParams implements IParams {
       p.center = this.center; //etc
       return p;
     } */
-    /** @todo : gérer le recalcul automatique avec calc.callback ou param.onchange ? */
+    /** Reads dirty */
+    get dirty(): boolean;
+    set dirty(value: boolean);
     setJuliaC(juliaC: ComplexPoint): void;
+    initSize(size: PixelPoint): void;
     get span(): ComplexPoint;
     get center(): ComplexPoint;
     set center(c: ComplexPoint);
     setVector(dia: number, angleDeg?: number): void;
     pix2c(point: PixelPoint): ComplexPoint;
     c2pix(c: ComplexPoint): PixelPoint;
-    zoom(pix: PixelPoint, zoomFactor: number): void;
-    old_zoom(pix: PixelPoint, zoomFactor: number): void;
-    reset(): void;
-    displayState(action: string, c?: ComplexPoint, pix?: PixelPoint): void;
+    onDrag(deltaPx: PixelPoint): void;
+    zoom_centered(pix: PixelPoint, zoomFactor: number): void;
+    onZoom(pix: PixelPoint, zoomFactor: number): void;
+    onReset(): void;
+    spyPixelMemory(): void;
 } /** */
 //# sourceMappingURL=cFractParams.d.ts.map

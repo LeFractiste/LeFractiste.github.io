@@ -28,6 +28,7 @@ import {
   PixelPoint,
   IParent,
   IParams,
+  ColorRGBA,
   IInputRouter,
   PointerEventCallbacks
 } from "../fractTypes.js";
@@ -44,17 +45,22 @@ export class cFract implements IParent {
 
   //Calc variables: //todo 2: envoyer des variables dans calc ? StateMachine ici
   public statusId: string;
-  private lockedC: ComplexPoint | null = null;
-  //public autoCalc: boolean = true; //event app...
-  public orbit: ComplexPoint[] = [{ re: 0.0, im: 0.0 }];
-  private fixedPoints: ComplexPoint[] = [];
+  private resetEl: HTMLElement;
+  // special points
+  public lockedJulia: IParent | null = null; // close minibrot in analysis
+  public cDeep: ComplexPoint = { re: 0.0, im: 0.0 }; // hoverPoint
+  public orbit: ComplexPoint[] = [this.cDeep]; // related orbit
+  public fixedPoints: ComplexPoint[] = []; // for Julia
+  // remote access through IParent (stupid: there is access write via params.centre=newC) !
   get params(): IParams {
     return this._params as IParams;
   }
 
-  constructor(canvasId: string, type = "MANDELBROT", statusId: string) {
+  constructor(canvasId: string, type = "MANDELBROT", statusId: string, resetId: string) {
     this.statusId = statusId;
     this.classConsole("Loading...");
+    this.resetEl = document.getElementById(resetId) as HTMLCanvasElement;
+    if (!this.resetEl) throw new Error(`Button #${resetId} introuvable`);
     this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
     if (!this.canvas) throw new Error(`Canvas #${canvasId} introuvable`);
     this.ctx = this.canvas.getContext("2d")!;
@@ -62,7 +68,7 @@ export class cFract implements IParent {
     this.cImage = new cImage(this.canvas.width, this.canvas.height); //passer canvas et déléguer DrawOverlay ?
     // Crée params - pourquoi private?
     this._params = new cFractParams(type, this);
-    // Crée calc - sasn calcul
+    // Crée calc - sans calcul
     this.calc = new cFractCalc(this);
     this.draw = new cFractDraw(this);
     this.inputRouter = new InputRouter(this.canvas);
@@ -71,7 +77,7 @@ export class cFract implements IParent {
   // #region Init
 
   // Launch the objet: calc, render, palette and events
-  async initParent(paletteLut?: Uint8Array, resetId?: string): Promise<void> {
+  async initParent(paletteLut?: Uint8Array): Promise<void> {
     // initialiser tout sauf calc
     if (paletteLut) this.cImage.updatePalette(paletteLut);
     // Last step: calc & rust & calcul up to render (point dur !)
@@ -79,38 +85,54 @@ export class cFract implements IParent {
     this.classConsole("Initialized");
     this.render();
     // Initialisation des événements
-    const cb = this.genCbEvents(resetId);
-    this.inputRouter.bindDOMEvents(cb);
+    const cb = this.genCbEvents();
+    this.inputRouter.bindDOMEvents(cb, this.resetEl);
   }
 
   // #region Events-UX
   // Câblage des PointerEventCallbacks
-  genCbEvents(resetId?: string): PointerEventCallbacks {
+  genCbEvents(): PointerEventCallbacks {
     const callbacks: PointerEventCallbacks = {
       // SURVOL (HOVER) : Met à jour le statut avec les coordonnées complexes sous la souris
       onHover: (px: PixelPoint) => {
-        const pC = this._params.pix2c(px);
-        this.updateStatusBar(pC, px.x, px.y); /// XXXX ramener cette version ici !
+        this.cDeep = this._params.pix2c(px);
+        // Logique spécifique Main
+        if (this.lockedJulia) this.orbit = this.calc.calcOrbit(this.cDeep); // debugger d'abord !
+        const testIter: number = this.calc.getAt(px);
+        const testRgba: ColorRGBA = this.cImage.getAt(px);
+        this.displayState(
+          `[Hoover] iter=${this.orbit.length}/${testIter} | ${JSON.stringify(testIter)} | `,
+          this.cDeep,
+          px
+        );
+        this.render();
       },
       // CLIC : Sélectionne ou fixe un point
       onClick: (px: PixelPoint) => {
         const pC = this._params.pix2c(px);
-        this._params.displayState("[Click]", pC, px);
-        // Logique spécifique Mandelbrot/Julia ici si besoin
+        this.displayState("[Click]", pC, px);
+        // Logique spécifique Main
+        if (this.lockedJulia) this.lockedJulia.params.juliaC = pC;
       },
       // ZOOM (Molette) : Utilise la méthode zoom de cFractParams
       onZoom: (px: PixelPoint, factor: number) => {
-        const cFP = this._params;
-        cFP.onZoom(px, factor); // zoom autour du point
-        cFP.displayState("[Zoom]", cFP.center, px);
+        const pC = this._params.pix2c(px);
+        this._params.onZoom(px, factor); // zoom autour du point
+        this.displayState("[Zoom]", pC, px);
       },
       // PAN (Glisser) : Déplace le centre
       onDrag: (deltaPx: PixelPoint) => {
         this._params.onDrag(deltaPx);
+        const pC = this._params.center;
+        const px = { x: 0.0, y: 0.0 };
+        this.displayState("[OnDrag]", pC, px);
       },
       // RESET
       onReset: () => {
         this._params.onReset();
+        const pC = this._params.center;
+        const px = this._params.c2pix(pC);
+        this.displayState("[Reset]", pC, px);
       }
     };
     return callbacks;
@@ -121,24 +143,25 @@ export class cFract implements IParent {
   /** Handles the display, as necessary
    */
   render(): void {
-    console.trace("cFract.render");
+    // console.trace("cFract.render");
     // recomputes if necessary (dirty) and possible (busy)
     const cFP = this._params;
     if (cFP.dirty) {
-      this.calc.calcFull(); //reset of dirty
+      this.calc.reCalcGrid(); //reset of dirty
       // recalcul des overlay ?
       // à faire
       // Envoi de l'image
-      this.ctx.putImageData(this.cImage.imageData, 0, 0);
+      this.ctx.putImageData(this.cImage.buffer, 0, 0);
     }
     // Envoi de l'orbite
     this.draw.drawComplexPath(this.orbit);
     // Envoi des overlay
-    if ((cFP.typeName = "JULIA")) {
+    if (cFP.isJulia) {
       //this.draw.drawFixedPointsOverlay(this); /** @todo mal initialisé */
       this.draw.drawReticle(cFP.c2pix(cFP.juliaC));
     } else {
-      if (this.lockedC) this.draw.drawReticle(cFP.c2pix(this.lockedC));
+      if (this.lockedJulia)
+        this.draw.drawReticle(cFP.c2pix(this.lockedJulia.params.juliaC));
     }
   }
 
@@ -149,22 +172,39 @@ export class cFract implements IParent {
     cFractDraw.drawComplexPath(this, orbit, {});
   } /**/
 
-  // Computes a new orbit
-  set cDeep(c: ComplexPoint) {
-    this.orbit = this.calc.calcOrbit(c);
-    this.render();
-  }
-
   // #region Status UI & Helpers
+
+  // Display the cfract state
+  displayState(action: string, c?: ComplexPoint, pix?: PixelPoint): void {
+    // console.trace("cFractParams.displayState");
+    const status = document.getElementById(this.statusId);
+    if (!status) return;
+    // Prepare display msg
+    const cF = this;
+    const cFP = this._params;
+    //const spyImage = cF.cImage.imageData.data.subarray(0, 5).join(","); //move to spy()
+    //const spyWasmPayload = cF.calc.calcBuffer;
+    let msg = action;
+    if (c) msg += `${cUtils.complexToString(c)}`;
+    if (cF.params.isJulia) {
+      msg += ` | JULIA: ${cUtils.complexToString(cFP.juliaC)}`;
+    }
+    if (pix) {
+      msg += ` | px=${Math.floor(pix.x)} py=${Math.floor(pix.y)}`;
+    }
+    msg += ` | dia=${cFP.dia.toExponential(1)}`;
+    msg += ` | calc: ${cF.calc.calcCount}`;
+    status.textContent = msg;
+  }
 
   updateStatusBar(c: ComplexPoint, px: number, py: number): void {
     const status = document.getElementById(this.statusId);
     if (!status) return;
 
     let msg = `${cUtils.complexToString(c)} | counter: ${this.calc.calcCount}`;
-    if (this._params.typeName === "JULIA") {
+    /** if (this._params.typeName === "JULIA") {
       msg += ` | JULIA: ${cUtils.complexToString(this._params.juliaC)}`;
-    }
+    } */
     msg += ` | px=${Math.floor(px)} py=${Math.floor(py)}`;
     status.textContent = msg;
   }

@@ -16,10 +16,18 @@ export class InputRouter {
         this.canvasEl = canvasEl;
     }
     /** Attache les écouteurs natifs DOM au canvas (Mouse & Touch) */
-    bindDOMEvents(cb) {
+    bindDOMEvents(cb, reset) {
         this.canvasEl.style.touchAction = "none"; // Bloque le scroll natif mobile
+        // pointeur events
         this.bindMouseEvents(cb);
         this.bindTouchEvents(cb);
+        // reset button
+        if (cb.onReset && reset) {
+            reset.addEventListener("click", e => {
+                if (cb.onReset)
+                    cb.onReset();
+            });
+        }
     }
     // #region Mouse Listeners
     // Ajout des events MOUSE - les callbacks peuvent être indéfinis !

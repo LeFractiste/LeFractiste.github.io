@@ -11,6 +11,7 @@ import { cFractCalc } from "../calc/cFractCalc.js";
 import { cFractDraw } from "../pres/fractDraw.js";
 import { cFractParams } from "../calc/cFractParams.js";
 import { cUtils } from "../calc/utils.js";
+import { InputRouter } from "../app/inputRouter.js";
 // #region CFRACT
 export class cFract {
     canvas;
@@ -18,17 +19,26 @@ export class cFract {
     cImage;
     _params;
     calc;
+    draw;
+    inputRouter;
     //Calc variables: //todo 2: envoyer des variables dans calc ? StateMachine ici
     statusId;
-    //public autoCalc: boolean = true; //event app...
-    orbit = [{ re: 0.0, im: 0.0 }];
-    fixedPoints = [];
+    resetEl;
+    // special points
+    lockedJulia = null; // close minibrot in analysis
+    cDeep = { re: 0.0, im: 0.0 }; // hoverPoint
+    orbit = [this.cDeep]; // related orbit
+    fixedPoints = []; // for Julia
+    // remote access through IParent (stupid: there is access write via params.centre=newC) !
     get params() {
         return this._params;
     }
-    constructor(canvasId, type = "MANDELBROT", statusId) {
+    constructor(canvasId, type = "MANDELBROT", statusId, resetId) {
         this.statusId = statusId;
         this.classConsole("Loading...");
+        this.resetEl = document.getElementById(resetId);
+        if (!this.resetEl)
+            throw new Error(`Button #${resetId} introuvable`);
         this.canvas = document.getElementById(canvasId);
         if (!this.canvas)
             throw new Error(`Canvas #${canvasId} introuvable`);
@@ -37,41 +47,95 @@ export class cFract {
         this.cImage = new cImage(this.canvas.width, this.canvas.height); //passer canvas et déléguer DrawOverlay ?
         // Crée params - pourquoi private?
         this._params = new cFractParams(type, this);
-        // Crée calc - sasn calcul
+        // Crée calc - sans calcul
         this.calc = new cFractCalc(this);
+        this.draw = new cFractDraw(this);
+        this.inputRouter = new InputRouter(this.canvas);
     }
-    // Launch the objet, up to calc.initCalc(handling wasm)
+    // #region Init
+    // Launch the objet: calc, render, palette and events
     async initParent(paletteLut) {
         // initialiser tout sauf calc
         if (paletteLut)
             this.cImage.updatePalette(paletteLut);
         // Last step: calc & rust & calcul up to render (point dur !)
-        try {
-            await this.calc.initCalc();
-            this.classConsole("Initialized");
-            this.render();
-        }
-        catch (e) {
-            this.classConsole("Error cFract init");
-        }
-        // InitCalc appelle render à la fin
+        await this.calc.initCalc();
+        this.classConsole("Initialized");
+        this.render();
+        // Initialisation des événements
+        const cb = this.genCbEvents();
+        this.inputRouter.bindDOMEvents(cb, this.resetEl);
+    }
+    // #region Events-UX
+    // Câblage des PointerEventCallbacks
+    genCbEvents() {
+        const callbacks = {
+            // SURVOL (HOVER) : Met à jour le statut avec les coordonnées complexes sous la souris
+            onHover: (px) => {
+                this.cDeep = this._params.pix2c(px);
+                // Logique spécifique Main
+                if (this.lockedJulia)
+                    this.orbit = this.calc.calcOrbit(this.cDeep); // debugger d'abord !
+                const testIter = this.calc.getAt(px);
+                const testRgba = this.cImage.getAt(px);
+                this.displayState(`[Hoover] iter=${this.orbit.length}/${testIter} | ${JSON.stringify(testIter)} | `, this.cDeep, px);
+                this.render();
+            },
+            // CLIC : Sélectionne ou fixe un point
+            onClick: (px) => {
+                const pC = this._params.pix2c(px);
+                this.displayState("[Click]", pC, px);
+                // Logique spécifique Main
+                if (this.lockedJulia)
+                    this.lockedJulia.params.juliaC = pC;
+            },
+            // ZOOM (Molette) : Utilise la méthode zoom de cFractParams
+            onZoom: (px, factor) => {
+                const pC = this._params.pix2c(px);
+                this._params.onZoom(px, factor); // zoom autour du point
+                this.displayState("[Zoom]", pC, px);
+            },
+            // PAN (Glisser) : Déplace le centre
+            onDrag: (deltaPx) => {
+                this._params.onDrag(deltaPx);
+                const pC = this._params.center;
+                const px = { x: 0.0, y: 0.0 };
+                this.displayState("[OnDrag]", pC, px);
+            },
+            // RESET
+            onReset: () => {
+                this._params.onReset();
+                const pC = this._params.center;
+                const px = this._params.c2pix(pC);
+                this.displayState("[Reset]", pC, px);
+            }
+        };
+        return callbacks;
     }
     // #region Render
     /** Handles the display, as necessary
      */
     render() {
-        console.trace("cFract.render");
+        // console.trace("cFract.render");
         // recomputes if necessary (dirty) and possible (busy)
-        if (this._params.dirty) {
-            this.calc.calcFull();
+        const cFP = this._params;
+        if (cFP.dirty) {
+            this.calc.reCalcGrid(); //reset of dirty
             // recalcul des overlay ?
             // à faire
             // Envoi de l'image
-            this.ctx.putImageData(this.cImage.imageData, 0, 0);
-            // Envoi de l'orbite
-            cFractDraw.drawComplexPath(this, this.orbit);
-            // Envoi des overlay
-            this.drawFixedPointsOverlay(); //via image ou Pres ?
+            this.ctx.putImageData(this.cImage.buffer, 0, 0);
+        }
+        // Envoi de l'orbite
+        this.draw.drawComplexPath(this.orbit);
+        // Envoi des overlay
+        if (cFP.isJulia) {
+            //this.draw.drawFixedPointsOverlay(this); /** @todo mal initialisé */
+            this.draw.drawReticle(cFP.c2pix(cFP.juliaC));
+        }
+        else {
+            if (this.lockedJulia)
+                this.draw.drawReticle(cFP.c2pix(this.lockedJulia.params.juliaC));
         }
     }
     /** Draw overlay with default options
@@ -80,23 +144,39 @@ export class cFract {
       this.render(); // lent mais...
       cFractDraw.drawComplexPath(this, orbit, {});
     } /**/
-    // Computes a new orbit
-    set cDeep(c) {
-        this.orbit = this.calc.calcOrbit(c);
-        this.render();
-    }
-    drawFixedPointsOverlay() {
-        cFractDraw.drawFixedPointsOverlay(this.ctx, this._params, this.canvas.width, this.canvas.height, this.fixedPoints);
-    }
     // #region Status UI & Helpers
+    // Display the cfract state
+    displayState(action, c, pix) {
+        // console.trace("cFractParams.displayState");
+        const status = document.getElementById(this.statusId);
+        if (!status)
+            return;
+        // Prepare display msg
+        const cF = this;
+        const cFP = this._params;
+        //const spyImage = cF.cImage.imageData.data.subarray(0, 5).join(","); //move to spy()
+        //const spyWasmPayload = cF.calc.calcBuffer;
+        let msg = action;
+        if (c)
+            msg += `${cUtils.complexToString(c)}`;
+        if (cF.params.isJulia) {
+            msg += ` | JULIA: ${cUtils.complexToString(cFP.juliaC)}`;
+        }
+        if (pix) {
+            msg += ` | px=${Math.floor(pix.x)} py=${Math.floor(pix.y)}`;
+        }
+        msg += ` | dia=${cFP.dia.toExponential(1)}`;
+        msg += ` | calc: ${cF.calc.calcCount}`;
+        status.textContent = msg;
+    }
     updateStatusBar(c, px, py) {
         const status = document.getElementById(this.statusId);
         if (!status)
             return;
         let msg = `${cUtils.complexToString(c)} | counter: ${this.calc.calcCount}`;
-        if (this._params.typeName === "JULIA") {
-            msg += ` | JULIA: ${cUtils.complexToString(this._params.juliaC)}`;
-        }
+        /** if (this._params.typeName === "JULIA") {
+          msg += ` | JULIA: ${cUtils.complexToString(this._params.juliaC)}`;
+        } */
         msg += ` | px=${Math.floor(px)} py=${Math.floor(py)}`;
         status.textContent = msg;
     }

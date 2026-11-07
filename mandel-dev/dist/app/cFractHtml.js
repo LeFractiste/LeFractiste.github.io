@@ -51,7 +51,7 @@ class cFractCardIds {
     <div class="cfract-card" id="${this.cardId}" data-type=${this.type}>
       <h4>
         <span>Plan de Mandelbrot</span>
-         <button id="${resetId}" style="font-size: 11px">Reset Zoom</button>
+         <button id="${this.resetId}" style="font-size: 11px">Reset Zoom</button>
       </h4>
       <div class="cfract-canvas-wrapper">
         <canvas class="cfract-canvas" id="${this.canvasId}" width="${width}" height="${height}"></canvas>
@@ -99,8 +99,8 @@ export function setupFractalCanvas(options) {
 export function updateParamsFromURL(params) {
     const hash = window.location.hash.substring(1);
     const paramsData = new URLSearchParams(hash);
-    if (params.typeName !== "MANDELBROT")
-        return;
+    if (params.isJulia)
+        return; //excluded so far
     // params.typeName: paramsData.get("type") || "MANDELBROT"; //type
     const re = parseFloat(paramsData.get("re") || "-0.75"); //centreRe
     const im = parseFloat(paramsData.get("im") || "0.0"); //centreIm
