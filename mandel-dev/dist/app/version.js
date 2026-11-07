@@ -9,7 +9,7 @@
  */
 //Gestion de version
 export const APP_VERSION = {
-    version: "4.7.0-dev",
+    version: "4.7.2-dev",
     buildDate: "2026-10-25 12:41 CET",
     gitTag: "branch rescue-stash", // À synchroniser avec `git describe --tags`
     environment: "development"

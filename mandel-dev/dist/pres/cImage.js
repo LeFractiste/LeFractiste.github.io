@@ -49,7 +49,7 @@ export class cImage {
         if (!inBounds)
             return { r: 0, g: 0, b: 0, a: 128 }; //error
         const pixels = this.buffer.data;
-        const index = 4 * (pt.x + this.width * pt.y);
+        const index = 4 * (Math.floor(pt.x) + this.width * Math.floor(pt.y));
         const rgba = {
             r: pixels[index],
             g: pixels[index + 1],

@@ -29,13 +29,14 @@ export interface TaskTrack {
     description: string;
     file?: string;
 }
-/** Point dans le plans complexe
- * //@todo 2: préparer le passage à la précision multiple!
+/** Point in Complex plane - Limit: JS precision is 32 bits
  */
 export interface ComplexPoint {
     re: number;
     im: number;
 }
+/** Canvas or screen coordinates, y positive down
+ * Not always an integer (math.fround), nor inBound */
 export interface PixelPoint {
     x: number;
     y: number;
@@ -47,8 +48,6 @@ export type CalcMode = "DIRECT" | "DEM";
  * */
 export interface IAlgoParams {
     isJulia: boolean;
-    cDeep?: ComplexPoint;
-    iterTry?: number; /** @todo: to compute new iterMax when zooming */
     iterMax: number;
     r2Max: number;
     juliaC: ComplexPoint;
@@ -78,6 +77,8 @@ export interface IParent {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     cImage: IImage;
+    cDeep: ComplexPoint;
+    orbit?: ComplexPoint[];
     palette?: {
         orbitColor?: string;
         trajectoryColor?: string;

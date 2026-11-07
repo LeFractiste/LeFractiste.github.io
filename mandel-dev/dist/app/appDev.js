@@ -15,7 +15,7 @@ class AppDev {
     constructor() {
         appConsole("Loading...");
         this.mandel = new cFract("mandelCanvas", "MANDELBROT", "mandelStatus", "btnResetMandel");
-        this.julia = new cFract("juliaCanvas", "JULIA", "juliaStatus", "btnResetMandel");
+        this.julia = new cFract("juliaCanvas", "JULIA", "juliaStatus", "btnResetJulia");
         // Initialiser l'éditeur de Palette V2/V3 et son callback
         this.palette = new PaletteEditor("paletteContainer", lut => {
             this.mandel.cImage.updatePalette(lut);
@@ -44,7 +44,7 @@ async function initApp() {
     app.mandel.lockedJulia = app.julia;
     appConsole("Ready for zoom !");
     // debug Code
-    window.debugApp = AppDev;
+    window.debugApp = app;
     var T = new cTest("AppDev");
 }
 // #region oldStuff

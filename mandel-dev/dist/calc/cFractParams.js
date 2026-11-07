@@ -111,11 +111,11 @@ export class cFractParams {
         const im = cFP.center.im - (point.y / cFP.size.y - 0.5) * cFP.span.im;
         return { re: re, im: im };
     }
-    // Transformation linéaire du plan - complexe vers canvas
+    // Transformation linéaire du plan - complexe vers canvas pixel (integer)
     c2pix(c) {
         const cF = this;
-        const px = ((c.re - cF.center.re) / cF.span.re + 0.5) * cF.size.x;
-        const py = (0.5 - (c.im - cF.center.im) / cF.span.im) * cF.size.y;
+        const px = Math.fround(((c.re - cF.center.re) / cF.span.re + 0.5) * cF.size.x);
+        const py = Math.fround((0.5 - (c.im - cF.center.im) / cF.span.im) * cF.size.y);
         return { x: px, y: py };
     }
     // PAN (Glisser) : Déplace le centre

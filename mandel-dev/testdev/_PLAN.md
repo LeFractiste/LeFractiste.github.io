@@ -1,7 +1,6 @@
 ## TODO
 
-- @todo 0: code/refact: **BUG** mandel.calc.calcGrid - isJulia + ITestableGrid
-- @todo 0: reset (3 compil)
+- @todo 4.7. : code/refact: **BUG** mandel.calc.calcGrid - Done: isJulia + ITestableGrid + reset + c2pix.fround
 - @todo 0: pres/html : test => génération du html => serveur ! . **BUG**: galère non débuggable !
 - @todo 2: code/calc: Gérer param.calcMode et implémenter cFractCalc.setMode ?
 - @todo 1: code/IParams: sécuriser fract_params via IParams = readOnly + onAction

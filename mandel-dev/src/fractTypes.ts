@@ -48,20 +48,20 @@ export interface TaskTrack {
 
 // #region Bases
 
-/** Point dans le plans complexe
- * //@todo 2: préparer le passage à la précision multiple!
+/** Point in Complex plane - Limit: JS precision is 32 bits
  */
 export interface ComplexPoint {
   re: number;
   im: number;
 }
-// Coordonnées canvas ou écran (souvent entier) - y positive down !
+/** Canvas or screen coordinates, y positive down
+ * Not always an integer (math.fround), nor inBound */
 export interface PixelPoint {
-  x: number;
-  y: number;
+  x: number; // integer?
+  y: number; // integer?
 }
 
-// Classes - Main sera le Mandelbrot d'analyse, avec les objets Julia + analyse / palette associés
+// Classes - Main est le Mandelbrot d'analyse, avec les objets Julia + analyse / palette associés
 export type FractType = "MAIN" | "MANDELBROT" | "JULIA";
 // Computation mode, handled by cFractCalc
 export type CalcMode = "DIRECT" | "DEM"; // todo 2+3: | "Hybrid" | "QuadHybrid" | "BigNumQH";
@@ -72,12 +72,10 @@ export type CalcMode = "DIRECT" | "DEM"; // todo 2+3: | "Hybrid" | "QuadHybrid" 
  * @todo 2: add width/height and r2max/iterMax
  * */
 export interface IAlgoParams {
-  //type?: string; //inutile: if (Param.JuliaC) {type="JULIA";}
+  //type: string; //inutile: if (Param.JuliaC) {type="JULIA";}
   //typeName: string;
   isJulia: boolean;
-  cDeep?: ComplexPoint; // point of interest - mouse hover/zoom
-  iterTry?: number; /** @todo: to compute new iterMax when zooming */
-  iterMax: number; //à renommer iterMax et R2Max dès que compilable //@todo 2: remove: for calc only
+  iterMax: number; // make automatic
   r2Max: number; //à renommer R2max
   juliaC: ComplexPoint; //defined for Julia and MandelMain. Undefined for Mandelbrot set
   // Used for auto recalc
@@ -102,7 +100,7 @@ export interface IViewportParams {
   //c2pix and pix2c ? (no: different projection = other params & arguments)
 }
 
-// Composition d'interfaces :
+// Interface d'accès externe aux paramètres
 export interface IParams extends IViewportParams, IAlgoParams {}
 
 // #region IParent
@@ -117,6 +115,8 @@ export interface IParent {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   cImage: IImage;
+  cDeep: ComplexPoint; // point of interest
+  orbit?: ComplexPoint[]; // orbit of that point
   palette?: {
     orbitColor?: string;
     trajectoryColor?: string;

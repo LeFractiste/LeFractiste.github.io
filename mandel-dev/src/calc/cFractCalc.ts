@@ -165,8 +165,7 @@ export class cFractCalc implements ICalc, ITestableGrid<PixelPoint, number> {
     const width = this.options.resX;
     const inBounds = pt.x >= 0 && pt.x <= width && pt.y >= 0 && pt.y <= this.options.resY;
     if (!inBounds) return -1; //error
-    const index = pt.x + width * pt.y;
-    debugger;
+    const index = Math.floor(pt.x) + width * Math.floor(pt.y);
     const iter = this._calcBuffer[index];
     return iter;
   }
