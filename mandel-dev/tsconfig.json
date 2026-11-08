@@ -20,5 +20,5 @@
     "src/**/*.ts", //ts refactoring
     "src/**/*.js" //ajout des js pour typedoc
   ],
-  "exclude": ["dist", "node_modules", "pkg", "target", "testdev", "docs", "**/*.rs"]
+  "exclude": ["dist", "node_modules", "pkg", "target", "proto", "docs", "**/*.rs"]
 }

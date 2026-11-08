@@ -1,9 +1,12 @@
 ## TODO
 
-- @todo 4.7. : code/refact: fixed mandel.calc.calcGrid - Done: isJulia + ITestableGrid + reset + c2pix.round + window/canvas listeners + Rust stable
+- @todo 0: UX/touch : version compatible de Smartphone !
 - @todo 0: pres/html : test => génération du html => serveur ! . **BUG**: galère non débuggable !
+- @todo 1: UX/srv: serveur d'image et url variable. 50%: manque update url (revoir svg)
+- @todo 1: UX/cImage - definir l'interface commun à Iter float et Dist/pix (négative ou reuse des Iter petits ? Mais dist0=iter grands !)
 - @todo 2: code/calc: Gérer param.calcMode et implémenter cFractCalc.setMode ?
 - @todo 1: code/IParams: sécuriser fract_params via IParams = readOnly + onAction
+- @todo 1: UX/html - ajout automatisé de boutons d'interface maxIter & setCalc (interface UX(btnX): html.addBtn(X, onclick): id=btnX, onClickX?)
 - @todo 3: Rust/IP - copyright, commenter les fonctions! Archi: params-->calcoptions-->Z0matrix-->ZNmatrix-->imageData
 - @todo 3: Rust/vitesse - recalcul des points noirs (iter bouge) - zoom\*2 récup! - taille image (zoom GPU) - quadTree
 - @todo 2: calc/Speed - Algorithme de calcul local de Mandelbrot via Julia précalculée (validité de la zone ?)
@@ -13,20 +16,28 @@
 - @todo 2: Calc/MaxIter ? Le calculer pour la bonne résolution DEM. Critère: un point "noir" est à une distance/pixel > 2
 - @todo 2: UX/extRay: avancer jusqu'au dernier pixel, puis zoomer (x10) et avancer jusqu'au derier pixel.
 - @todo 3: UX/data: historique de zoom : push, pop position (&vecteur: dia/rotation)
-- @todo 1: UX/html - ajout automatisé de boutons d'interface maxIter & setCalc (interface UX(btnX): html.addBtn(X, onclick): id=btnX, onClickX?)
 - @todo 2: code/string : grouper les utils.toString et les cFract.Console dans cFractConsole
 - @todo 2: calc/perfo: vitesse de chargement : init bmp pour mandel
 - @todo 1: UX/CSS: synchroniser palette et le CSS de site (harmonie) 50%: couleurs des palettes et boutons
-- @todo 1: UX/srv: serveur d'image et url variable. 50%: manque update url (revoir svg)
-- @todo 2: UX/cImage - definir l'interface commun à Iter float et Dist/pix (négative ou reuse des Iter petits ? Mais dist0=iter grands !)
 - @todo 1: UX/PaletteEditor: le respécifier avec nodes et le fAIre. Voir chez Lily.
 - @todo 3: Web/SEO : SEO site + copyright + pub Utube
 
 # DONE
 
+- 4.8.1. : pour publier - amélioration ce todo, index.html & CSS, déplacé ../prepa, AppDev crea + cTest
+- 4.8.0. : refactoring 100% - isJulia + ITestableGrid + reset + c2pix.round + window/canvas listeners + Rust stable + params setters
+- 4.7.x : branche rescue-stash pour débugger le refactoring encours.
+
 # VERSIONS
 
-Spécifications d'idées pour le moteur de Fractales [V1] Rendu de base Mandelbrot/Julia Canvas2D/Wasm - OK [V2] PaletteEditor interactif + export JSON/URL - OK [V3] Moteur d'itération optimisé (AVX2/SIMD via Rust Wasm) - OK [V4] Intégration de V2 et V3 - troisième codeur. [V4-Core] Pipeline d'affichage à 5 champs :
+# Idees
+
+Spécifications d'idées pour le moteur de Fractales
+
+- [V1] Rendu de base Mandelbrot/Julia Canvas2D/Wasm - OK
+- [V2] PaletteEditor interactif + export JSON/URL - OK
+- [V3] Moteur d'itération optimisé (AVX2/SIMD via Rust Wasm) - OK
+- [V4] Intégration de V2 et V3 - troisième codeur. [V4-Core] Pipeline d'affichage à 5 champs :
 
 - Jauge Intérieure : Ratio pixels intérieurs / total
 - Question de contrôle : "Stabilité du zoom ?"

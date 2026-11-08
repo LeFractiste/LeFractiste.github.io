@@ -65,7 +65,8 @@ Questions: que fait merge?
 - git add . # Stagging = Empaquetage de tout le dossier (vérifier le CD directory !)
 - git commit -m "fix(): comment" # Commiter = sauvegarder le dossier empaqueté. Avec un commentaire: fix = correction
 - git push origin main # envoyer vers github
-- git pull # Rapatrie de l'info. Concept: stash = commit temporaire où VScode sauve les infos écrasées par l'opération git reflog # liste des commit (hors stash)
+- git pull # Rapatrie de l'info. Concept: stash = commit temporaire où VScode sauve les infos écrasées par l'opération
+- git reflog # liste des commit (hors stash)
 
 # debug
 
@@ -74,7 +75,8 @@ Questions: que fait merge?
 - git log -p -n 3 -- src/calc/cFractCalc.ts # voir l'historique du fichier
 - git ls-tree -r --name-only 32c3649 #liste le contenu d'un commit, par hash
 - git status -- . ":(exclude)dist" # exclure dist de l'affichage (un peu tordu)
-- git show 32c3649:mandel/src/calc/cFractParams.ts # Afficher le fichier du stash 32c3649 sans modifier le disque git diff HEAD 32c3649 -- mandel-dev/src/calc/cFractParams.ts # Comparer ton fichier actuel avec la version du stash
+- git show 32c3649:mandel/src/calc/cFractParams.ts # Afficher le fichier du stash 32c3649 sans modifier le disque
+- git diff HEAD 32c3649 -- mandel-dev/src/calc/cFractParams.ts # Comparer ton fichier actuel avec la version du stash
 - git diff --no-index file1 file2 # comparer deux fichiers actuels
 - copy file1 file2 # Faire une copie locale avant écrasement
 - git checkout 32c3649 -- src/calc/cFractParams.ts # Extraire la version du stash directement dans ton répertoire de travail
@@ -91,7 +93,7 @@ Questions: que fait merge?
 - git checkout main # active la branche main
 - git checkout -b branch # crée la branche "branch"
 - git checkout mandel-V4 -- path/oneFile.js #récupère un fichier de la branche mandel-V4
-- git push -u origin mandel-dev # pour publier la branche vers it, à la fin
+- git push -u origin branch # pour publier la branche vers git, à la fin
 - merge #pour appliquer la branche au main
 - git reset --soft TAG # Revenir au commit/tag V4.0 tout en conservant tes fichiers modifiés dans ton dossier de travail (?)
 

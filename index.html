@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mandel-dev / Le Fractiste</title>
-    <style>
+    <title>Le Fractiste</title>
+    <link rel="stylesheet" href="style-LeFractiste.css" />
+    <style>/**/
       body {
         font-family: system-ui, sans-serif;
         background: #121214;
@@ -12,7 +13,7 @@
         padding: 2rem;
         max-width: 900px;
         margin: 0 auto;
-      }
+      } /*
       h1 {
         color: #61afef;
         border-bottom: 1px solid #333;
@@ -48,60 +49,83 @@
       a {
         text-decoration: none;
         color: inherit;
-      }
+      } /**/
     </style>
   </head>
   <body>
     <h1>Mandel-dev — Galerie &amp; Laboratoire Fractal</h1>
     <p>
-      Plateforme d'exploration et de rendu haute précision (Wasm / Rust / Canvas
-      / DEM).
+      Plateforme d'exploration et de rendu haute précision (Wasm / Rust / Canvas). Projets:
+      <ol>
+        <li>Continuer à améliorer la qualité <i>mathématico-scientifique</i> du site. Quelques idées.</li>
+        <li>Améliorer le <i>design</i> du site, et implémenter l'éditeur de couleurs.</li> 
+        <li>User Experience (UX) : rendre les visites interactives. Jeu découverte.</li>
+        <li>Documenter: pages <i>didactiques</i>, blog de développement, documenter le package.</li>
+      </ol>
+    </ul>
     </p>
-    <h2>Annonce du mois</h2>
-    <p>
-      Nous recherchons un jeune co-développeur passionné par les mathématiques
-      et/ou la programmation pour rejoindre notre équipe de développement. Tech:
-      Web, js, Ts, Rust, Wasm, git, VScode, gScript, sheets, images, movies... -
-      IA-coding, UX Maths: Fractales, théorie, fonctions itérées,
-      transformations complexes, Julia, Mandelbrot, dynamique des orbite,
-      géométrie fractale, analyse de convergence. Mind: Curiosité, créativité,
-      sens artisitique, rigueur, autonomie, esprit d'équipe, sens de l'humour.
-    </p>
-
+    
     <div class="grid">
-      <a href="./mandel-V4/mandel.html" class="card">
-        <h3>🔬 Mandel-V4 (Dev)</h3>
+      <!-- Debuggage !
+      <a href="../mandel-dev/mandel-V5.html" class="card">
+        <h3>🚧 Mandel-V5</h3>
         <p>
-          Ajout de l'interaction Zoom, ainsi que la synchonisation du Julia-set
-          à la bonne valeur de zoom. Analyse de l'itération.
-        </p> </a
-      ><a href="./mandel-V3/mandel.html" class="card">
+          Version de développement (4.8.0.). Identique à V4, tout le code a été réécrit en
+          typeScript, et amélioré (plusieurs fonctions arrivent).
+        </p>
+      </a>
+      -->
+      <a href="./mandel-V4/mandel.html" class="card">
+        <h3>🎶 Mandel-V4 (Julia)</h3>
+        <p>
+          Ajout de l'interaction Zoom, ainsi que la synchonisation du Julia-set. Analyse d'orbites.
+        </p>
+      </a>
+      <a href="./mandel-V3/mandel.html" class="card">
         <h3>🔬 Mandel-V3 (DEM)</h3>
         <p>
-          Version technique: vue jumelée Mandelbrot &amp; Julia, avec rendu DEM,
-          palette HSV dynamic et export d'orbites vers Sheets.
+          Version technique: vue jumelée Mandelbrot &amp; Julia, avec rendu DEM, palette
+          HSV dynamic et export d'orbites vers Sheets.
         </p>
       </a>
       <a href="./mandel-V2/mandel.html" class="card">
         <h3>🏛️ Mandel-V2 (Base)</h3>
         <p>
-          Version historique de référence pour l'interaction utilisateur et le
-          système de zoom.
+          Version historique de référence pour l'interaction utilisateur et le système de
+          zoom.
         </p>
       </a>
       <a href="./SVGgen-V2/SVGgen.html" class="card">
         <h3>🎨 Générateur SVG</h3>
-        <p>
-          Outil d'export vectoriel pour l'impression et les schémas structurels.
-        </p>
+        <p>Outil d'export vectoriel pour l'impression et les schémas structurels.</p>
       </a>
       <a href="./articles/didactique.html" class="card">
         <h3>📚 Pages Didactiques</h3>
         <p>
-          Explications théoriques sur la géométrie fractale, la méthode DEM et
-          la dynamique des orbites.
+          Explications théoriques sur la géométrie fractale, la méthode DEM et la
+          dynamique des orbites.
         </p>
       </a>
     </div>
+    <h2>Annonce du mois</h2>
+    <p>
+      Es-tu passionné de programmation et de logique ? Artiste ?
+      Tu veux t'IActiver ? Nous recherchons deux jeunes stagiaires pour rejoindre
+      notre équipe. Défi contact: proposer une petite évolution (git public).
+    </p>
+    <ul>
+      <li>
+        Interêts: web-design, IA-coding, User Experience, visual effects, documentation.
+      </li>
+      <li>Programmation: Web, js, Ts, Wasm-Rust, git, VScode, sheets, gscript...</li>
+      <li>
+        Maths: Fractales, ensembles de Mandelbrot et Julia, fonctions itérées,
+        transformations complexes, algorithmique, logique.
+      </li>
+      <li>
+        Profil: Curieux, créatif, sens artistique, rigoureux, autonome, esprit d'équipe,
+        sens de l'humour. Envie d'apprendre et tester.
+      </li>
+    </ul>
   </body>
 </html>

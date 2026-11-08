@@ -27,7 +27,7 @@ export class cFractParams implements IParams {
     const defaultType: FractType = "MANDELBROT";
     const testType: string = typeName.toUpperCase();
     this.type = (testType as FractType) || defaultType;
-    this.center = this.isJulia ? { re: -0.7, im: 0.0 } : { re: 0.0, im: 0.0 };
+    this.center = this.isJulia ? { re: 0.0, im: 0.0 } : { re: -0.7, im: 0.0 };
     this.dia = 2.25; // 2.25
     this.iterMax = typeName === defaultType ? 300 : 100;
     this.r2Max = 100000.0;
