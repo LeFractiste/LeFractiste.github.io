@@ -5,14 +5,16 @@
 :root {
   --bg-color: #121212;
   --card-bg: #1e1e1e;
+  --h1-color: #61afef;
+  --h2-color: #6182ef;
   --accent-color: #00ffcc;
   --text-color: #e0e0e0;
   --btn-bg: #2a2a2a;
   --btn-hover: #3a3a3a;
 }
-
+/* Main */
 body {
-  margin: 0;
+  margin: 0 auto;
   padding: 20px;
   background-color: var(--bg-color);
   color: var(--text-color);
@@ -24,13 +26,55 @@ body {
   flex-direction: column;
   align-items: center;
 }
-
+h1 {
+  color: var(--h1-color);
+  border-bottom: 1px solid #444;
+  padding-bottom: 0.5rem;
+}
+h2 {
+  color: var(--h2-color);
+  border-bottom: 1px solid #555;
+  padding-bottom: 0.2rem;
+}
+/* Index.html : grid, card */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+.card {
+  background: #1e1e24;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
+}
+.card:hover {
+  border-color: #61afef;
+  transform: translateY(-2px);
+}
+.card h3 {
+  margin-top: 0;
+  color: #98c379;
+}
+.card p {
+  font-size: 0.9rem;
+  color: #abb2bf;
+}
+a {
+  text-decoration: none;
+  color: inherit;
+}
+/* pour srv.html */
 .srv-header h1 {
   margin-bottom: 1rem;
   font-size: 1.5rem;
   color: var(--accent-color);
 }
-
+/* cFract.html : canvas, reset, status */
 .cfract-card {
   display: flex;
   flex-direction: column;
@@ -40,14 +84,12 @@ body {
   padding: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
-
 .cfract-canvas {
   border: 1px solid #333;
   cursor: crosshair;
   background-color: #000;
   image-rendering: pixelated;
 }
-
 .cfract-status {
   margin-top: 10px;
   font-family: monospace;
@@ -56,7 +98,17 @@ body {
   width: 100%;
   text-align: center;
 }
-
+.cfract-reset {
+  background-color: var(--btn-bg);
+  color: var(--text-color);
+  border: 1px solid #444;
+  padding: 8px 16px; /* 6 - 12 */
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+/* Pour ajout de boutons */
 .controls-panel {
   margin-top: 15px;
   display: flex;

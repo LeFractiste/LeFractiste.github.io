@@ -1,0 +1,155 @@
+
+
+
+* Analyses techniques
+
+A. Memo: organisation des fichiers et commandes V4
+  C:CODEBASE\Github\"LeFractiste.github.io" et url: LeFractiste.github.io/
+    .git/                   Masqué par défaut
+    .gitignore              Votre fichier créant les règles d'exclusion
+     index.html              Page principale site GitHub
+    style.css               Fichier css pour cet html - et le site ?
+  /.vscode/                Specs, doc, fichiers de pilotage & .vscode
+      spec-plan           THIS file
+  /Mandel-V4/             Projet Mandelbrot (V4: js)
+    Cargo.toml           config cargo=Rust
+    mandel.html           (html pour git)
+    app.js               Code applicatif pour le html, interface graphique
+    mandel.js            Business logic: class cFract - objet central
+    palette.js           Business logic: PaletteEditor
+    utils.js             Utilitaires associés: types et fonctions. Complexe, liste, trajectoire, params?
+    infra.js             Infrastructure de debug, test, génération de code 
+  /mandel-dev/           Projet Mandelbrot (V5: refactoring ts)
+    /src                 ts and rs files
+      lib.rs             wasm code
+      fractTypes         Série d'interfaces pour forcer l'architecture
+      mandel-dev.html    Fichier html de démarrage
+      mandel-srv.html    Fichier de base, serveur d'image fixe
+      mandel-V1.html     App de base, V1 - Exploreur de Mandelbrot simple (à faire)
+      editor.html        Editeur de palette pour fractale          
+      /app/
+        appDev           Source appelé par html - génère les app et objets cFract
+        cFract           Gère l'objet parent principal Mandel = Mandelbrot + Julia + Analyse + paletteEditor
+        inputRouter      Gère tous les événements onHover, onClick, onZoom, onDrag (onPan)
+      /pres/
+        cImage           Génère l'image
+        fractDraw        Génère les overlays et les target de pointage
+      /analysis/
+        analysis         Analyses diverses
+        externalRay      Helper: suivi de trajectoire
+      /calc/
+        cFractParams     Gère tous les paramètres de l'app (de calcul et options d'image, d'UX, ...)
+        cFractCalc       Gère les calculs, via le code Wasm ou des fallback
+        analysisMath     Helper: calcul à basculer dans Rust
+        utils            Fonctions simples
+        test.ts          Experimental file: the current branch of code
+    /pkg/                Package Rust exporté
+    /mandel-V2/          Idem versions released, à conserver 
+    /Wasm/               TODO: relocate the wasm project
+      src/               rs files de développement  (après je copie ou non la source)
+        lib.rs           wasm code           
+        target/         Fichiers temporaires de compilation Rust
+    /NoCompile/         (mes vieux codes et tests et code généré non utlisé)
+  }
+
+  A.2: architecture en couches - alerte, on va vers 10000 lignes de code !
+  Couche 0 (Kernel) : Wasm / Rust / Math pur (analysisMath.ts). Zéro dépendance au DOM ou au Canvas.
+  Couche 1 (Domaine) : Moteur d'analyse, trajectoires, rayons externes, gestion d'état.
+  Couche 2 (Application) : Routeur d'événements, synchronisation IHM.
+  Couche 3 (Présentation) : Rendu Canvas, UI HTML/CSS.
+
+  A.3. Interactions
+  # CHAPITRE INTERACTIONS (SPECIFICATION)
+
+[ENTRÉES UTILISATEUR & ÉVÉNEMENTS TARGET]
+
+1. DESKTOP / SOURIS & CLAVIER
+- Clic Gauche + Drag   : Pan (déplacement de la vue complexe).
+- Molette (Wheel)      : Zoom centré sur le pointeur (factor: 1.1x).
+- Survol (PointerMove) : Calcul dynamique d'orbite/C-point sous le curseur.
+- Shift + Clic         : Verrouillage d'un point d'intérêt / Point d'ancrage (cLocked).
+- Raccourcis Clavier   : Space (Reset vue), Z (Mode Zoonorama), E (Rayon Externe).
+
+2. SMARTPHONE / TACTILE & CAPTEURS
+- Single Touch + Drag  : Pan (déplacement fluide 1 doigt).
+- Pinch-to-Zoom        : Zoom continu multi-touch (calcul de distance inter-doigts).
+- Tap Simple           : Sélection de point complexe (équivalent Clic).
+- Double Tap           : Auto-centrage + Zoom in 2x sur le point.
+- Long Press (>500ms)  : Verrouillage du point / Ouverture du menu contextuel d'analyse.
+- Gyroscope (Tilt)     : Inclinaison X/Y -> Variation continue de c (mouvement dans l'espace des phases) ou suivi dynamique d'un rayon externe.
+
+3. UNIFICATION & ABSTRACTION (INTERACTOR ENGINE)
+- Normalisation : Conversion des événements Pointer/Touch/DeviceOrientation en commandes géométriques abstraites (NAVIGATE, SELECT, ANALYZE, PARAM_SHIFT).
+- Isolation : canvas.style.touchAction = 'none' pour bloquer le scroll natif du navigateur sur mobile.
+
+
+  B. Diagramme de boot - à implémenter par App
+  V4.6 + ts = V5.0
+  [URL Params] ──┐
+                 ├─> [Param / SetupOptions] ─> [htmlHelper] ─> [new cFract(param, container)] ─> init()
+  [Defaults] ────┘
+
+   V4.3 {
+    (1) app.js charge (aussi) Rust et appelle await init()
+                Instancie mandel = new cFract('mandelCanvas')
+                Instancie julia = new cFract('juliaCanvas')
+    (2) mandel.js importe rust-m.js, injecte mandelEngine à cFract image
+                Exécute le 1er calcul et alimente le canvas2D via image.
+    (3) rust-m.js : charge le code wasm
+  }
+  C. Gestion mémoire
+    (0) cFract: App instancie un cFract par image html
+    (1) Image: géré par wasm (chaque cFract, via constructeur), injecté via canvas
+    (2) Calcul: mandelengine.buffer F32(w*h*PAYLOAD) géré par wasm (chaque cFract)
+    (3) Orbite: généré et envoyé par mandel.js (wasm plus tard)
+    (4) Orbite_csv: généré par rust et copié sur navigateur.clipboard
+    Blocage mémoire durant les recalculs ?
+
+
+  D. Hypothèses métier / sources fractales
+  - Iter: z0 est le point du plan (iter=0). M ne part pas de l'origine !
+  - DEM: évalue la distance absolue avec M. Ou mieux en distPx
+  - max_iter: ajuster via DEM / pixelSize et latence calcul (vs 60 FPS ?).
+  - Minibrots: source pour numéroter les minibrots: Murano (incomplet ?)
+  - Mini-Julia: ? trouver comment déterminer les bons rayons de zoom 
+  - Graphisme: s'inspirer de Fraqtive pour l'éditeur de palette + anti-aliasing
+  - Vitesse: Wasm + zoom numérique + quadTree
+  - Deep zoom: bigInt? Directement: algo de Marint, s'inspirer de KallesFraktaler
+  - Projection: passe de p(x,y) à z0. Linéaire ou non !
+  - Zoonorama: à finaliser (code non public)
+
+  E. Business
+  - Tout en gratuit multi-LLM (limiter dépendances)
+  - Licenses: réfléchir au copyright et type de licence (code public propriétaire)
+  - 
+
+  F. Zoonorama
+  Zoonorama: image de taille W*H, avec W=L*H
+* Test 1: transformation cartésienne - avancer vers la droite de moins en moins vite, et en zoomant sur y
+* Test 2: image allongée en x -> afficher c et définir condition sur L et zoom.
+* Test 3: image déformée en y extrême -> transformation conforme + rotation, pour tenir le critère de Cauchy- (pixels carrés)
+* Test 4: aliasing -> DEM renvoie la distance en pixels (taille variable)
+
+  E. Analyses d'orbites - idées
+* Minibrot: Newton sur fp(c)=0 - détection de périodicité d'orbite. Zones à multiplicateur lambda ?
+* Recherche de frontière par gradient et zoonorama
+* Points pré-périodiques - Misiurewicz - noeuds à bifurcation infinie
+* Recherche de la courbure de frontière - antennes + centres tourbillons = courbure maxi. 
+* Plongée selon le gradient, avec zoonorama activé (mais éviter d'entrer dans le trou noir d'un minibrot!)
+* Correcteur de trajectoire: spline de Bezier - (éviter un zoom centré droit)
+* Raytracing de rayons externes (Douady-Hubbard external rays)
+* DEM autozoom step - adapter la vitesse de zoom au nveau de détail visible (pas sûr du résultat).
+* Chercher frontière d'un composant hyperbolique |fp'(c)|=1
+
+Prompt Google AI studio
+### DIRECTIVE STRICTE DE DÉVELOPPEMENT (MODE STEP-BY-STEP)
+
+Tu agis en tant que développeur Rust/Wasm/JS sous la direction d'un architecte système.
+Avant de générer le moindre code, tu dois respecter impérativement ces 3 étapes :
+
+1. IMPACT ANALYSIS : Mettre la liste exacte des fichiers modifiés, créés ou supprimés.
+2. INTERFACE SUMMARY : Lister les signatures exactes des fonctions/classes modifiées ou ajoutées.
+3. CODE GENERATION : Fournir des fichiers 100% COMPLETS (aucun "...reste du code inchangé...", aucune omission).
+
+Contrainte : Ne traite QUE le Palier spécifié. Ne touche pas aux fonctionnalités des paliers futurs.
+

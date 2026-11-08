@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Ne marchera pas sans utiliser la palette de cImage.ts ! (utiliser Mandel-V4 plutôt ou attendre Mandle-V5)-->
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -6,6 +7,7 @@
     <title>Test Wasm Minimal</title>
   </head>
   <body>
+    <h1>Basic Mandelbrot set - V5 - in construction</h1>
     <canvas
       id="fractCanvas"
       width="800"
@@ -16,7 +18,7 @@
     <script type="module">
       // Pas forcément pertinent-  contient des illusions du copain : wasm.calc_Mandelbrot = null
       // 1. Charger directement le wrapper Wasm/Rust
-      import initWasm, { calc_mandelbrot } from "./dist/calc/rust_m.js"; // Ajuste le chemin selon ton dossier dist
+      import initWasm, { calc_mandelbrot } from "./pkg/rust_m.js"; // Ajuste le chemin selon ton dossier dist
       import { cFractParams } from "./dist/calc/cFractParams.js";
 
       async function runMinimalTest() {

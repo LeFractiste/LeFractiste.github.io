@@ -5,9 +5,9 @@
 // TODO 2: recherche des bons zooms pour un cDeep - comment est défini un mniJulia ?
 
 // #region Imports & Index
-import { cUtils } from "../../testArea/utils.js";
+import { cUtils } from "../calc/utils.js";
 import { t_externalRay } from "./externalRay.js";
-import type { ComplexPoint, PointAnalysisResult, ICFractParent } from "../fractTypes.js";
+import type { ComplexPoint, PointAnalysisResult, IParent } from "../fractTypes.js";
 import {
   analyzePointMath,
   findMinibrotCenterMath,
@@ -23,8 +23,9 @@ import {
 // #endregion
 
 // #region Tests & Experiments
-export function t_test(): void {
-  t_externalRay();
+export function analysis_test(): string {
+  // to do: t_externalRay();
+  return t_analysis();
 }
 
 export function t_analysis(
@@ -50,9 +51,13 @@ export function t_analysis(
 
 // Analyse d'orbite
 export class cFractAnalysis {
+  /*private parent: IParent;*/
   public detectedMinibrots: ComplexPoint[] = [];
-  constructor(public parent?: ICFractParent) {}
+  constructor(/*parent: IParent*/) {
+    /*this.parent = parent;*/
+  }
 
+  // Wrapper : return a point analysis of c
   analyzePoint(c_re: number, c_im: number, maxIter = 1000): PointAnalysisResult {
     return analyzePointMath(c_re, c_im, maxIter);
   }

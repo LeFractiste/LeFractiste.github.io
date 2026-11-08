@@ -1,53 +1,63 @@
-/* #region Imports & Documentation */
+/** InputRouter.ts - V1.2 - Copyright LeFractiste 2026
+ * Update: 1.2: changed EventCallbacks to be agnostic (only pixels plane)
+ * @todo : intégrer à cFract via cFractEvents
+ * @todo 2:  la sélection de points complexes et la manipulation de poignées (InteractiveHandles).
+ * @todo 3: émettre et consommer mes événements de classe (voir snippets)
+ */
+
+// #region Imports
 import {
-  ComplexPoint,
   PixelPoint,
-  ICFractParent,
   InteractiveHandle,
-  EventRouterCallbacks,
-  IInputRouter,
+  PointerEventCallbacks, // cb events: onPan, onHoover, onZoom, onClick
+  IPointerRouter, // Interface
   UserCommand,
   AppMode
 } from "../fractTypes.js";
 
-/**
- * Routeur d'événements unifié (InputRouter) - Mouse, touch et gestures.
- * - Gère le Pan (Glisser), Zoom (Molette & Pinch), Survol et Clics et Touches.
- * - Anticipe @todo:  la sélection de points complexes et la manipulation de poignées (Handles).
- */
+// Simple function binder to HTML Id
+export function bindClickEvent(btnId: string, callback: () => void) {
+  const btn = document.getElementById(btnId);
+  if (btn) {
+    btn.addEventListener("click", callback);
+  } else {
+    throw new Error("Can't find element ${btnId}");
+  }
+}
 
 // #region InputRouter Class
-export class InputRouter implements IInputRouter {
-  public activeMode: AppMode = "PAN_ZOOM";
-  public handles: InteractiveHandle[] = [];
+
+/** Routeur d'événements
+ *  Pointeur: récupère les événements natifs (DOM) Mouse, Touch and gestures, et les attache (bind) aux callBacks (cb: eventRouterCallBack)
+ *  Click (single touch), Pan (Glisser), Zoom (Molette & Pinch), Survol (Hoover). */
+export class PointerRouter implements IPointerRouter {
   public canvasEl: HTMLCanvasElement; //node.js
-  private parent: ICFractParent;
   private isDragging = false;
   private lastMouse: PixelPoint = { x: 0, y: 0 };
   private touchStartDist = 0; // Pour le Pinch-to-zoom Smartphone
-
-  /** @todo: modifier la déclaration pour injecter les événements via mandel.onHoover */
-  constructor(parent: ICFractParent, canvasEl: HTMLCanvasElement) {
-    this.parent = parent;
+  constructor(canvasEl: HTMLCanvasElement) {
     this.canvasEl = canvasEl;
   }
 
-  //interface - not defined yet
-  public registerHandle(handle: InteractiveHandle): void {}
-
   /** Attache les écouteurs natifs DOM au canvas (Mouse & Touch) */
-  public bindDOMEvents(cb: EventRouterCallbacks): void {
+  public bindDOMEvents(cb: PointerEventCallbacks, reset?: HTMLElement): void {
     this.canvasEl.style.touchAction = "none"; // Bloque le scroll natif mobile
+    // pointeur events
     this.bindMouseEvents(cb);
     this.bindTouchEvents(cb);
+    // reset button
+    if (cb.onReset && reset) {
+      reset.addEventListener("click", e => {
+        if (cb.onReset) cb.onReset();
+      });
+    }
   }
-
-  public dispatch(command: UserCommand): void {}
 
   // #region Mouse Listeners
   // Ajout des events MOUSE - les callbacks peuvent être indéfinis !
-  private bindMouseEvents(cb: EventRouterCallbacks): void {
+  private bindMouseEvents(cb: PointerEventCallbacks): void {
     let hasMoved: boolean;
+
     // MOUSE WHEEL: zoom on point
     this.canvasEl.addEventListener("wheel", e => {
       e.preventDefault();
@@ -55,16 +65,19 @@ export class InputRouter implements IInputRouter {
       const factor = e.deltaY < 0 ? 0.82 : 1.22;
       if (cb.onZoom) cb.onZoom(pt, factor);
     });
-    // MOUSE DOWN: isdragging from lastMouse
+    // MOUSE DOWN: isdragging from lastMouse - strictly on canvas
     this.canvasEl.addEventListener("mousedown", e => {
       if (e.button !== 0) return;
       this.isDragging = true;
       hasMoved = false;
       this.lastMouse = this.getCanvasPx(e.clientX, e.clientY);
     });
-    // MOUSE MOVE: onHoover(pix2c) OU isDragging: onPan(deltaC)
+    // MOUSE MOVE: onHoover(pix2c) OU isDragging: onPan(deltaC) - window: all cFract get it !
     window.addEventListener("mousemove", e => {
       const pt = this.getCanvasPx(e.clientX, e.clientY);
+      // debug !
+      console.log(e.clientX, e.clientY, pt.x, pt.y);
+      // teste la sortie de canvas ou pour ignorer l'autre cFract
       const inBounds =
         pt.x >= 0 &&
         pt.x <= this.canvasEl.width &&
@@ -73,21 +86,21 @@ export class InputRouter implements IInputRouter {
       if (!inBounds) {
         this.isDragging = false;
         return;
-      } //sortie écran
-      if (cb.onHover && !this.isDragging) cb.onHover(this.parent.pix2c(pt), pt);
+      }
+      if (cb.onHover && !this.isDragging) cb.onHover(pt);
       if (this.isDragging) {
-        const dx = e.clientX - this.lastMouse.x;
-        const dy = e.clientY - this.lastMouse.y;
+        const dx = pt.x - this.lastMouse.x;
+        const dy = pt.y - this.lastMouse.y;
         if (Math.hypot(dx, dy) > 3) hasMoved = true;
-        this.lastMouse = { x: e.clientX, y: e.clientY };
-        if (cb.onPan) cb.onPan(this.pix2cVector(dx, dy));
+        this.lastMouse = pt;
+        if (cb.onDrag) cb.onDrag({ x: dx, y: dy }); // axe y inversé dans onDrag
       }
     });
-    // MOUSE UP: envoie onClick(c) et clôture isDragging
+    // MOUSE UP: envoie onClick(c) et clôture isDragging - window: all cFract get it !
     window.addEventListener("mouseup", e => {
+      if (!this.isDragging) return; //ignore les autres cartes!
       if (this.isDragging && cb.onClick && !hasMoved) {
-        const pC = this.parent.pix2c(this.lastMouse);
-        cb.onClick(pC, this.lastMouse);
+        cb.onClick(this.lastMouse);
       }
       this.isDragging = false;
     });
@@ -97,7 +110,7 @@ export class InputRouter implements IInputRouter {
   // #region Touch Listeners
 
   // Ajout des events TOUCH Smartphone - les callbacks peuvent être indéfinis !
-  private bindTouchEvents(cb: EventRouterCallbacks): void {
+  private bindTouchEvents(cb: PointerEventCallbacks): void {
     let hasMoved: boolean;
     // TOUCHSTART: initie isDragging, lastMove et touchStartThis
     this.canvasEl.addEventListener("touchstart", e => {
@@ -116,14 +129,16 @@ export class InputRouter implements IInputRouter {
     // TOUCHMOVE: onPan du déplacement (un doigt) ou onZoom autour du centre (2 doigts)
     this.canvasEl.addEventListener("touchmove", e => {
       e.preventDefault();
-      if (e.touches.length === 1 && this.isDragging && cb.onPan) {
+      if (e.touches.length === 1 && this.isDragging && cb.onDrag) {
+        // single touch
         hasMoved = true;
         const touch = e.touches[0];
         const dx = touch.clientX - this.lastMouse.x;
         const dy = touch.clientY - this.lastMouse.y;
         this.lastMouse = { x: touch.clientX, y: touch.clientY };
-        cb.onPan(this.pix2cVector(dx, dy));
+        cb.onDrag({ x: dx, y: dy });
       } else if (e.touches.length === 2 && cb.onZoom) {
+        // dual touch  - zoom  (or todo: implement rotation)
         const dist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
@@ -142,7 +157,7 @@ export class InputRouter implements IInputRouter {
     // TOUCHEND: fin move ou onClick
     this.canvasEl.addEventListener("touchend", () => {
       if (this.isDragging && !hasMoved && cb.onClick) {
-        cb.onClick(this.parent.pix2c(this.lastMouse), this.lastMouse);
+        cb.onClick(this.lastMouse);
       }
       this.isDragging = false;
       this.touchStartDist = 0;
@@ -156,14 +171,6 @@ export class InputRouter implements IInputRouter {
     const rect = this.canvasEl.getBoundingClientRect();
     return { x: clientX - rect.left, y: clientY - rect.top };
   }
-
-  // Computes a complex vector from delta pixels
-  private pix2cVector(dxPx: number, dyPx: number): ComplexPoint {
-    const p0 = this.parent.pix2c({ x: 0, y: 0 });
-    const p1 = this.parent.pix2c({ x: dxPx, y: dyPx });
-    return { re: p0.re - p1.re, im: p0.im - p1.im };
-  }
-  // #endregion
 }
 
 // #endregion
