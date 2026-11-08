@@ -98,7 +98,7 @@ export class cFractCalc implements ICalc, ITestableGrid<PixelPoint, number> {
 
   // Launch the wasm module or prepare to compute by script
   public async initCalc(): Promise<void> {
-    console.trace("cFractCalc.initCalc");
+    //console.trace("cFractCalc.initCalc");
     const op = this.options;
     try {
       const wasmExports = await init(); //Wasm
@@ -109,11 +109,11 @@ export class cFractCalc implements ICalc, ITestableGrid<PixelPoint, number> {
         const ptr = this.wasmEngine.buffer_ptr(); // Float32 Wasm
         this._calcBuffer = new Float32Array(this.wasmMemory.buffer, ptr, op.payloadLen);
       } else {
-        this._calcBuffer = new Float32Array(op.payloadLen);
-        this.parent.classConsole("cFract: Wasm not initialised");
+        //this._calcBuffer = new Float32Array(op.payloadLen);
+        this.parent.T.userInfo("Wasm-Rust not initialised");
       }
     } catch (e) {
-      this.parent.classConsole("Error Calc init");
+      throw new Error("Error Calc init");
     }
   }
 
@@ -179,17 +179,23 @@ export class cFractCalc implements ICalc, ITestableGrid<PixelPoint, number> {
       this.isBusy = true;
       // copy parameters : not dirty!
       this.options = new CalcOptions(this.parent.params, this.parent.canvas); //exposed
-      this.parent.params.dirty = false;
+      this.parent.params.setDirty(false);
       const op = this.options;
 
       if (op.calcMode >= 99) {
         throw new Error("Bug 99 calc_mode");
         return;
       }
-      //computes data and image
-
+      //computes data and image - use fresh buffer
       if (this.wasmActive) {
         this.computeWasmPayload();
+        // use fresh buffer : may change (both cFract likely to share the code)
+        const ptr = this.wasmEngine!.buffer_ptr();
+        this._calcBuffer = new Float32Array(
+          this.wasmMemory!.buffer,
+          ptr,
+          this.options.payloadLen
+        );
         this.parent.cImage.reCalcGrid(this._calcBuffer, op.iterMax);
       } else {
         this.calcFull_Direct_FallBack();

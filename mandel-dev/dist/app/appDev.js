@@ -2,7 +2,7 @@
 /** @todo: passer aussi en ts ! */
 // @ts-check
 import { PaletteEditor } from "../pres/palette.js";
-import { analysis_test } from "../analysis/analysis.js";
+import { bindClickEvent } from "./inputRouter.js";
 import { cFract } from "./cFract.js"; // main Object
 import { logAppHeader } from "./version.js";
 import { cTest } from "../analysis/cTest.js";
@@ -13,21 +13,22 @@ class AppDev {
     julia;
     palette;
     constructor() {
-        appConsole("Loading...");
+        T.userInfo("Loading...");
         this.mandel = new cFract("mandelCanvas", "MANDELBROT", "mandelStatus", "btnResetMandel");
         this.julia = new cFract("juliaCanvas", "JULIA", "juliaStatus", "btnResetJulia");
         // Initialiser l'éditeur de Palette V2/V3 et son callback
         this.palette = new PaletteEditor("paletteContainer", lut => {
             this.mandel.cImage.updatePalette(lut);
             this.mandel.render();
-            this.julia.cImage.updatePalette(lut);
-            this.julia.render();
+            if (this.julia) {
+                this.julia.cImage.updatePalette(lut);
+                this.julia.render();
+            }
         });
         this.palette.generateLut();
-        // bouton Test
-        testEventListener(); // @todo 2: vider!
+        // testEventListener(); // @todo 2: vider!
         // Done
-        appConsole("Loaded");
+        T.userInfo("Loaded");
     }
 }
 // --- INITIALISATION DU MOTEUR & DE L'APPLICATION ---
@@ -40,15 +41,34 @@ async function initApp() {
     // Amorce de chaque cFract autonome
     app = new AppDev();
     await app.mandel.initParent(app.palette.lut);
-    await app.julia.initParent(app.palette.lut);
-    app.mandel.lockedJulia = app.julia;
-    appConsole("Ready for zoom !");
-    // debug Code
-    window.debugApp = app;
-    var T = new cTest("AppDev");
+    if (app.julia) {
+        await app.julia.initParent(app.palette.lut);
+        app.mandel.lockedJulia = app.julia;
+    }
+    T.userInfo("Ready for zoom !");
+    // bouton Test
+    bindClickEvent("btnTest", () => {
+        const result = T.autotest();
+    });
+    window.debugApp = app.mandel;
 }
-// #region oldStuff
-// Nouvelle procédure d'initialisation
+// #region MAIN
+// debug
+const statusEl = document.getElementById("appStatus");
+if (statusEl)
+    // Global debug class
+    var T = new cTest(statusEl);
+// Démarrage de l'application dès le chargement du DOM
+window.addEventListener("DOMContentLoaded", initApp);
+// #region Display
+// BANDEAU D'INFORMATION ET STATUT
+function updateAppStatusBar(msg, c, px, py) {
+    const appStatus = document.getElementById("appStatus");
+    if (appStatus) {
+        appStatus.textContent = `${msg} c = ${c.re.toFixed(12)} ${c.im >= 0 ? "+" : ""}${c.im.toFixed(12)}i  |  Px: (${Math.round(px)}, ${Math.round(py)})`;
+    }
+}
+/** @todo 1: // Prochaine procédure d'initialisation */
 /**
   // Au chargement complet de la page (ou dans ton point d'entrée appDev.ts)
   document.addEventListener("DOMContentLoaded", () => {
@@ -68,53 +88,37 @@ async function initApp() {
   });
 
 */
-/** moved away
-// Définit les evénements, à la place de initEventListeners(), déconnecté
-function old_setupAppRouter() {
-  /** const routerMandel = new InputRouter(canvas : HTMLCanvasElement);
-  routerMandel.bindDOMEvents({
-    onHover: (px) => {
-      updateAppStatusBar("Mandel:", mouseC, px.x, px.y);
-      mandel.cDeep = mouseC;
-    },
-    onClick: (targetC, px) => {
-      lockedC = targetC;
-      updateAppStatusBar("Locked:", lockedC, px.x, px.y);
-      julia.params.juliaC = lockedC;
-    },
-    onZoom: (centerPx, factor) => mandel.params.zoom(centerPx, factor),
-    onPan: deltaC => (mandel.params.center = deltaC)
-  });
-  const routerJulia = new InputRouter(julia, julia.canvas);
-  routerJulia.bindDOMEvents({
-    onHover: (mouseC, px) => {
-      updateAppStatusBar("Julia:", mouseC, px.x, px.y);
-    },
-    onClick: undefined,
-    onZoom: (centerPx, factor) => julia.params.zoom(centerPx, factor),
-    onPan: deltaC => (julia.params.center = deltaC)
-  });
-} /**/
+// #region old_appUX
+/**
 // --- ÉCOUTEURS D'ÉVÉNEMENTS (INTERACTION UX) ---
 function testEventListener() {
-    //Areas to activate -@todo 1: move to cFract.html
-    // const canvasM = mandel.canvas;
-    // const canvasJ = julia.canvas;
-    const btnCopy = document.getElementById("btnCopyCsv");
-    const btnTest = document.getElementById("btnTest");
-    // Button test: lance l'analyse d'orbite complète
-    if (btnTest) {
-        // inactivé: mandel.sélection du point à faire !
-        btnTest.addEventListener("click", () => {
-            const result = analysis_test();
-            const status = document.getElementById("appStatus");
-            if (status) {
-                status.innerText = result;
-                //setTimeout(() => (status.innerText = ""), 3000);
-            }
-        });
-    }
-}
+  //Areas to activate -@todo 1: move to cFract.html
+  // const canvasM = mandel.canvas;
+  // const canvasJ = julia.canvas;
+  const btnCopy = document.getElementById("btnCopyCsv");
+  const btnTest = document.getElementById("btnTest");
+
+  // Button test: lance l'analyse d'orbite complète
+  if (btnTest) {
+    // inactivé: mandel.sélection du point à faire !
+    btnTest.addEventListener("click", () => {
+      // const result = analysis_test();
+      const result = this.mandel.autoTest();
+      const status = document.getElementById("appStatus");
+      if (status) {
+        status.innerText = result;
+        //setTimeout(() => (status.innerText = ""), 3000);
+      }
+    });
+  }
+} /**/
+// AppConsole: available as global
+/**function appConsole(msg: string) {
+  const appStatus = document.getElementById("appStatus");
+  if (appStatus) {
+    appStatus.textContent = `[INFO] ${msg} })`;
+  }
+} /**/
 // #region oldStuff
 /** @todo : Button copie csv: lance l'analyse d'orbite complète
   if (btnCopy && false) {
@@ -131,26 +135,9 @@ function testEventListener() {
   }
 
   // mandel: cFract.OnPosition event
-  // @todo: trouver comment émettre et consommer ses événements de classe
 
-  // MANDEL: BOUTON INTERFACE RESET ZOOM
-  const btnResetM = document.getElementById("btnResetMandel");
-  if (btnResetM) {
-    btnResetM.addEventListener("click", () => {
-      this.mandel.params.reset();
-      //lockedC = null; //mieux de garder le point visible
-      if (lockedC) {
-        const reticlePx = mandel.params.c2pix(lockedC);
-        drawReticle(canvasM, reticlePx.x, reticlePx.y);
-      }
-    });
-  }
-  // JULIA: BOUTON INTERFACE RESET ZOOM
-  const btnResetJ = document.getElementById("btnResetJulia");
-  if (btnResetJ) {
-    btnResetJ.addEventListener("click", () => {
-      julia.params.reset();
-    });
+
+
   }
   /** LISTBOX INTERFACE CALC MODE
    * @todo 2: implement on html !
@@ -165,49 +152,6 @@ function testEventListener() {
     });
   }
 } /*initEventListeners*/
-// ---Helpers---
-//@todo 0 : réflexion d'architecture pour décider où ceci est implémenté !
-//Si nous implémentons en rendu opengl rapide lors des transitions de souris,
-//il faut passer par cImage au lieu de cFract (pas de calcul) et regénérer une image
-// avec zoom, centrage, render, puis nouveau lockedC et orbite
-// DESSIN DU RÉTICULE (Aide visuelle sur Mandelbrot)
-/** moved
-function drawReticle(canvas, px, py) {
-  // Rendre l'image de base pour effacer l'ancien réticule
-  this.mandel.render();
-  const ctx = canvas.getContext("2d");
-  ctx.save();
-  // Croix orthogonale
-  ctx.strokeStyle = "#00ffcc";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(px - 10, py);
-  ctx.lineTo(px + 10, py);
-  ctx.moveTo(px, py - 10);
-  ctx.lineTo(px, py + 10);
-  ctx.stroke();
-  // Cercle de ciblage
-  ctx.beginPath();
-  ctx.arc(px, py, 5, 0, 2 * Math.PI);
-  ctx.stroke();
-  //affiche ?
-  ctx.restore();
-} /**/
-// #region Display
-// BANDEAU D'INFORMATION ET STATUT
-function updateAppStatusBar(msg, c, px, py) {
-    const appStatus = document.getElementById("appStatus");
-    if (appStatus) {
-        appStatus.textContent = `${msg} c = ${c.re.toFixed(12)} ${c.im >= 0 ? "+" : ""}${c.im.toFixed(12)}i  |  Px: (${Math.round(px)}, ${Math.round(py)})`;
-    }
-}
-// AppConsole: available as global
-function appConsole(msg) {
-    const appStatus = document.getElementById("appStatus");
-    if (appStatus) {
-        appStatus.textContent = `[INFO] ${msg} })`;
-    }
-}
 /**
 //@todo 1: prendre la version de mandel
 //CALCUL ET EXPORTATION D'ORBITE POUR GOOGLE SHEETS
@@ -243,6 +187,4 @@ function old_exportOrbitToSheets(c: ComplexPoint): void {
       console.error("Erreur lors de la copie dans le presse-papier:", err);
     });
 } /**/
-// Démarrage de l'application dès le chargement du DOM
-window.addEventListener("DOMContentLoaded", initApp);
 //# sourceMappingURL=appDev.js.map

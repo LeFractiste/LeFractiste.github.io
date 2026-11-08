@@ -36,7 +36,7 @@ export interface ComplexPoint {
     im: number;
 }
 /** Canvas or screen coordinates, y positive down
- * Not always an integer (math.fround), nor inBound */
+ * Not always an integer (math.round), nor inBound */
 export interface PixelPoint {
     x: number;
     y: number;
@@ -47,26 +47,26 @@ export type CalcMode = "DIRECT" | "DEM";
  * @todo 2: add width/height and r2max/iterMax
  * */
 export interface IAlgoParams {
-    isJulia: boolean;
-    iterMax: number;
+    readonly isJulia: boolean;
+    readonly iterMax: number;
     r2Max: number;
-    juliaC: ComplexPoint;
-    dirty: boolean;
+    readonly juliaC: ComplexPoint;
+    readonly dirty: boolean;
+    setJuliaC(juliaC: ComplexPoint): void;
+    setDirty(value: boolean): void;
 }
 export interface IViewportParams {
-    get center(): ComplexPoint;
-    set center(c: ComplexPoint);
+    readonly center: ComplexPoint;
     dia: number;
     size: PixelPoint;
     angleDeg?: number;
     get aspectRatio(): number;
     get span(): ComplexPoint;
+    setCenter(c: ComplexPoint): void;
     pix2c(pix: PixelPoint): ComplexPoint;
     c2pix(c: ComplexPoint): PixelPoint;
-    onZoom(pix: PixelPoint, zoomFactor: number): void;
-    onReset(): void;
 }
-export interface IParams extends IViewportParams, IAlgoParams {
+export interface IParams extends IViewportParams, IAlgoParams, PointerEventCallbacks {
 }
 /** Interface d'accès minimal au moteur cFract (parent)
  * @todo 1: move functions to params !
@@ -75,6 +75,7 @@ export interface IParent {
     params: IParams;
     calc: ICalc;
     canvas: HTMLCanvasElement;
+    T: ITestableClass<HTMLElement>;
     ctx: CanvasRenderingContext2D;
     cImage: IImage;
     cDeep: ComplexPoint;
@@ -86,12 +87,17 @@ export interface IParent {
     };
     initParent(paletteLut?: Uint8Array, reset?: HTMLElement): void;
     render(): void;
-    updateStatusBar(c: ComplexPoint, px: number, py: number): void;
-    classConsole(msg: string): void;
+}
+export interface ITestableClass<HTMLElement> {
+    statusEl: HTMLElement;
+    autotest(): boolean;
+    userInfo(shortMsg: string): void;
+    log(consoleMsg: string): void;
 }
 export interface ITestableGrid<Index, Out> {
     autoTest?(): boolean;
     getAt(index: Index): Out;
+    setAt?(index: Index, value: Out): void;
 }
 export interface ICalcOptions {
     mode: CalcMode;
@@ -174,12 +180,6 @@ export interface UserCommand {
  * todo 2: rendre cohérent - tout en pix, avec pC optionnel ou non fourni, à calculer par le callback ?)
  * todo 2: ajouter la rotation: roller+right click / two fingers rotation / angles entiers à ajouter à URL
  */
-export interface old_EventRouterCallbacks {
-    onHover?: (pC: ComplexPoint, pPx: PixelPoint) => void;
-    onClick?: (pC: ComplexPoint, pPx: PixelPoint) => void;
-    onZoom?: (centerPx: PixelPoint, factor: number) => void;
-    onDrag?: (deltaC: ComplexPoint) => void;
-}
 export interface PointerEventCallbacks {
     onHover?: (pPx: PixelPoint) => void;
     onClick?: (pPx: PixelPoint) => void;
@@ -189,12 +189,12 @@ export interface PointerEventCallbacks {
     onReset?: () => void;
 }
 /** Contrat du Gestionnaire d'Événements / InputRouter */
-export interface IInputRouter {
+export interface IPointerRouter {
     canvasEl: HTMLCanvasElement;
     bindDOMEvents: (cb: PointerEventCallbacks, resetBtn: HTMLElement) => void;
 }
 /** reserved */
-export interface IIHandlesRouter extends IInputRouter {
+export interface IIHandlesRouter extends IPointerRouter {
     handles: InteractiveHandle[];
     activeMode: AppMode;
     registerHandle: (handle: InteractiveHandle) => void;

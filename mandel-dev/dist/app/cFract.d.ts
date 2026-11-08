@@ -8,7 +8,8 @@
 import { cImage } from "../pres/cImage.js";
 import { cFractCalc } from "../calc/cFractCalc.js";
 import { cFractDraw } from "../pres/fractDraw.js";
-import { ComplexPoint, PixelPoint, IParent, IParams, IInputRouter, PointerEventCallbacks } from "../fractTypes.js";
+import { cTest } from "../analysis/cTest.js";
+import { ComplexPoint, PixelPoint, IParent, IParams, IPointerRouter, PointerEventCallbacks } from "../fractTypes.js";
 export declare class cFract implements IParent {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
@@ -16,8 +17,8 @@ export declare class cFract implements IParent {
     private _params;
     calc: cFractCalc;
     draw: cFractDraw;
-    inputRouter: IInputRouter;
-    statusId: string;
+    inputRouter: IPointerRouter;
+    T: cTest;
     private resetEl;
     lockedJulia: IParent | null;
     cDeep: ComplexPoint;
@@ -37,7 +38,5 @@ export declare class cFract implements IParent {
       cFractDraw.drawComplexPath(this, orbit, {});
     } /**/
     displayState(action: string, c?: ComplexPoint, pix?: PixelPoint): void;
-    updateStatusBar(c: ComplexPoint, px: number, py: number): void;
-    classConsole(msg: string): void;
 }
 //# sourceMappingURL=cFract.d.ts.map

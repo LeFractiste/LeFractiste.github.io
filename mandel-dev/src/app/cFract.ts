@@ -12,24 +12,19 @@
 import init, { MandelEngine } from "../../pkg/rust_m.js";
 import { cImage } from "../pres/cImage.js";
 import { cFractCalc } from "../calc/cFractCalc.js";
-import {
-  IFractCard,
-  IHTMLSetupOptions,
-  setupFractalCanvas,
-  updateParamsFromURL,
-  updateURLfromParams
-} from "../app/cFractHtml.js";
+import { IFractCard, IHTMLSetupOptions, setupFractalCanvas } from "../app/cFractHtml.js";
 import { cFractDraw } from "../pres/fractDraw.js";
 import { cFractParams } from "../calc/cFractParams.js";
 import { cUtils } from "../calc/utils.js";
-import { InputRouter } from "../app/inputRouter.js";
+import { PointerRouter } from "../app/inputRouter.js";
+import { cTest } from "../analysis/cTest.js";
 import {
   ComplexPoint,
   PixelPoint,
   IParent,
   IParams,
   ColorRGBA,
-  IInputRouter,
+  IPointerRouter,
   PointerEventCallbacks
 } from "../fractTypes.js";
 
@@ -41,10 +36,10 @@ export class cFract implements IParent {
   private _params: cFractParams;
   public calc: cFractCalc;
   public draw: cFractDraw;
-  public inputRouter: IInputRouter;
-
+  public inputRouter: IPointerRouter;
+  public T: cTest;
   //Calc variables: //todo 2: envoyer des variables dans calc ? StateMachine ici
-  public statusId: string;
+  //public statusId: string;
   private resetEl: HTMLElement;
   // special points
   public lockedJulia: IParent | null = null; // close minibrot in analysis
@@ -57,9 +52,12 @@ export class cFract implements IParent {
   }
 
   constructor(canvasId: string, type = "MANDELBROT", statusId: string, resetId: string) {
-    this.statusId = statusId;
-    this.classConsole("Loading...");
-    this.resetEl = document.getElementById(resetId) as HTMLCanvasElement;
+    statusEl: HTMLElement;
+    const statusEl = document.getElementById(statusId) as HTMLElement;
+    if (!statusEl) debugger;
+    this.T = new cTest(statusEl);
+    this.T.userInfo("Loading...");
+    this.resetEl = document.getElementById(resetId) as HTMLElement;
     if (!this.resetEl) throw new Error(`Button #${resetId} introuvable`);
     this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
     if (!this.canvas) throw new Error(`Canvas #${canvasId} introuvable`);
@@ -71,7 +69,7 @@ export class cFract implements IParent {
     // Crée calc - sans calcul
     this.calc = new cFractCalc(this);
     this.draw = new cFractDraw(this);
-    this.inputRouter = new InputRouter(this.canvas);
+    this.inputRouter = new PointerRouter(this.canvas);
   }
 
   // #region Init
@@ -82,7 +80,7 @@ export class cFract implements IParent {
     if (paletteLut) this.cImage.updatePalette(paletteLut);
     // Last step: calc & rust & calcul up to render (point dur !)
     await this.calc.initCalc();
-    this.classConsole("Initialized");
+    this.T.userInfo("Initialized");
     this.render();
     // Initialisation des événements
     const cb = this.genCbEvents();
@@ -110,9 +108,10 @@ export class cFract implements IParent {
       // CLIC : Sélectionne ou fixe un point
       onClick: (px: PixelPoint) => {
         const pC = this._params.pix2c(px);
-        this.displayState("[Click]", pC, px);
         // Logique spécifique Main
-        if (this.lockedJulia) this.lockedJulia.params.juliaC = pC;
+        if (this.lockedJulia) this.lockedJulia.params.setJuliaC(pC);
+        this._params.onClick(px); // render this
+        this.displayState("[Click]", pC, px);
       },
       // ZOOM (Molette) : Utilise la méthode zoom de cFractParams
       onZoom: (px: PixelPoint, factor: number) => {
@@ -124,8 +123,8 @@ export class cFract implements IParent {
       onDrag: (deltaPx: PixelPoint) => {
         this._params.onDrag(deltaPx);
         const pC = this._params.center;
-        const px = { x: 0.0, y: 0.0 };
-        this.displayState("[OnDrag]", pC, px);
+        //const px = { x: 0.0, y: 0.0 };
+        this.displayState("[OnDrag]", pC, deltaPx);
       },
       // RESET
       onReset: () => {
@@ -150,9 +149,9 @@ export class cFract implements IParent {
       this.calc.reCalcGrid(); //reset of dirty
       // recalcul des overlay ?
       // à faire
-      // Envoi de l'image
-      this.ctx.putImageData(this.cImage.buffer, 0, 0);
     }
+    // Envoi de l'image (pour effacer overlay)
+    this.ctx.putImageData(this.cImage.buffer, 0, 0);
     // Envoi de l'orbite
     this.draw.drawComplexPath(this.orbit);
     // Envoi des overlay
@@ -176,45 +175,44 @@ export class cFract implements IParent {
 
   // Display the cfract state
   displayState(action: string, c?: ComplexPoint, pix?: PixelPoint): void {
-    // console.trace("cFractParams.displayState");
-    const status = document.getElementById(this.statusId);
-    if (!status) return;
     // Prepare display msg
     const cF = this;
     const cFP = this._params;
     //const spyImage = cF.cImage.imageData.data.subarray(0, 5).join(","); //move to spy()
     //const spyWasmPayload = cF.calc.calcBuffer;
     let msg = action;
-    if (c) msg += `${cUtils.complexToString(c)}`;
     if (cF.params.isJulia) {
-      msg += ` | JULIA: ${cUtils.complexToString(cFP.juliaC)}`;
+      msg += ` | JuliaC: ${cUtils.complexToString(cFP.juliaC)}\n`;
     }
+    if (c) msg += `${cUtils.complexToString(c)}`;
     if (pix) {
       msg += ` | px=${Math.floor(pix.x)} py=${Math.floor(pix.y)}`;
     }
     msg += ` | dia=${cFP.dia.toExponential(1)}`;
     msg += ` | calc: ${cF.calc.calcCount}`;
-    status.textContent = msg;
+    this.T.userInfo(msg);
   }
 
-  updateStatusBar(c: ComplexPoint, px: number, py: number): void {
+  // #region OLD_STUFF
+
+  /** updateStatusBar(c: ComplexPoint, px: number, py: number): void {
     const status = document.getElementById(this.statusId);
     if (!status) return;
 
     let msg = `${cUtils.complexToString(c)} | counter: ${this.calc.calcCount}`;
     /** if (this._params.typeName === "JULIA") {
       msg += ` | JULIA: ${cUtils.complexToString(this._params.juliaC)}`;
-    } */
+    } 
     msg += ` | px=${Math.floor(px)} py=${Math.floor(py)}`;
     status.textContent = msg;
   }
 
-  classConsole(msg: string): void {
+  //classConsole(msg: string): void {
     const status = document.getElementById(this.statusId);
     if (status) {
       status.textContent = `[INFO] ${msg}`;
     }
-  }
+  } /**/
 
   /** Creation d'objet standard : à revoir
   static newMandelbrot(): cFractParams {
@@ -263,3 +261,5 @@ export class cFract implements IParent {
     myFract.render();
   } /** */
 }
+
+// #end region

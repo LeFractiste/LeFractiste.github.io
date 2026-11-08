@@ -10,8 +10,8 @@ import { cUtils } from "../calc/utils.js";
 // cFractparams : paramètres du calcul asynchrone
 export class cFractParams implements IParams {
   private parent: IParent; // utilisé pour l'affichage sans event
-  private _center: ComplexPoint; //controled property
-  private _dirty: boolean;
+  public center: ComplexPoint; //controled property
+  public dirty: boolean;
   public type: FractType;
   public size: PixelPoint;
   public aspectRatio: number; //800-600 par défaut!
@@ -20,12 +20,6 @@ export class cFractParams implements IParams {
   public r2Max: number;
   public juliaC: ComplexPoint; //exigé par rust-m, à rendre optionel?
   public angleDeg: number = 0.0;
-  get typeName(): string {
-    return this.type as string;
-  }
-  get isJulia(): boolean {
-    return this.type === "JULIA";
-  }
   // #region constructor
 
   constructor(typeName: string, parent: IParent) {
@@ -33,7 +27,7 @@ export class cFractParams implements IParams {
     const defaultType: FractType = "MANDELBROT";
     const testType: string = typeName.toUpperCase();
     this.type = (testType as FractType) || defaultType;
-    this._center = this.isJulia ? { re: -0.7, im: 0.0 } : { re: 0.0, im: 0.0 };
+    this.center = this.isJulia ? { re: -0.7, im: 0.0 } : { re: 0.0, im: 0.0 };
     this.dia = 2.25; // 2.25
     this.iterMax = typeName === defaultType ? 300 : 100;
     this.r2Max = 100000.0;
@@ -41,7 +35,7 @@ export class cFractParams implements IParams {
     this.juliaC = { re: -0.7, im: 0.27015 };
     this.size = { x: this.parent.canvas.width, y: this.parent.canvas.height };
     this.aspectRatio = this.size.y / this.size.x;
-    this._dirty = true;
+    this.dirty = true; // no calc here
   }
   /**  */
 
@@ -66,29 +60,30 @@ export class cFractParams implements IParams {
 
   // #region Getters - Setters
 
-  /** Reads dirty */
-  public get dirty(): boolean {
-    return this._dirty;
+  get typeName(): string {
+    return this.type as string;
   }
   // Sets dirty and launches new rendering
-  public set dirty(value: boolean) {
-    this._dirty = value;
+  setDirty(value: boolean) {
+    this.dirty = value;
     if (value) this.parent.render();
   }
 
-  // Gestion du type (encore non utilisé)
-  public setJuliaC(juliaC: ComplexPoint) {
+  get isJulia(): boolean {
+    return this.type === "JULIA";
+  }
+  setJuliaC(juliaC: ComplexPoint) {
     this.juliaC = juliaC;
-    this.dirty = true;
+    this.setDirty(true);
   }
   // Changes the size (not be used now !!!)
-  initSize(size: PixelPoint) {
+  setSize(size: PixelPoint) {
     this.size = size;
     this.aspectRatio = size.y / size.x;
-    this.dirty = true;
+    this.setDirty(true);
   }
   // Computed span, so that dia is represented
-  public get span(): ComplexPoint {
+  get span(): ComplexPoint {
     if (this.size.y > this.size.x) {
       // aspectRatio= y/x
       return { re: this.dia, im: this.dia * this.aspectRatio };
@@ -96,21 +91,16 @@ export class cFractParams implements IParams {
       return { re: this.dia / this.aspectRatio, im: this.dia };
     }
   }
-  // Centrage (pan)
-  // GETTER: direct access
-  public get center(): ComplexPoint {
-    return this._center;
-  }
-  // SETTER: activates dirty for recalc
-  public set center(c: ComplexPoint) {
-    this._center = c;
-    this.dirty = true;
+  // New center value
+  public setCenter(c: ComplexPoint) {
+    this.center = c;
+    this.setDirty(true);
   }
   // Vector: diameter and rotation angle in deg
   setVector(dia: number, angleDeg: number = 0.0) {
     this.dia = dia;
     this.angleDeg = angleDeg;
-    this.dirty = true;
+    this.setDirty(true);
   }
 
   // #region Proj
@@ -125,8 +115,8 @@ export class cFractParams implements IParams {
   // Transformation linéaire du plan - complexe vers canvas pixel (integer)
   c2pix(c: ComplexPoint): PixelPoint {
     const cF = this;
-    const px = Math.fround(((c.re - cF.center.re) / cF.span.re + 0.5) * cF.size.x);
-    const py = Math.fround((0.5 - (c.im - cF.center.im) / cF.span.im) * cF.size.y);
+    const px = Math.round(((c.re - cF.center.re) / cF.span.re + 0.5) * cF.size.x);
+    const py = Math.round((0.5 - (c.im - cF.center.im) / cF.span.im) * cF.size.y);
     return { x: px, y: py };
   }
 
@@ -139,14 +129,17 @@ export class cFractParams implements IParams {
     const w = cFP.size.x;
     const h = cFP.size.y;
     cFP.center.re -= (deltaPx.x / w) * span.re;
-    cFP.center.im += (deltaPx.y / h) * span.im; // Inversé car y positif vers le bas
-    this.dirty = true;
+    cFP.center.im += (deltaPx.y / h) * span.im; // y inversé
+    this.setDirty(true);
+  }
+  onClick(pix: PixelPoint) {
+    this.parent.render(); // to display the locked reticle
   }
 
   // Simple zoom from center
-  zoom_centered(pix: PixelPoint, zoomFactor: number): void {
+  onZoom_centered(zoomFactor: number): void {
     this.dia /= zoomFactor;
-    this.dirty = true;
+    this.setDirty(true);
   }
 
   // Zoom around a fixed point (used for Mouse scroll)
@@ -168,19 +161,18 @@ export class cFractParams implements IParams {
       re: mouseC.re - alpha * this.span.re,
       im: mouseC.im - beta * this.span.im
     };
-    // Relance
-    this.dirty = true;
+    this.setDirty(true);
   }
   onReset(): void {
     const cFP = this;
-    cFP._center.re = cFP.isJulia ? 0 : -0.7;
-    cFP._center.im = 0.0;
+    cFP.center.re = cFP.isJulia ? 0 : -0.7;
+    cFP.center.im = 0.0;
     cFP.dia = 2.25; // 9/4
-    this.dirty = true;
+    this.setDirty(true);
   }
 
   // #region display
-
+  // untested
   spyPixelMemory(): void {
     if (!this.parent) return;
     // Prepare display msg

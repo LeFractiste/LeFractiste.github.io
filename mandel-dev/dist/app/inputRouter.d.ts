@@ -1,14 +1,16 @@
 /** InputRouter.ts - V1.2 - Copyright LeFractiste 2026
  * Update: 1.2: changed EventCallbacks to be agnostic (only pixels plane)
  * @todo : intégrer à cFract via cFractEvents
- *  @todo:  la sélection de points complexes et la manipulation de poignées (InteractiveHandles).
+ * @todo 2:  la sélection de points complexes et la manipulation de poignées (InteractiveHandles).
+ * @todo 3: émettre et consommer mes événements de classe (voir snippets)
  */
 import { PointerEventCallbacks, // cb events: onPan, onHoover, onZoom, onClick
-IInputRouter } from "../fractTypes.js";
+IPointerRouter } from "../fractTypes.js";
+export declare function bindClickEvent(btnId: string, callback: () => void): void;
 /** Routeur d'événements
  *  Pointeur: récupère les événements natifs (DOM) Mouse, Touch and gestures, et les attache (bind) aux callBacks (cb: eventRouterCallBack)
  *  Click (single touch), Pan (Glisser), Zoom (Molette & Pinch), Survol (Hoover). */
-export declare class InputRouter implements IInputRouter {
+export declare class PointerRouter implements IPointerRouter {
     canvasEl: HTMLCanvasElement;
     private isDragging;
     private lastMouse;

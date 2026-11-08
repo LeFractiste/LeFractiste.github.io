@@ -4,8 +4,8 @@
 import { IParams, ComplexPoint, PixelPoint, IParent, FractType } from "../fractTypes.js";
 export declare class cFractParams implements IParams {
     private parent;
-    private _center;
-    private _dirty;
+    center: ComplexPoint;
+    dirty: boolean;
     type: FractType;
     size: PixelPoint;
     aspectRatio: number;
@@ -14,8 +14,6 @@ export declare class cFractParams implements IParams {
     r2Max: number;
     juliaC: ComplexPoint;
     angleDeg: number;
-    get typeName(): string;
-    get isJulia(): boolean;
     constructor(typeName: string, parent: IParent);
     /**  */
     toMetadata(): string;
@@ -25,19 +23,19 @@ export declare class cFractParams implements IParams {
       p.center = this.center; //etc
       return p;
     } */
-    /** Reads dirty */
-    get dirty(): boolean;
-    set dirty(value: boolean);
+    get typeName(): string;
+    setDirty(value: boolean): void;
+    get isJulia(): boolean;
     setJuliaC(juliaC: ComplexPoint): void;
-    initSize(size: PixelPoint): void;
+    setSize(size: PixelPoint): void;
     get span(): ComplexPoint;
-    get center(): ComplexPoint;
-    set center(c: ComplexPoint);
+    setCenter(c: ComplexPoint): void;
     setVector(dia: number, angleDeg?: number): void;
     pix2c(point: PixelPoint): ComplexPoint;
     c2pix(c: ComplexPoint): PixelPoint;
     onDrag(deltaPx: PixelPoint): void;
-    zoom_centered(pix: PixelPoint, zoomFactor: number): void;
+    onClick(pix: PixelPoint): void;
+    onZoom_centered(zoomFactor: number): void;
     onZoom(pix: PixelPoint, zoomFactor: number): void;
     onReset(): void;
     spyPixelMemory(): void;

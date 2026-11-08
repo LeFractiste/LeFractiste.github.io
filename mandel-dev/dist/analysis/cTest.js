@@ -5,15 +5,15 @@
  */
 export class cTest {
     //public fileCopy : boolean = false;  //@todo: implement
-    traceIsOn = true;
+    statusEl;
+    traceIsOn = false;
     module = "";
     lastSource = "";
     errorLevel;
     // Build a module specific cTest - usage: private T = new cTest(moduleName);
-    constructor(moduleName, traceState = false) {
-        this.module = moduleName;
+    constructor(statusEl) {
+        this.statusEl = statusEl;
         this.trace("new");
-        this.traceIsOn = traceState;
         this.errorLevel = "OK";
     }
     log(msg) {
@@ -28,10 +28,10 @@ export class cTest {
         if (!condition)
             throw this.error(`[ASSERT] ${msg}`, source);
     }
-    eq(varA, varB, msg = "assertEq", source = "") {
-        const pass = JSON.stringify(varA) === JSON.stringify(varB);
+    eq(received, expected, msg = "assertEq", source = "") {
+        const pass = JSON.stringify(received) === JSON.stringify(expected);
         if (!pass)
-            this.warn(`${msg} | Received: ${varA} [NEQ] Expected: ${varB}`, source);
+            this.warn(`${msg} | Received: ${received} [NEQ] Expected: ${expected}`, source);
         return pass;
     }
     warn(msg, source = "") {
@@ -40,9 +40,18 @@ export class cTest {
     error(msg, source = "") {
         console.error(`**[ERROR][${source}] ${msg}`);
     }
-    UserMsgAbort(msg, source = "") {
+    userAbort(msg, source = "") {
         alert(`[ABORT] ${source} ${msg}`);
         throw new Error(msg);
+    }
+    userInfo(msg) {
+        this.statusEl.innerText = msg;
+    }
+    autotest() {
+        this.statusEl.innerText = `Status=${this.errorLevel}`;
+        const result = this.errorLevel === "OK";
+        //setTimeout(() => (status.innerText = ""), 3000);
+        return result;
     }
 }
 // testClass: classe de test

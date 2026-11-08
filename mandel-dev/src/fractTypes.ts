@@ -55,7 +55,7 @@ export interface ComplexPoint {
   im: number;
 }
 /** Canvas or screen coordinates, y positive down
- * Not always an integer (math.fround), nor inBound */
+ * Not always an integer (math.round), nor inBound */
 export interface PixelPoint {
   x: number; // integer?
   y: number; // integer?
@@ -74,34 +74,32 @@ export type CalcMode = "DIRECT" | "DEM"; // todo 2+3: | "Hybrid" | "QuadHybrid" 
 export interface IAlgoParams {
   //type: string; //inutile: if (Param.JuliaC) {type="JULIA";}
   //typeName: string;
-  isJulia: boolean;
-  iterMax: number; // make automatic
+  readonly isJulia: boolean;
+  readonly iterMax: number; // make automatic
   r2Max: number; //à renommer R2max
-  juliaC: ComplexPoint; //defined for Julia and MandelMain. Undefined for Mandelbrot set
+  readonly juliaC: ComplexPoint; //defined for Julia and MandelMain. Undefined for Mandelbrot set
   // Used for auto recalc
-  dirty: boolean; //for asynchroneous recalc
+  readonly dirty: boolean; //for asynchroneous recalc
+  setJuliaC(juliaC: ComplexPoint): void;
+  setDirty(value: boolean): void;
 }
 
 export interface IViewportParams {
-  get center(): ComplexPoint; // centre of image
-  set center(c: ComplexPoint);
+  readonly center: ComplexPoint; // centre of image
   dia: number; //diameter represented around centre.re //@todo 2: depending on min(W,H)
   size: PixelPoint; //computed window x=width (to right), y=height (to bottom)
   angleDeg?: number; //rotation around re axis //@todo: not implemented
   get aspectRatio(): number; //canvas width/heigth
   get span(): ComplexPoint; // Propriété calculée
   //pixelVector2c?: ComplexPoint; // pix2c(deltax, deltay);
-
+  setCenter(c: ComplexPoint): void;
   pix2c(pix: PixelPoint): ComplexPoint;
   c2pix(c: ComplexPoint): PixelPoint;
-  onZoom(pix: PixelPoint, zoomFactor: number): void;
-  onReset(): void;
-
   //c2pix and pix2c ? (no: different projection = other params & arguments)
 }
 
 // Interface d'accès externe aux paramètres
-export interface IParams extends IViewportParams, IAlgoParams {}
+export interface IParams extends IViewportParams, IAlgoParams, PointerEventCallbacks {}
 
 // #region IParent
 
@@ -113,6 +111,7 @@ export interface IParent {
   params: IParams;
   calc: ICalc;
   canvas: HTMLCanvasElement;
+  T: ITestableClass<HTMLElement>;
   ctx: CanvasRenderingContext2D;
   cImage: IImage;
   cDeep: ComplexPoint; // point of interest
@@ -124,16 +123,25 @@ export interface IParent {
   };
   initParent(paletteLut?: Uint8Array, reset?: HTMLElement): void;
   render(): void;
-  updateStatusBar(c: ComplexPoint, px: number, py: number): void;
-  classConsole(msg: string): void;
+  //updateStatusBar(c: ComplexPoint, px: number, py: number): void;  // moved to T: cTest
+  //classConsole(msg: string): void;
   // orbit
 }
 
 // #region test
+// Ability fora class to send data to console or UX
+export interface ITestableClass<HTMLElement> {
+  statusEl: HTMLElement;
+  autotest(): boolean;
+  userInfo(shortMsg: string): void;
+  log(consoleMsg: string): void;
+}
+
 // Interface globale pour composant testable (image, calc, wasmBuffer, palette)
 export interface ITestableGrid<Index, Out> {
   autoTest?(): boolean;
   getAt(index: Index): Out;
+  setAt?(index: Index, value: Out): void;
 }
 
 // #region Calc
@@ -254,12 +262,6 @@ export interface UserCommand {
  * todo 2: rendre cohérent - tout en pix, avec pC optionnel ou non fourni, à calculer par le callback ?)
  * todo 2: ajouter la rotation: roller+right click / two fingers rotation / angles entiers à ajouter à URL
  */
-export interface old_EventRouterCallbacks {
-  onHover?: (pC: ComplexPoint, pPx: PixelPoint) => void;
-  onClick?: (pC: ComplexPoint, pPx: PixelPoint) => void;
-  onZoom?: (centerPx: PixelPoint, factor: number) => void;
-  onDrag?: (deltaC: ComplexPoint) => void;
-}
 export interface PointerEventCallbacks {
   onHover?: (pPx: PixelPoint) => void;
   onClick?: (pPx: PixelPoint) => void;
@@ -270,12 +272,12 @@ export interface PointerEventCallbacks {
 }
 
 /** Contrat du Gestionnaire d'Événements / InputRouter */
-export interface IInputRouter {
+export interface IPointerRouter {
   canvasEl: HTMLCanvasElement;
   bindDOMEvents: (cb: PointerEventCallbacks, resetBtn: HTMLElement) => void;
 }
 /** reserved */
-export interface IIHandlesRouter extends IInputRouter {
+export interface IIHandlesRouter extends IPointerRouter {
   handles: InteractiveHandle[];
   activeMode: AppMode;
   registerHandle: (handle: InteractiveHandle) => void;

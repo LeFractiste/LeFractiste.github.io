@@ -1,13 +1,24 @@
 /** InputRouter.ts - V1.2 - Copyright LeFractiste 2026
  * Update: 1.2: changed EventCallbacks to be agnostic (only pixels plane)
  * @todo : intégrer à cFract via cFractEvents
- *  @todo:  la sélection de points complexes et la manipulation de poignées (InteractiveHandles).
+ * @todo 2:  la sélection de points complexes et la manipulation de poignées (InteractiveHandles).
+ * @todo 3: émettre et consommer mes événements de classe (voir snippets)
  */
+// Simple function binder to HTML Id
+export function bindClickEvent(btnId, callback) {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+        btn.addEventListener("click", callback);
+    }
+    else {
+        throw new Error("Can't find element ${btnId}");
+    }
+}
 // #region InputRouter Class
 /** Routeur d'événements
  *  Pointeur: récupère les événements natifs (DOM) Mouse, Touch and gestures, et les attache (bind) aux callBacks (cb: eventRouterCallBack)
  *  Click (single touch), Pan (Glisser), Zoom (Molette & Pinch), Survol (Hoover). */
-export class InputRouter {
+export class PointerRouter {
     canvasEl; //node.js
     isDragging = false;
     lastMouse = { x: 0, y: 0 };
@@ -41,7 +52,7 @@ export class InputRouter {
             if (cb.onZoom)
                 cb.onZoom(pt, factor);
         });
-        // MOUSE DOWN: isdragging from lastMouse
+        // MOUSE DOWN: isdragging from lastMouse - strictly on canvas
         this.canvasEl.addEventListener("mousedown", e => {
             if (e.button !== 0)
                 return;
@@ -49,10 +60,12 @@ export class InputRouter {
             hasMoved = false;
             this.lastMouse = this.getCanvasPx(e.clientX, e.clientY);
         });
-        // MOUSE MOVE: onHoover(pix2c) OU isDragging: onPan(deltaC)
+        // MOUSE MOVE: onHoover(pix2c) OU isDragging: onPan(deltaC) - window: all cFract get it !
         window.addEventListener("mousemove", e => {
             const pt = this.getCanvasPx(e.clientX, e.clientY);
-            // teste la sortie de canvas
+            // debug !
+            console.log(e.clientX, e.clientY, pt.x, pt.y);
+            // teste la sortie de canvas ou pour ignorer l'autre cFract
             const inBounds = pt.x >= 0 &&
                 pt.x <= this.canvasEl.width &&
                 pt.y >= 0 &&
@@ -64,17 +77,19 @@ export class InputRouter {
             if (cb.onHover && !this.isDragging)
                 cb.onHover(pt);
             if (this.isDragging) {
-                const dx = e.clientX - this.lastMouse.x;
-                const dy = e.clientY - this.lastMouse.y;
+                const dx = pt.x - this.lastMouse.x;
+                const dy = pt.y - this.lastMouse.y;
                 if (Math.hypot(dx, dy) > 3)
                     hasMoved = true;
-                this.lastMouse = { x: e.clientX, y: e.clientY };
+                this.lastMouse = pt;
                 if (cb.onDrag)
-                    cb.onDrag({ x: dx, y: dy });
+                    cb.onDrag({ x: dx, y: dy }); // axe y inversé dans onDrag
             }
         });
-        // MOUSE UP: envoie onClick(c) et clôture isDragging
+        // MOUSE UP: envoie onClick(c) et clôture isDragging - window: all cFract get it !
         window.addEventListener("mouseup", e => {
+            if (!this.isDragging)
+                return; //ignore les autres cartes!
             if (this.isDragging && cb.onClick && !hasMoved) {
                 cb.onClick(this.lastMouse);
             }

@@ -8,8 +8,7 @@ class cFractCard {
     canvasEl;
     statusEl;
     resetEl;
-    constructor(cardIds) {
-        const cardId = cardIds.cardId;
+    constructor(cardId) {
         try {
             const card = document.getElementById(cardId);
             if (!card)
@@ -96,19 +95,13 @@ export function setupFractalCanvas(options) {
     };
 }
 // Lit les paramètres dans l'url, et modifie params (en direct)
-export function updateParamsFromURL(params) {
+export function getParamsFromURL() {
     const hash = window.location.hash.substring(1);
     const paramsData = new URLSearchParams(hash);
-    if (params.isJulia)
-        return; //excluded so far
-    // params.typeName: paramsData.get("type") || "MANDELBROT"; //type
     const re = parseFloat(paramsData.get("re") || "-0.75"); //centreRe
     const im = parseFloat(paramsData.get("im") || "0.0"); //centreIm
     const dia = parseFloat(paramsData.get("dia") || "2.25"); //dia
-    //error: params.setCalcMode(paramsData.get("calc") || "DIRECT");      //mode
-    params.center = { re: re, im: im };
-    params.dia = dia;
-    params.dirty = true;
+    return paramsData;
 }
 // todo 2: Updates URL with (some) params
 export function updateURLfromParams(params) {

@@ -279,12 +279,12 @@ function ReadOnly(target: any, propertyKey: string) {
 
 // Utilisation dans une classe :
 class FractalConfig {
-  @ReadOnly
+  @ReadOnly // error ts(1240) ClassFieldDecoratorContext
   public maxIterations: number = 1000;
 }
 
 // #region write version file -----------------------
-const { execSync } = require('child_process');
+const { execSync } = require('child_process');  // error ts(2591)
 const fs = require('fs');
 const gitTag = execSync('git describe --tags --always --dirty').toString().trim();
 const buildDate = new Date().toISOString();
@@ -294,4 +294,20 @@ const content = `// Généré automatiquement - Ne pas modifier à la main\n` +
                 `  buildDate: "${buildDate}"\n` +
                 `};\n`;
 fs.writeFileSync('./src/version.ts', content);
+
+// #region switch (case)
+const expr : string = "Papayas";
+switch (expr) {
+  case "Oranges":
+    console.log("Oranges are $0.59 a pound.");
+    break;
+  case "Mangoes":
+  case "Papayas":
+    console.log("Mangoes and papayas are $2.79 a pound.");
+    // Expected output: "Mangoes and papayas are $2.79 a pound."
+    break;
+  default:
+    console.log(`Sorry, we are out of ${expr}.`);
+}
+
 // #endRegion

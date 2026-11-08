@@ -37,6 +37,6 @@ export type HTMLSearchOptions = {
 /** Initialise le div html avec canvas, boutons, statusBar,...
  * @todo: bouton ZoomReset serait ajouté par le constructeur de cFract ?  (ici canvas minimum) */
 export declare function setupFractalCanvas(options: IHTMLSetupOptions): IFractCard;
-export declare function updateParamsFromURL(params: IParams): void;
+export declare function getParamsFromURL(): URLSearchParams;
 export declare function updateURLfromParams(params: IParams): void;
 //# sourceMappingURL=cFractHtml.d.ts.map

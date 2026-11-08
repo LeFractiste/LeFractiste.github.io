@@ -11,7 +11,8 @@ import { cFractCalc } from "../calc/cFractCalc.js";
 import { cFractDraw } from "../pres/fractDraw.js";
 import { cFractParams } from "../calc/cFractParams.js";
 import { cUtils } from "../calc/utils.js";
-import { InputRouter } from "../app/inputRouter.js";
+import { PointerRouter } from "../app/inputRouter.js";
+import { cTest } from "../analysis/cTest.js";
 // #region CFRACT
 export class cFract {
     canvas;
@@ -21,8 +22,9 @@ export class cFract {
     calc;
     draw;
     inputRouter;
+    T;
     //Calc variables: //todo 2: envoyer des variables dans calc ? StateMachine ici
-    statusId;
+    //public statusId: string;
     resetEl;
     // special points
     lockedJulia = null; // close minibrot in analysis
@@ -34,8 +36,12 @@ export class cFract {
         return this._params;
     }
     constructor(canvasId, type = "MANDELBROT", statusId, resetId) {
-        this.statusId = statusId;
-        this.classConsole("Loading...");
+        statusEl: HTMLElement;
+        const statusEl = document.getElementById(statusId);
+        if (!statusEl)
+            debugger;
+        this.T = new cTest(statusEl);
+        this.T.userInfo("Loading...");
         this.resetEl = document.getElementById(resetId);
         if (!this.resetEl)
             throw new Error(`Button #${resetId} introuvable`);
@@ -50,7 +56,7 @@ export class cFract {
         // Crée calc - sans calcul
         this.calc = new cFractCalc(this);
         this.draw = new cFractDraw(this);
-        this.inputRouter = new InputRouter(this.canvas);
+        this.inputRouter = new PointerRouter(this.canvas);
     }
     // #region Init
     // Launch the objet: calc, render, palette and events
@@ -60,7 +66,7 @@ export class cFract {
             this.cImage.updatePalette(paletteLut);
         // Last step: calc & rust & calcul up to render (point dur !)
         await this.calc.initCalc();
-        this.classConsole("Initialized");
+        this.T.userInfo("Initialized");
         this.render();
         // Initialisation des événements
         const cb = this.genCbEvents();
@@ -84,10 +90,11 @@ export class cFract {
             // CLIC : Sélectionne ou fixe un point
             onClick: (px) => {
                 const pC = this._params.pix2c(px);
-                this.displayState("[Click]", pC, px);
                 // Logique spécifique Main
                 if (this.lockedJulia)
-                    this.lockedJulia.params.juliaC = pC;
+                    this.lockedJulia.params.setJuliaC(pC);
+                this._params.onClick(px); // render this
+                this.displayState("[Click]", pC, px);
             },
             // ZOOM (Molette) : Utilise la méthode zoom de cFractParams
             onZoom: (px, factor) => {
@@ -99,8 +106,8 @@ export class cFract {
             onDrag: (deltaPx) => {
                 this._params.onDrag(deltaPx);
                 const pC = this._params.center;
-                const px = { x: 0.0, y: 0.0 };
-                this.displayState("[OnDrag]", pC, px);
+                //const px = { x: 0.0, y: 0.0 };
+                this.displayState("[OnDrag]", pC, deltaPx);
             },
             // RESET
             onReset: () => {
@@ -123,9 +130,9 @@ export class cFract {
             this.calc.reCalcGrid(); //reset of dirty
             // recalcul des overlay ?
             // à faire
-            // Envoi de l'image
-            this.ctx.putImageData(this.cImage.buffer, 0, 0);
         }
+        // Envoi de l'image (pour effacer overlay)
+        this.ctx.putImageData(this.cImage.buffer, 0, 0);
         // Envoi de l'orbite
         this.draw.drawComplexPath(this.orbit);
         // Envoi des overlay
@@ -147,44 +154,24 @@ export class cFract {
     // #region Status UI & Helpers
     // Display the cfract state
     displayState(action, c, pix) {
-        // console.trace("cFractParams.displayState");
-        const status = document.getElementById(this.statusId);
-        if (!status)
-            return;
         // Prepare display msg
         const cF = this;
         const cFP = this._params;
         //const spyImage = cF.cImage.imageData.data.subarray(0, 5).join(","); //move to spy()
         //const spyWasmPayload = cF.calc.calcBuffer;
         let msg = action;
+        if (cF.params.isJulia) {
+            msg += ` | JuliaC: ${cUtils.complexToString(cFP.juliaC)}\n`;
+        }
         if (c)
             msg += `${cUtils.complexToString(c)}`;
-        if (cF.params.isJulia) {
-            msg += ` | JULIA: ${cUtils.complexToString(cFP.juliaC)}`;
-        }
         if (pix) {
             msg += ` | px=${Math.floor(pix.x)} py=${Math.floor(pix.y)}`;
         }
         msg += ` | dia=${cFP.dia.toExponential(1)}`;
         msg += ` | calc: ${cF.calc.calcCount}`;
-        status.textContent = msg;
-    }
-    updateStatusBar(c, px, py) {
-        const status = document.getElementById(this.statusId);
-        if (!status)
-            return;
-        let msg = `${cUtils.complexToString(c)} | counter: ${this.calc.calcCount}`;
-        /** if (this._params.typeName === "JULIA") {
-          msg += ` | JULIA: ${cUtils.complexToString(this._params.juliaC)}`;
-        } */
-        msg += ` | px=${Math.floor(px)} py=${Math.floor(py)}`;
-        status.textContent = msg;
-    }
-    classConsole(msg) {
-        const status = document.getElementById(this.statusId);
-        if (status) {
-            status.textContent = `[INFO] ${msg}`;
-        }
+        this.T.userInfo(msg);
     }
 }
+// #end region
 //# sourceMappingURL=cFract.js.map

@@ -12,8 +12,8 @@ import { AppVersionInfo, TaskTrack } from "../fractTypes.js";
 
 //Gestion de version
 export const APP_VERSION: AppVersionInfo = {
-  version: "4.7.2-dev",
-  buildDate: "2026-10-25 12:41 CET",
+  version: "4.8.0-dev",
+  buildDate: "2026-11-08 01:50 CET",
   gitTag: "branch rescue-stash", // À synchroniser avec `git describe --tags`
   environment: "development"
 };

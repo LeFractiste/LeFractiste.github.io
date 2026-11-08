@@ -1,6 +1,6 @@
 ## TODO
 
-- @todo 4.7. : code/refact: **BUG** mandel.calc.calcGrid - Done: isJulia + ITestableGrid + reset + c2pix.fround
+- @todo 4.7. : code/refact: fixed mandel.calc.calcGrid - Done: isJulia + ITestableGrid + reset + c2pix.round + window/canvas listeners + Rust stable
 - @todo 0: pres/html : test => génération du html => serveur ! . **BUG**: galère non débuggable !
 - @todo 2: code/calc: Gérer param.calcMode et implémenter cFractCalc.setMode ?
 - @todo 1: code/IParams: sécuriser fract_params via IParams = readOnly + onAction
