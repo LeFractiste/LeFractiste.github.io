@@ -29,8 +29,9 @@
 
 # TypeScript tsconfig.json
 
-- Transpiler à la volée: npx tsc -w
-- Lister les erreurs de compilation dans la console: npx tsc --noEmit
+- cd mandel-dev # bien se mettre dans le répertoire de tsconfig
+- npx tsc -w # Transpiler à la volée:
+- npx tsc --noEmit # Recompile tout, et liste les erreurs dans la console:
 - Améliorer la **complétion dynamique**
 - Décorateurs @tag - avant la fonction, hors commentaire! Activer experimentalDecorators dans tsconfig.
 
@@ -58,8 +59,6 @@
 
 # Commandes GIT ==========
 
-Questions: que fait merge?
-
 ## principales
 
 - git add . # Stagging = Empaquetage de tout le dossier (vérifier le CD directory !)
@@ -67,6 +66,7 @@ Questions: que fait merge?
 - git push origin main # envoyer vers github
 - git pull # Rapatrie de l'info. Concept: stash = commit temporaire où VScode sauve les infos écrasées par l'opération
 - git reflog # liste des commit (hors stash)
+- git fetch origin # rapatrie l'historique
 
 # debug
 
@@ -96,6 +96,22 @@ Questions: que fait merge?
 - git push -u origin branch # lie branche locale à branche distante, pour faire des commandes pull/push sans paramètres.
 - git merge branch # pour appliquer la branche au main. Main doit être activé sur le PC !!
 - git reset --soft TAG # Revenir au commit/tag V4.0 tout en conservant tes fichiers modifiés dans ton dossier de travail (?)
+- git reset --hard origin/branch # plus violent... écrase la branche locale active par la branche.
+
+Procédure de merge: Procédure merge branche
+
+1.  commit & push la branche
+2.  git checkout main #reprend le contexte de main
+3.  rm -rf dist # Optionnel : nettoie le dossier dist local si besoin (et d'autres)
+
+- 3b: commit (pour confirmer dist vide)
+
+4.  git merge branche # de main vers la branche
+5.  résoudre les conflits # sinon "git merge --abort"
+
+- 5b. git add . # quand tout est bon, pousser dans le stash ("continue" est bloqué sinon)
+
+6.  commit & push origin main (ou "sync").
 
 ## special
 
@@ -105,7 +121,12 @@ Questions: que fait merge?
 - git apply modification.patch # applique un patch/diff - pas encore testé
 - git log --diff-filter=D --summary #récupère la liste des fichiers effacés - marche pas fort
 - git log --all --full-history -- _fileName_ #recherche un nom dans l'historique
-- git log -p -- src/app/monFichier.ts #les modifications d'un fichier précis
+- git log -p -- src/app/monFichier.ts #les modifications d'un fichier précis Mail
+- git commit --amend --author="LeFractiste <285131110+LeFractiste@users.noreply.github.com>" --no-edit
+- git config --global user.email "285131110+LeFractiste@users.noreply.github.com"
+- git config --global user.name "LeFractiste"
+- git log -1 --pretty=format:"%an <%ae>" #inspecter le commit
+- git log --oneline --pretty=format:"%h - %an <%ae> : %s" #inspecter la branche
 
 ## diff (touche de sortie: "q")
 

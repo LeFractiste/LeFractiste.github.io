@@ -35,11 +35,8 @@ export class cUtils {
     ];
   }
 
-<<<<<<< HEAD
-=======
   // #region toString
 
->>>>>>> rescue-stash
   // Affichage complexe - //@todo 2: à passer dans utils
   static complexToString(c: ComplexPoint, digits = 7) {
     return `${c.re.toFixed(digits)} ${c.im >= 0 ? "+" : ""}${c.im.toFixed(digits)}i`;
@@ -73,8 +70,6 @@ export class cUtils {
       });
   }
 } /** cUtils */
-<<<<<<< HEAD
-=======
 
 // #region zMath
 
@@ -160,4 +155,3 @@ function T_zMath(): void {
   const Z = new zMath();
   Z.plus(1);
 }
->>>>>>> rescue-stash
