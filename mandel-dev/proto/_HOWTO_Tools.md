@@ -12,6 +12,7 @@
 - Vertical slice: modifier le code là où il faut pour amener la fonctionalité, sans faire joli.
 - Deux chapeaux: ne jamais faire en même temps de l'ajout de fonctions et du refactoring de code. Sinon, refactoring divergent.
 - Mettre au frigo: noter les bonnes idées quelque part, mais ne pas les exécuter de suite !
+- Test SmartPhone: npm run dev --> site accessible via http://192.168.x.x:5173
 
 # JavaScript.js
 
@@ -51,7 +52,6 @@
 
 # Gestion des packages
 
--
 - Vérifier si un package est installé ou sa version
 - Installer, mettre à jour
 - Différence entre npm et npx ?
@@ -93,8 +93,8 @@ Questions: que fait merge?
 - git checkout main # active la branche main
 - git checkout -b branch # crée la branche "branch"
 - git checkout mandel-V4 -- path/oneFile.js #récupère un fichier de la branche mandel-V4
-- git push -u origin branch # pour publier la branche vers git, à la fin
-- merge #pour appliquer la branche au main
+- git push -u origin branch # lie branche locale à branche distante, pour faire des commandes pull/push sans paramètres.
+- git merge branch # pour appliquer la branche au main. Main doit être activé sur le PC !!
 - git reset --soft TAG # Revenir au commit/tag V4.0 tout en conservant tes fichiers modifiés dans ton dossier de travail (?)
 
 ## special
