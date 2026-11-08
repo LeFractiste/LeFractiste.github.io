@@ -1,8 +1,8 @@
 {
   "name": "lefractiste.github.io",
-  "version": "4.6.0",
+  "version": "4.8.0",
   "description": "This GitHub repository / page(s) is here to show my contribution to the Web !\r I am interested in Fractals, Script, VBA for Office, trying anything with IA, while developping tricks to limit cognitive overload.\r Looking for partners: fun fonctions in Script.",
-  "main": "app.js",
+  "main": "appDev.js",
   "scripts": {
     "docs": "typedoc",
     "test": "echo \"Error: no test specified\" && exit 1"

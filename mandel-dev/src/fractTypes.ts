@@ -186,7 +186,7 @@ export interface Trajectory {
   points?: ComplexPoint[];
   parent?: IParent;
   moveAlong?(stepSize: number, field: (p: ComplexPoint) => ComplexPoint): ComplexPoint;
-  draw?(options?: DrawOptions): void;
+  draw?(options?: IDrawOptions): void;
 }
 
 /** Calcul d'external ray */
@@ -302,15 +302,16 @@ export interface IDrawOverlay {
   //ctx: CanvasRenderingContext2D;
   drawReticle(pix: PixelPoint): void;
   drawFixedPointsOverlay(fixedPoints: ComplexPoint[]): void;
-  drawComplexPath(points: ComplexPoint[], options: DrawOptions): void;
+  drawComplexPath(points: ComplexPoint[], options: IDrawOptions): void;
   /** @todo intégrer à pres et mémoriser canvas et ctx et width */
 }
 
 /** Options de dessin optionnelles qui surchargent celles du parent */
-export interface DrawOptions {
-  color?: string;
-  lineWidth?: number;
-  showPoints?: boolean;
+export interface IDrawOptions {
+  color: string;
+  lineWidth: number;
+  showPoints: boolean;
+  fillStyle: string;
 }
 
 // Gestion Simplifiée de la Palette

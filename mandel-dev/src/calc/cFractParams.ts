@@ -143,14 +143,13 @@ export class cFractParams implements IParams {
     this.setDirty(true);
   }
 
-  // Zoom around a fixed point (used for Mouse scroll)
-  // Algorithme: l'écart sous la souris est réduit par (1 - zoomFactor)
+  // Zoom around a fixed point (used for Mouse scroll) or 2 fingers-touch
   onZoom(pix: PixelPoint, zoomFactor: number): void {
     const cFP: cFractParams = this;
     // Fixed pointc, et affichage
     const mouseC = this.pix2c(pix);
     // Ajustement du facteur d'échelle
-    cFP.dia /= zoomFactor;
+    cFP.dia /= zoomFactor; // zoomFactor > 1 = deeper
     //todo: event ! this.parent.updateStatusBar(mouseC, pix);
     // Ratio normalisé du pointeur par rapport au centre du canvas (-0.5 à +0.5)
     const w = cFP.size.x;

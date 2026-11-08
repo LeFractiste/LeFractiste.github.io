@@ -8,7 +8,9 @@
 - @todo 1: code/IParams: sécuriser fract_params via IParams = readOnly + onAction
 - @todo 1: UX/html - ajout automatisé de boutons d'interface maxIter & setCalc (interface UX(btnX): html.addBtn(X, onclick): id=btnX, onClickX?)
 - @todo 3: Rust/IP - copyright, commenter les fonctions! Archi: params-->calcoptions-->Z0matrix-->ZNmatrix-->imageData
-- @todo 3: Rust/vitesse - recalcul des points noirs (iter bouge) - zoom\*2 récup! - taille image (zoom GPU) - quadTree
+- @todo 3: Rust/vitesse - recalcul des points noirs (iter augmente) - zoom\*2 récup! - taille image (zoom GPU) - quadTree
+- @todo 2: Rust/refactor - multi-instance étanche ou mono instancve multi-users. allocations mémoire, paramètres, isoler "sessions".
+- @todo 2: Rust/interface - exposer des types de données vers TypeScript.
 - @todo 2: calc/Speed - Algorithme de calcul local de Mandelbrot via Julia précalculée (validité de la zone ?)
 - @todo 2: pres/Grid - afficher grille + viser des coordonnées "entières" - pixSize = dia / min(W, H) pixSize0=3/600=1/200 zoom 2 ou 2.5
 - @todo 2: code/HTML : Mandel utilise html-helper pour faire url<-->params

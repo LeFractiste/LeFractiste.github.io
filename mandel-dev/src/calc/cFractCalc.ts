@@ -271,10 +271,11 @@ export class cFractCalc implements ICalc, ITestableGrid<PixelPoint, number> {
     this Float32Array(this.wasmMemory.buffer, rawPtr, this.options.payloadLen); */
   }
 
-  // #region to refactor
+  // #region CalcOrbit
 
-  //Calcul d'orbite z(n+1):= z^2 + c (@todo: déléguer au Wasm)
-  /* return this.wasmEngine.compute_orbit_array(
+  /** Calcul d'orbite z(n+1):= z^2 + c
+   * @todo: déléguer au Wasm
+   * // return this.wasmEngine.compute_orbit_array(
         z0.re, z0.im, c.re, c.im, maxIter); */
   calcOrbit(z0: ComplexPoint, maxIter = this.options.iterMax): ComplexPoint[] {
     const op: CalcOptions = this.options;

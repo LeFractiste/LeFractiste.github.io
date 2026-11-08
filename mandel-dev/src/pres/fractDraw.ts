@@ -12,7 +12,7 @@ import type {
   IParent,
   IParams,
   IDrawOverlay,
-  DrawOptions
+  IDrawOptions
 } from "../fractTypes.js";
 
 /** Fonctions de rendu graphique pour orbites, lignes et rayons externes
@@ -20,10 +20,17 @@ import type {
  */
 export class cFractDraw implements IDrawOverlay {
   private parent: IParent;
+  public drawOptions: IDrawOptions;
   //private ctx:CanvasRenderingContext2D;
   //public drawOptions: DrawOptions;
   constructor(parent: IParent) {
     this.parent = parent;
+    this.drawOptions = {
+      color: "#ff0055",
+      lineWidth: 1.5,
+      showPoints: true,
+      fillStyle: "#fbff27"
+    };
   }
 
   // #region Reticle
@@ -83,15 +90,18 @@ export class cFractDraw implements IDrawOverlay {
 
   /* Gère le tracé vectoriel au-dessus du canvas de pixels
    *(points fixes, axes, orbites, repères). */
-  drawComplexPath(points: ComplexPoint[], options: DrawOptions = {}): void {
+  drawComplexPath(
+    points: ComplexPoint[],
+    options: IDrawOptions = this.drawOptions
+  ): void {
     // input check and init
     const canvas = this.parent.canvas;
     const ctx: CanvasRenderingContext2D | null = canvas.getContext("2d");
     if (!ctx) return;
     const cP = this.parent.params;
     if (points.length === 0) return;
-    const color = options.color || "#ff0055"; // || this.parent.palette?.trajectoryColor
-    const lineWidth = options.lineWidth || 1.5;
+    const color = options.color; // || this.parent.palette?.trajectoryColor
+    const lineWidth = options.lineWidth;
     // Convert to pixels
     const N: number = points.length;
     const pix: PixelPoint[] = Array<PixelPoint>(N);
@@ -109,9 +119,9 @@ export class cFractDraw implements IDrawOverlay {
     }
     ctx.stroke();
     if (options.showPoints) {
-      ctx.fillStyle = "#ffffff"; // this.parent.palette?.pointColor ||
+      ctx.fillStyle = options.fillStyle; // this.parent.palette?.pointColor ||
       for (let i = 0; i < N; i++) {
-        ctx.fillRect(pix[N].x - 1.5, pix[N].y - 1.5, 3, 3);
+        ctx.fillRect(pix[N].x - 2, pix[N].y - 2, 4, 4);
       }
     }
     ctx.restore();

@@ -117,7 +117,7 @@ export class PointerRouter implements IPointerRouter {
       if (e.touches.length === 1) {
         this.isDragging = true;
         hasMoved = false;
-        this.lastMouse = this.getCanvasPx(e.touches[0].clientX, e.touches[0].clientY);
+        this.lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       } else if (e.touches.length === 2) {
         this.isDragging = false;
         this.touchStartDist = Math.hypot(
@@ -144,7 +144,7 @@ export class PointerRouter implements IPointerRouter {
           e.touches[0].clientY - e.touches[1].clientY
         );
         if (this.touchStartDist > 0) {
-          const factor = this.touchStartDist / dist;
+          const factor = dist / this.touchStartDist; // inversé = intuitif
           const centerPx = this.getCanvasPx(
             (e.touches[0].clientX + e.touches[1].clientX) / 2,
             (e.touches[0].clientY + e.touches[1].clientY) / 2

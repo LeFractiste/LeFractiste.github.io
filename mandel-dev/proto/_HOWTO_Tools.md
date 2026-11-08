@@ -12,7 +12,7 @@
 - Vertical slice: modifier le code là où il faut pour amener la fonctionalité, sans faire joli.
 - Deux chapeaux: ne jamais faire en même temps de l'ajout de fonctions et du refactoring de code. Sinon, refactoring divergent.
 - Mettre au frigo: noter les bonnes idées quelque part, mais ne pas les exécuter de suite !
-- Test SmartPhone: npm run dev --> site accessible via http://192.168.x.x:5173
+- npm run dev # pour test SmartPhone: site accessible via http://192.168.x.x:5173 (IP: cmd>ipconfig)
 
 # JavaScript.js
 
@@ -67,6 +67,7 @@
 - git pull # Rapatrie de l'info. Concept: stash = commit temporaire où VScode sauve les infos écrasées par l'opération
 - git reflog # liste des commit (hors stash)
 - git fetch origin # rapatrie l'historique
+- git help diff # aide sur la commande diff
 
 # debug
 
@@ -97,6 +98,7 @@
 - git merge branch # pour appliquer la branche au main. Main doit être activé sur le PC !!
 - git reset --soft TAG # Revenir au commit/tag V4.0 tout en conservant tes fichiers modifiés dans ton dossier de travail (?)
 - git reset --hard origin/branch # plus violent... écrase la branche locale active par la branche.
+- git push origin main --force #la suite: écrase origin par mon main local. Propre, radical.
 
 Procédure de merge: Procédure merge branche
 
@@ -130,7 +132,7 @@ Procédure de merge: Procédure merge branche
 
 ## diff (touche de sortie: "q")
 
-- git diff --stat main..mandel-V4 #from mandel.V4 to main
+- git diff main branch --stat # différence entre deux commit (de branch à main).
 - git diff main..mandel-V4 -- pathToOneFile/anyFile.js
 
 # Commandes Rust ========
