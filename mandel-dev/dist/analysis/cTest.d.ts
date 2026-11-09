@@ -6,18 +6,18 @@ import { ITestableClass } from "../fractTypes.js";
 export declare class cTest implements ITestableClass<HTMLElement> {
     statusEl: HTMLElement;
     traceIsOn: boolean;
-    private module;
-    private lastSource;
     private errorLevel;
     constructor(statusEl: HTMLElement);
     log(msg: string): void;
-    trace(source: string, args?: string): void;
     assert(condition: boolean, msg?: string, source?: string): void;
     eq(received: any, expected: any, msg?: string, source?: string): boolean;
+    reset(): void;
     warn(msg: string, source?: string): void;
     error(msg: string, source?: string): void;
     userAbort(msg: string, source?: string): void;
     userInfo(msg: string): void;
     autotest(): boolean;
+    version(full?: boolean): string;
+    logVersion(): void;
 }
 //# sourceMappingURL=cTest.d.ts.map

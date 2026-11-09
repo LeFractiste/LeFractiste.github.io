@@ -110,7 +110,7 @@ export class cFract {
                     this.orbit = this.calc.calcOrbit(this.cDeep); // debugger d'abord !
                 const testIter = this.calc.getAt(px);
                 const testRgba = this.cImage.getAt(px);
-                this.displayState(`[Hoover] iter=${this.orbit.length}/${testIter} | ${JSON.stringify(testIter)} | `, this.cDeep, px);
+                this.displayState(`[Hoover]`, this.cDeep, px, `iter=${this.orbit.length}`);
                 this.render();
             },
             // CLIC : Sélectionne ou fixe un point
@@ -120,13 +120,13 @@ export class cFract {
                 if (this.lockedJulia)
                     this.lockedJulia.params.setJuliaC(pC);
                 this._params.onClick(px); // render this
-                this.displayState("[Click]", pC, px);
+                this.displayState("[Click] ", pC, px);
             },
             // ZOOM (Molette) : Utilise la méthode zoom de cFractParams
             onZoom: (px, factor) => {
                 const pC = this._params.pix2c(px);
                 this._params.onZoom(px, factor); // zoom autour du point
-                this.displayState("[Zoom]", pC, px);
+                this.displayState("[Zoom]  ", pC, px);
             },
             // PAN (Glisser) : Déplace le centre
             onDrag: (deltaPx) => {
@@ -140,7 +140,7 @@ export class cFract {
                 this._params.onReset();
                 const pC = this._params.center;
                 const px = this._params.c2pix(pC);
-                this.displayState("[Reset]", pC, px);
+                this.displayState("[Reset] ", pC, px);
             }
         };
         return callbacks;
@@ -179,24 +179,28 @@ export class cFract {
     } /**/
     // #region Status UI & Helpers
     // Display the cfract state
-    displayState(action, c, pix) {
+    displayState(action, c, pix, msg2) {
         // Prepare display msg
         const cF = this;
         const cFP = this._params;
         //const spyImage = cF.cImage.imageData.data.subarray(0, 5).join(","); //move to spy()
         //const spyWasmPayload = cF.calc.calcBuffer;
         let msg = action;
-        if (cF.params.isJulia) {
-            msg += ` | JuliaC: ${cUtils.complexToString(cFP.juliaC)}\n`;
-        }
+        /* if (cF.params.isJulia) {
+          msg += ` | JuliaC: ${cUtils.complexToString(cFP.juliaC)}\n`;
+        } */
         if (c)
             msg += `${cUtils.complexToString(c)}`;
         if (pix) {
             msg += ` | px=${Math.floor(pix.x)} py=${Math.floor(pix.y)}`;
         }
-        msg += ` | dia=${cFP.dia.toExponential(1)}`;
-        msg += ` | calc: ${cF.calc.calcCount}`;
+        // msg += ` | dia=${cFP.dia.toExponential(1)}`;
+        // msg += ` | calc: ${cF.calc.calcCount}`;
+        msg += " | " + msg2;
+        // Display to cFract status:
         this.T.userInfo(msg);
+        // Display to App status:
+        // T.userInfo(msg);
     }
 }
 // #end region

@@ -4,7 +4,6 @@
 import { PaletteEditor } from "../pres/palette.js";
 import { bindClickEvent } from "./inputRouter.js";
 import { cFract } from "./cFract.js"; // main Object
-import { logAppHeader } from "./version.js";
 import { cTest } from "../analysis/cTest.js";
 // #region CLASS & initApp
 // --- ÉTATS GLOBAUX ---
@@ -25,7 +24,6 @@ class AppDev {
                 this.julia.render();
             }
         });
-        this.palette.generateLut();
         // testEventListener(); // @todo 2: vider!
         // Done
         T.userInfo("Loaded");
@@ -37,18 +35,18 @@ class AppDev {
 let app;
 async function initApp() {
     // Ecriture de la version
-    logAppHeader();
+    T.log(T.version(true));
     // Amorce de chaque cFract autonome
     app = new AppDev();
-    await app.mandel.initParent(app.palette.lut);
+    await app.mandel.initParent(app.palette?.lut);
     if (app.julia) {
-        await app.julia.initParent(app.palette.lut);
+        await app.julia.initParent(app.palette?.lut);
         app.mandel.lockedJulia = app.julia;
     }
     T.userInfo("Ready for zoom !");
     // bouton Test
     bindClickEvent("btnTest", () => {
-        const result = T.autotest();
+        T.autotest();
     });
     window.debugApp = app.mandel;
 }

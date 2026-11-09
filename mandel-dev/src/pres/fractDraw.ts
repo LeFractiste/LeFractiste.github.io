@@ -16,7 +16,6 @@ import type {
 } from "../fractTypes.js";
 
 /** Fonctions de rendu graphique pour orbites, lignes et rayons externes
-
  */
 export class cFractDraw implements IDrawOverlay {
   private parent: IParent;
@@ -26,10 +25,11 @@ export class cFractDraw implements IDrawOverlay {
   constructor(parent: IParent) {
     this.parent = parent;
     this.drawOptions = {
-      color: "#ff0055",
+      lineColor: "#ff0055",
       lineWidth: 1.5,
       showPoints: true,
-      fillStyle: "#fbff27"
+      fillStyle: "#fbff27",
+      pointSize: 1.5
     };
   }
 
@@ -100,7 +100,7 @@ export class cFractDraw implements IDrawOverlay {
     if (!ctx) return;
     const cP = this.parent.params;
     if (points.length === 0) return;
-    const color = options.color; // || this.parent.palette?.trajectoryColor
+    const color = options.lineColor; // || this.parent.palette?.trajectoryColor
     const lineWidth = options.lineWidth;
     // Convert to pixels
     const N: number = points.length;
@@ -119,9 +119,10 @@ export class cFractDraw implements IDrawOverlay {
     }
     ctx.stroke();
     if (options.showPoints) {
-      ctx.fillStyle = options.fillStyle; // this.parent.palette?.pointColor ||
+      ctx.fillStyle = options.fillStyle || "#fafc9c"; // this.parent.palette?.pointColor ||
       for (let i = 0; i < N; i++) {
-        ctx.fillRect(pix[N].x - 2, pix[N].y - 2, 4, 4);
+        const size: number = options.pointSize || 2.0;
+        ctx.fillRect(pix[i].x - size, pix[i].y - size, 2 * size, 2 * size);
       }
     }
     ctx.restore();

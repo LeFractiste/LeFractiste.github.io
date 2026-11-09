@@ -6,14 +6,21 @@
  * @todo 2: logic - is this a cFract or agnostic Overlay module ?
  */
 /** Fonctions de rendu graphique pour orbites, lignes et rayons externes
-
  */
 export class cFractDraw {
     parent;
+    drawOptions;
     //private ctx:CanvasRenderingContext2D;
     //public drawOptions: DrawOptions;
     constructor(parent) {
         this.parent = parent;
+        this.drawOptions = {
+            lineColor: "#ff0055",
+            lineWidth: 1.5,
+            showPoints: true,
+            fillStyle: "#fbff27",
+            pointSize: 1.5
+        };
     }
     // #region Reticle
     // Draw reticle: a circle with a cross
@@ -70,7 +77,7 @@ export class cFractDraw {
     // #region Path
     /* Gère le tracé vectoriel au-dessus du canvas de pixels
      *(points fixes, axes, orbites, repères). */
-    drawComplexPath(points, options = {}) {
+    drawComplexPath(points, options = this.drawOptions) {
         // input check and init
         const canvas = this.parent.canvas;
         const ctx = canvas.getContext("2d");
@@ -79,8 +86,8 @@ export class cFractDraw {
         const cP = this.parent.params;
         if (points.length === 0)
             return;
-        const color = options.color || "#ff0055"; // || this.parent.palette?.trajectoryColor
-        const lineWidth = options.lineWidth || 1.5;
+        const color = options.lineColor; // || this.parent.palette?.trajectoryColor
+        const lineWidth = options.lineWidth;
         // Convert to pixels
         const N = points.length;
         const pix = Array(N);
@@ -98,9 +105,10 @@ export class cFractDraw {
         }
         ctx.stroke();
         if (options.showPoints) {
-            ctx.fillStyle = "#ffffff"; // this.parent.palette?.pointColor ||
+            ctx.fillStyle = options.fillStyle || "#fafc9c"; // this.parent.palette?.pointColor ||
             for (let i = 0; i < N; i++) {
-                ctx.fillRect(pix[N].x - 1.5, pix[N].y - 1.5, 3, 3);
+                const size = options.pointSize || 2.0;
+                ctx.fillRect(pix[i].x - size, pix[i].y - size, 2 * size, 2 * size);
             }
         }
         ctx.restore();

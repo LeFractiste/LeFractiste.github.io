@@ -1,16 +1,12 @@
-/** charger:
- import { } from "..fractTypes.js";
- */
-/** V1.1: homogène et global / complet  / appliqué - et bouge !
+/** Helper pour cFract & assistance LLM : définit les interfaces de l'application.
+ * @todo 1: trop gros déjà ! (analyser si on peut rétrocéder les sous-interfaces aux fichiers des sous-classes)
+ * @todo 2: supprimer les accès perturbants (pour la console, pour le recalcul...)
+ * @todo 2: définir les interfaces associées au code Rust et aux calculs distribués partout, y compris les outputs (distance/potential -> palette)
+ * V1.1: homogène et global / complet  / appliqué - et bouge !
  * intégré params.isJulia à la place de typeName
  * intégré ITestable
  * V1.0: homogène et global
- * IParent permet l'accès aux sous-classes. Eviter les accès profonds !
- * IParams permet l'accès (facile) à tous
- * @todo 1: trop gros déjà ! (analyser si on peut rétrocéder les sous-interfaces aux fichiers des sous-classes)
- * @todo 2: supprimer les accès perturbants (pour la console, pour le recalcul...)
- * @todo 2: définir les interfaces associées aux aspects html (div.content, image, events)
- * @todo 2: définir les interfaces associées au code Rust et aux calculs distribués partout, y compris les outputs (distance/potential -> palette)
+ * Accès des sous-classes via IParent et IParams. Eviter les accès profonds !
  */
 export interface AppVersionInfo {
     version: string;
@@ -23,11 +19,16 @@ export type LogLevel = "ALL" | "NOTRACE" | "NOLOG" | "NOWARN";
 export interface ILogger {
     logLevel: LogLevel;
 }
-export interface TaskTrack {
+export interface ITaskTrack {
     id: string;
-    type: "TODO" | "DONE" | "WIP";
+    type: "TODO" | "WIP" | "DONE";
     description: string;
     file?: string;
+}
+export interface IVersionHistory {
+    version: string;
+    objective: string;
+    done: string;
 }
 /** Point in Complex plane - Limit: JS precision is 32 bits
  */
@@ -131,7 +132,7 @@ export interface Trajectory {
     points?: ComplexPoint[];
     parent?: IParent;
     moveAlong?(stepSize: number, field: (p: ComplexPoint) => ComplexPoint): ComplexPoint;
-    draw?(options?: DrawOptions): void;
+    draw?(options?: IDrawOptions): void;
 }
 /** Calcul d'external ray */
 export interface ExternalRayConfig {
@@ -211,13 +212,16 @@ export type DrawType = "continuous" | "points" | "groupedPoints";
 export interface IDrawOverlay {
     drawReticle(pix: PixelPoint): void;
     drawFixedPointsOverlay(fixedPoints: ComplexPoint[]): void;
-    drawComplexPath(points: ComplexPoint[], options: DrawOptions): void;
+    drawComplexPath(points: ComplexPoint[], options: IDrawOptions): void;
 }
 /** Options de dessin optionnelles qui surchargent celles du parent */
-export interface DrawOptions {
-    color?: string;
-    lineWidth?: number;
-    showPoints?: boolean;
+export interface IDrawOptions {
+    lineColor: string;
+    lineWidth: number;
+    showPoints: boolean;
+    fillStyle?: string;
+    pointSize?: number;
+    pointColor?: string;
 }
 export interface ColorRGBA {
     r: number;
@@ -251,7 +255,7 @@ export interface IPalette {
 }
 export interface IPaletteEditor {
     container: HTMLElement;
-    params: IPalOptions;
+    options: IPalOptions;
     lut: Uint8Array;
 }
 /** Contrat de perception pour l'Agent d' Exploration

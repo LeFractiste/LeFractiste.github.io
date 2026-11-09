@@ -8,9 +8,11 @@ export declare class ContPalette implements IPalOptions {
     size: number;
     constructor();
 }
+/** Editeur de palette, version 1. Self-installing in HTML
+ *  @todo: version 2: avec handles + colorer ITerSmooth et DEM en range 1.0) */
 export declare class PaletteEditor implements IPaletteEditor {
     container: HTMLElement;
-    params: IPalOptions;
+    options: IPalOptions;
     lut: Uint8Array;
     onChange: (lookUpTable: Uint8Array) => void;
     previewCanvas: HTMLCanvasElement | null;

@@ -1,22 +1,14 @@
-// src/fractTypes.ts - V1.0 - copyright LeFractiste 2026
-// Helper pour cFract: définit les interfaces utiles à l'application.
-// Sert à cadrer le refactoring (et la génération de code compatible du legacy).
-// Utile pour donner à App les billes pour utiliser les données générées.
+// src/fractTypes.ts - V1.2 - copyright LeFractiste 2026
 
-/** charger:
- import { } from "..fractTypes.js";
- */
-
-/** V1.1: homogène et global / complet  / appliqué - et bouge !
+/** Helper pour cFract & assistance LLM : définit les interfaces de l'application.
+ * @todo 1: trop gros déjà ! (analyser si on peut rétrocéder les sous-interfaces aux fichiers des sous-classes)
+ * @todo 2: supprimer les accès perturbants (pour la console, pour le recalcul...)
+ * @todo 2: définir les interfaces associées au code Rust et aux calculs distribués partout, y compris les outputs (distance/potential -> palette)
+ * V1.1: homogène et global / complet  / appliqué - et bouge !
  * intégré params.isJulia à la place de typeName
  * intégré ITestable
  * V1.0: homogène et global
- * IParent permet l'accès aux sous-classes. Eviter les accès profonds !
- * IParams permet l'accès (facile) à tous
- * @todo 1: trop gros déjà ! (analyser si on peut rétrocéder les sous-interfaces aux fichiers des sous-classes)
- * @todo 2: supprimer les accès perturbants (pour la console, pour le recalcul...)
- * @todo 2: définir les interfaces associées aux aspects html (div.content, image, events)
- * @todo 2: définir les interfaces associées au code Rust et aux calculs distribués partout, y compris les outputs (distance/potential -> palette)
+ * Accès des sous-classes via IParent et IParams. Eviter les accès profonds !
  */
 
 // #region Coding
@@ -39,11 +31,17 @@ export interface ILogger {
 }
 
 // Pour suivi local (Todo / Done) spécifique à la branche courante
-export interface TaskTrack {
+export interface ITaskTrack {
   id: string;
-  type: "TODO" | "DONE" | "WIP";
+  type: "TODO" | "WIP" | "DONE";
   description: string;
   file?: string;
+}
+
+export interface IVersionHistory {
+  version: string;
+  objective: string;
+  done: string;
 }
 
 // #region Bases
@@ -308,10 +306,12 @@ export interface IDrawOverlay {
 
 /** Options de dessin optionnelles qui surchargent celles du parent */
 export interface IDrawOptions {
-  color: string;
+  lineColor: string;
   lineWidth: number;
   showPoints: boolean;
-  fillStyle: string;
+  fillStyle?: string;
+  pointSize?: number;
+  pointColor?: string;
 }
 
 // Gestion Simplifiée de la Palette
@@ -357,7 +357,7 @@ export interface IPalette {
 /* Palette editor */
 export interface IPaletteEditor {
   container: HTMLElement; //rename: id
-  params: IPalOptions; //rename options
+  options: IPalOptions; //rename options
   lut: Uint8Array; //rename lookUpTable --> palette ?
 }
 // #endregion

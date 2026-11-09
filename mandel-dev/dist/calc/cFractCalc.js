@@ -224,9 +224,10 @@ export class cFractCalc {
         const rawPtr: number = this.wasmEngine.buffer_ptr(); // Float32 Wasm
         this Float32Array(this.wasmMemory.buffer, rawPtr, this.options.payloadLen); */
     }
-    // #region to refactor
-    //Calcul d'orbite z(n+1):= z^2 + c (@todo: déléguer au Wasm)
-    /* return this.wasmEngine.compute_orbit_array(
+    // #region CalcOrbit
+    /** Calcul d'orbite z(n+1):= z^2 + c
+     * @todo: déléguer au Wasm
+     * // return this.wasmEngine.compute_orbit_array(
           z0.re, z0.im, c.re, c.im, maxIter); */
     calcOrbit(z0, maxIter = this.options.iterMax) {
         const op = this.options;

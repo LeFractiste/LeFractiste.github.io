@@ -63,6 +63,6 @@ export declare class cFract implements IParent {
       this.render(); // lent mais...
       cFractDraw.drawComplexPath(this, orbit, {});
     } /**/
-    displayState(action: string, c?: ComplexPoint, pix?: PixelPoint): void;
+    displayState(action: string, c?: ComplexPoint, pix?: PixelPoint, msg2?: string): void;
 }
 //# sourceMappingURL=cFract.d.ts.map

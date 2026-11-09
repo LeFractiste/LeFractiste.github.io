@@ -1,4 +1,4 @@
-// Palette.ts - 1.6=refactoring ts - copyright LeFractiste 2026
+// Palette.ts - 1.7=refactoring ts - copyright LeFractiste 2026
 export class ContPalette {
     cyclesH = 1.0;
     cyclesS = 0.0;
@@ -9,18 +9,20 @@ export class ContPalette {
     // Paramètres par défaut de la palette HSV (1024 couleurs)
     constructor() { }
 }
-// Editeur de palette, version 1  (version 2: avec handles + colorer ITerSmooth et DEM en range 1.0)
+/** Editeur de palette, version 1. Self-installing in HTML
+ *  @todo: version 2: avec handles + colorer ITerSmooth et DEM en range 1.0) */
 export class PaletteEditor {
     container;
-    params; //rename options
+    options; //rename options
     lut; //rename lookUpTable --> palette ?
     onChange;
     previewCanvas; //à nettoyer null plus tard
     previewCtx; //à nettoyer null
+    // Class setup
     constructor(containerId, onChangeCallback) {
         // Paramètres par défaut de la palette HSV (1024 couleurs)
-        this.params = new ContPalette();
-        this.lut = new Uint8Array(this.params.size * 4); // Lookup Table RGBA
+        this.options = new ContPalette();
+        this.lut = new Uint8Array(this.options.size * 4); // Lookup Table RGBA
         this.generateLut(); // calcul ok? sans déclencher onChange à la construction interne SANS déclencher onChange à la construction
         const container = document.getElementById(containerId);
         if (container)
@@ -29,7 +31,7 @@ export class PaletteEditor {
             throw new Error(`Container ${container} not defined`);
         }
         this.onChange = onChangeCallback;
-        //HTML update and interaction
+        // Build the HTML code - self installing class !
         this.container.innerHTML = `
             <div style="background: #222; padding: 10px; border-radius: 6px; font-family: sans-serif; font-size: 12px; color: #fff;">
                 <canvas id="palettePreview" width="256" height="5" style="width: 100%; border: 1px solid #555; border-radius: 3px;"></canvas>
@@ -45,26 +47,26 @@ export class PaletteEditor {
         //Listen to UI palCycleH
         document.getElementById("palCyclesH")?.addEventListener("input", e => {
             const targetCy = e.target;
-            this.params.cyclesH = parseFloat(targetCy.value); //js original: e.target.value - @bug: property value does not exist on EventTarget
+            this.options.cyclesH = parseFloat(targetCy.value); //js original: e.target.value - @bug: property value does not exist on EventTarget
             this.updatePalette();
         });
         //Listen to UI palPhaseH
         document.getElementById("palPhaseH")?.addEventListener("input", e => {
             const targetPh = e.target;
-            this.params.phaseH = parseFloat(targetPh.value);
+            this.options.phaseH = parseFloat(targetPh.value);
             this.updatePalette();
         });
     }
     // Génération de la LUT, interpolation sinusoïdales. Appel séparé du callback.
     generateLut() {
-        const N = this.params.size;
+        const N = this.options.size;
         for (let i = 0; i < N; i++) {
             const t = i / N;
             const h = 360 *
                 (0.5 +
-                    0.5 * Math.sin(2.0 * Math.PI * this.params.cyclesH * t + this.params.phaseH));
+                    0.5 * Math.sin(2.0 * Math.PI * this.options.cyclesH * t + this.options.phaseH));
             const s = 0.85;
-            const v = 0.6 + 0.4 * Math.sin(2.0 * Math.PI * this.params.cyclesV * t);
+            const v = 0.6 + 0.4 * Math.sin(2.0 * Math.PI * this.options.cyclesV * t);
             const [r, g, b] = hsvToRgb(h, s, v);
             this.lut[i * 4] = r;
             this.lut[i * 4 + 1] = g;
@@ -73,7 +75,7 @@ export class PaletteEditor {
         }
         this.drawPreview();
     }
-    //Update palette: initie le callback(lut)
+    //Update palette: callback(lut)
     updatePalette() {
         this.generateLut();
         if (this.onChange)
@@ -87,7 +89,7 @@ export class PaletteEditor {
         if (!imgData)
             return;
         for (let x = 0; x < 256; x++) {
-            const lutIdx = Math.floor((x / 256) * this.params.size) * 4;
+            const lutIdx = Math.floor((x / 256) * this.options.size) * 4;
             imgData.data[x * 4] = this.lut[lutIdx];
             imgData.data[x * 4 + 1] = this.lut[lutIdx + 1];
             imgData.data[x * 4 + 2] = this.lut[lutIdx + 2];
@@ -99,7 +101,7 @@ export class PaletteEditor {
     getColorFromNormalized(t) {
         // Clamping entre 0.0 et 0.9999
         const clampedT = Math.max(0, Math.min(0.9999, t));
-        const idx = Math.floor(clampedT * this.params.size) * 4;
+        const idx = Math.floor(clampedT * this.options.size) * 4;
         return {
             r: this.lut[idx],
             g: this.lut[idx + 1],

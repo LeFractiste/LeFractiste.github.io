@@ -23,7 +23,7 @@ body {
     -apple-system,
     sans-serif;
   display: flex;
-  flex-direction: row; /* was column */
+  flex-direction: column;
   align-items: center;
 }
 h1 {
